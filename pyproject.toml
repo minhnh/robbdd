@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bdd_textx"
+version = "0.0.1"
+authors = [
+    { name="Minh Nguyen", email="minh@mail.minhnh.com" }
+]
+description = """
+A TextX Language for working with Behaviour-Driven Development (BDD) meta-model.
+"""
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
+]
+dependencies = [
+  'textx'
+]
+
+[project.entry-points.textx_languages]
+bdd = "bdd_textx.registration:bdd_lang"
+
+[tool.ruff]
+line-length = 100
+
+[tool.black]
+line-length = 100
