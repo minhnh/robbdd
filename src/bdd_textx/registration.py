@@ -9,7 +9,7 @@ CWD = abspath(dirname(__file__))
 
 def bdd_metamodel():
     mm_bdd = metamodel_from_file(
-        join(CWD, "..", "..", "grammars", "bdd.tx"), classes=[URI, ShortURI, NamespaceDeclare]
+        join(CWD, "grammars", "bdd.tx"), classes=[URI, ShortURI, NamespaceDeclare]
     )
     mm_bdd.register_scope_providers(
         {
