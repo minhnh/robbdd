@@ -19,11 +19,11 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
-  'textx'
+  'textx', 'rdflib'
 ]
 
 [project.entry-points.textx_languages]
-bdd = "bdd_textx.registration:bdd_lang"
+bdd-tx = "bdd_textx.registration:bdd_lang"
 
 [tool.ruff]
 line-length = 100

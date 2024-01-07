@@ -1,0 +1,18 @@
+import uri
+
+Model:
+namespaces=NamespaceDeclare*
+
+us=UserStory
+;
+
+UserStory:
+'User' 'Story' name=URIBase '{'
+    scenarios=Scenario+
+'}'
+;
+
+Scenario:
+'Scenario' name=URIBase '{'
+'}'
+;

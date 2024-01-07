@@ -1,0 +1,6 @@
+ns bdd='https://hbrs-sesame.github.io/models/acceptance-criteria/bdd/pickplace#'
+
+User Story (ns=bdd) pickplace_single_arm {
+    Scenario (ns=bdd) simple_pick {
+    }
+}
