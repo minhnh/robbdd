@@ -17,12 +17,25 @@ class UserStory(object):
 
 
 class ScenarioTemplate(object):
-    def __init__(self, parent, ns, name, variables, givens):
+    def __init__(
+        self,
+        parent,
+        ns,
+        name,
+        variables,
+        given_clauses,
+        when_event_clauses,
+        when_behaviour,
+        then_clauses,
+    ):
         self.parent = parent
         self.ns = ns
         self.name = name
         self.variables = variables
-        self.givens = givens
+        self.given_clause = given_clauses
+        self.when_event_clauses = when_event_clauses
+        self.when_behaviour = when_behaviour
+        self.then_clauses = then_clauses
 
         self._ns_obj = Namespace(self.ns.uri)
         self.uri = self._ns_obj[self.name]

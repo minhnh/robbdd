@@ -1,12 +1,21 @@
 ns bdd='https://hbrs-sesame.github.io/models/acceptance-criteria/bdd/pickplace#'
 ns bdd_tmpl='https://hbrs-sesame.github.io/models/acceptance-criteria/bdd/templates/pickplace#'
 
+Behaviour pick_and_place
+Event e_custom
+
 Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
     var target_object
+    var robot
     var pick_ws
     var place_ws
 
-    Given <target_object> is located at <pick_ws>
+    Given:
+        <target_object> is located at <pick_ws> before <pick_and_place>
+    When:
+        <robot> executes <pick_and_place>
+    Then:
+        <target_object> is located at <place_ws> after <pick_and_place>
 }
 
 User Story (ns=bdd) us_pickplace_single_arm {
@@ -17,5 +26,7 @@ User Story (ns=bdd) us_pickplace_single_arm {
     Scenarios:
         Scenario simple_pick {
             template: tmpl_pickplace
+            When:
+                event <e_custom> occurs
         }
 }

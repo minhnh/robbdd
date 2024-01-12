@@ -4,10 +4,20 @@ Model:
 
 namespaces=NamespaceDeclare*
 
+(
+behaviours+=Behaviour
+|
+events+=Event
+)*
+
 templates=ScenarioTemplate*
 
 stories=UserStory*
 ;
+
+Behaviour: 'Behaviour' name=ID ;
+
+Event: 'Event' name=ID ;
 
 UserStory:
 'User' 'Story' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')'  name=ID '{'
@@ -24,21 +34,43 @@ UserStory:
 ScenarioVariant:
 'Scenario' name=ID '{'
     'template' ':' template=[ScenarioTemplate|FQN]
+
+    ('Given' ':' given_clauses=Clause+)?
+    ('When' ':' when_event_clauses=EventWhenClause+)?
+    ('Then' ':' then_clauses=Clause+)?
 '}'
 ;
 
 ScenarioTemplate:
 'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
     variables=ScenarioVariable*
-    givens=GivenClause+
+
+    'Given' ':'
+        given_clauses=Clause+
+
+    'When' ':'
+        when_event_clauses=EventWhenClause*
+        when_behaviour=BehaviourWhenClause
+
+    'Then' ':'
+        then_clauses=Clause+
 '}'
 ;
 
 ScenarioVariable: 'var' name=ID;
 
-GivenClause: 'Given' clause=Clause;
-ThenClause: 'Then' clause=Clause;
+EventWhenClause: 'event' '<' event=[Event|FQN] '>' 'occurs';
 
-Clause: LocatedAtFluentClause|TextClause;
+BehaviourWhenClause: AgentBehaviourWhenClause ;
+AgentBehaviourWhenClause: '<' agent=[ScenarioVariable|FQN] '>' 'executes'  '<' behaviour=[Behaviour|FQN] '>' ;
+
+Clause: LocatedAtFluentClause | TextClause;
+
 TextClause: text=STRING;
-LocatedAtFluentClause: '<' object=[ScenarioVariable|FQN] '>' 'is' 'located' 'at' '<' workspace=[ScenarioVariable|FQN] '>';
+
+TimeConstraint: BeforeBehaviour | AfterBehaviour ;
+BeforeBehaviour: 'before' '<' behaviour=[Behaviour|FQN] '>';
+AfterBehaviour: 'after' '<' behaviour=[Behaviour|FQN] '>';
+LocatedAtFluentClause:
+    '<' object=[ScenarioVariable|FQN] '>' 'is' 'located' 'at' '<' workspace=[ScenarioVariable|FQN] '>'
+    tc=TimeConstraint ;
