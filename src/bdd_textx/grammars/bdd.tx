@@ -23,6 +23,7 @@ UserStory:
 
 ScenarioVariant:
 'Scenario' name=ID '{'
+    'template' ':' template=[ScenarioTemplate|FQN]
 '}'
 ;
 
@@ -40,4 +41,4 @@ ThenClause: 'Then' clause=Clause;
 
 Clause: LocatedAtFluentClause|TextClause;
 TextClause: text=STRING;
-LocatedAtFluentClause: object=[ScenarioVariable|FQN] 'is' 'located' 'at' workspace=[ScenarioVariable|FQN];
+LocatedAtFluentClause: '<' object=[ScenarioVariable|FQN] '>' 'is' 'located' 'at' '<' workspace=[ScenarioVariable|FQN] '>';

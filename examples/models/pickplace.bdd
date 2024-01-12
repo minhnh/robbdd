@@ -1,11 +1,21 @@
 ns bdd='https://hbrs-sesame.github.io/models/acceptance-criteria/bdd/pickplace#'
+ns bdd_tmpl='https://hbrs-sesame.github.io/models/acceptance-criteria/bdd/templates/pickplace#'
 
-User Story (ns=bdd) pickplace_single_arm {
+Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
+    var target_object
+    var pick_ws
+    var place_ws
+
+    Given <target_object> is located at <pick_ws>
+}
+
+User Story (ns=bdd) us_pickplace_single_arm {
     As A "Function Developer"
     I Want "Pick and place behaviour"
     So That "I can transport objects"
 
     Scenarios:
         Scenario simple_pick {
+            template: tmpl_pickplace
         }
 }
