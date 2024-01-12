@@ -1,7 +1,7 @@
 from os.path import abspath, dirname, join
 from textx import LanguageDesc, metamodel_from_file
 import textx.scoping.providers as scoping_providers
-from bdd_textx.classes.uri import URI, ShortURI, NamespaceDeclare
+from bdd_textx.classes.bdd import UserStory, ScenarioTemplate
 
 
 CWD = abspath(dirname(__file__))
@@ -9,7 +9,7 @@ CWD = abspath(dirname(__file__))
 
 def bdd_metamodel():
     mm_bdd = metamodel_from_file(
-        join(CWD, "grammars", "bdd.tx"), classes=[URI, ShortURI, NamespaceDeclare]
+        join(CWD, "grammars", "bdd.tx"), classes=[UserStory, ScenarioTemplate]
     )
     mm_bdd.register_scope_providers(
         {

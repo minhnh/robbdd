@@ -1,4 +1,0 @@
-URIBase: ShortURI | URI ;
-URI: val=STRING ;
-ShortURI: '(' 'ns' '=' ns=ID ')' name=ID ;
-NamespaceDeclare: 'ns' name=ID '=' uri=URI ;

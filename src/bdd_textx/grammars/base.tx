@@ -1,0 +1,4 @@
+FQN: ID+['.'];
+Import: 'import' importURI=STRING;
+Comment: /\/\/.*$/;
+NamespaceDeclare: 'ns' name=ID '=' uri=STRING ;

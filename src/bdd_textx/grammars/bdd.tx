@@ -1,18 +1,43 @@
-import uri
+import base
 
 Model:
+
 namespaces=NamespaceDeclare*
 
-us=UserStory
+templates=ScenarioTemplate*
+
+stories=UserStory*
 ;
 
 UserStory:
-'User' 'Story' name=URIBase '{'
-    scenarios=Scenario+
+'User' 'Story' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')'  name=ID '{'
+
+'As' 'A' role=STRING
+'I' 'Want' feature=STRING
+'So' 'That' benefit=STRING
+
+'Scenarios' ':'
+    scenarios=ScenarioVariant+
 '}'
 ;
 
-Scenario:
-'Scenario' name=URIBase '{'
+ScenarioVariant:
+'Scenario' name=ID '{'
 '}'
 ;
+
+ScenarioTemplate:
+'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+    variables=ScenarioVariable*
+    givens=GivenClause+
+'}'
+;
+
+ScenarioVariable: 'var' name=ID;
+
+GivenClause: 'Given' clause=Clause;
+ThenClause: 'Then' clause=Clause;
+
+Clause: LocatedAtFluentClause|TextClause;
+TextClause: text=STRING;
+LocatedAtFluentClause: object=[ScenarioVariable|FQN] 'is' 'located' 'at' workspace=[ScenarioVariable|FQN];

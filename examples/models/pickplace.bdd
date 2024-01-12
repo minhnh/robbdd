@@ -1,6 +1,11 @@
 ns bdd='https://hbrs-sesame.github.io/models/acceptance-criteria/bdd/pickplace#'
 
 User Story (ns=bdd) pickplace_single_arm {
-    Scenario (ns=bdd) simple_pick {
-    }
+    As A "Function Developer"
+    I Want "Pick and place behaviour"
+    So That "I can transport objects"
+
+    Scenarios:
+        Scenario simple_pick {
+        }
 }
