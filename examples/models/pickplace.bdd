@@ -28,6 +28,21 @@ User Story (ns=bdd) us_pickplace_single_arm {
     Scenarios:
         Scenario simple_pick {
             template: <tmpl_pickplace>
+
+            var <tmpl_pickplace.target_object> can be:
+                - obj <brsu_scene.box>
+                - obj <brsu_scene.ball>
+                - obj <brsu_scene.bottle>
+            var <tmpl_pickplace.pick_ws> can be:
+                - ws <brsu_scene.dining_table>
+                - ws <brsu_scene.shelf>
+            var <tmpl_pickplace.place_ws> can be:
+                - ws <brsu_scene.shelf>
+                - ws <brsu_scene.dining_table>
+            var <tmpl_pickplace.robot> can be:
+                - agn <brsu_scene.freddy>
+                - agn <brsu_scene.lucy>
+
             When:
                 event <e_custom> occurs
             Then:

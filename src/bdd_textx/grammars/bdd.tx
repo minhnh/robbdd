@@ -39,10 +39,22 @@ ScenarioVariant:
 'Scenario' name=ID '{'
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
 
+    (variations=TaskVariation+)?
+
     ('Given' ':' given_clauses=Clause+)?
     ('When' ':' when_event_clauses=EventWhenClause+)?
     ('Then' ':' then_clauses=Clause+)?
 '}'
+;
+
+TaskVariation: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'can' 'be' ':'
+(
+'-' 'obj' '<' objects+=[Object|FQN] '>'
+|
+'-' 'ws' '<' workspaces+=[Workspace|FQN] '>'
+|
+'-' 'agn' '<' agents+=[Agent|FQN] '>'
+)*
 ;
 
 ScenarioTemplate:
@@ -63,16 +75,19 @@ ScenarioTemplate:
 
 ScenarioVariable: 'var' name=ID;
 
+// When Clauses
 EventWhenClause: 'event' '<' event=[Event|FQN] '>' 'occurs';
 
 BehaviourWhenClause: AgentBehaviourWhenClause ;
 AgentBehaviourWhenClause: '<' agent=[ScenarioVariable|FQN] '>' 'executes'  '<' behaviour=[Behaviour|FQN] '>' ;
 
+// Time constraints
 TimeConstraint: BeforeBehaviour | AfterBehaviour | DuringBehaviour ;
 BeforeBehaviour: 'before' '<' behaviour=[Behaviour|FQN] '>';
 AfterBehaviour: 'after' '<' behaviour=[Behaviour|FQN] '>';
 DuringBehaviour: 'during' '<' behaviour=[Behaviour|FQN] '>';
 
+// Given/Then clauses
 Clause: LocatedAtFluentClause | DoesNotDropFluentClause | TextClause;
 TextClause: text=STRING tc=TimeConstraint;
 LocatedAtFluentClause:

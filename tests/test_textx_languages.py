@@ -13,9 +13,9 @@ class TestTextXLanguages(unittest.TestCase):
         """Test scene-tx language"""
         scene_tx_mm = metamodel_for_language("scene-tx")
         scene_model = scene_tx_mm.model_from_file(join(MODELS_DIR, "brsu.scene"))
-        assert len(scene_model.objects) > 0
-        assert len(scene_model.workspaces) > 0
-        assert len(scene_model.agents) > 0
+        assert len(scene_model.model.objects) > 0
+        assert len(scene_model.model.workspaces) > 0
+        assert len(scene_model.model.agents) > 0
 
     def test_bdd_tx(self):
         """Test bdd-tx language"""
@@ -23,3 +23,5 @@ class TestTextXLanguages(unittest.TestCase):
         bdd_model = bdd_tx_mm.model_from_file(join(MODELS_DIR, "pickplace.bdd"))
         assert len(bdd_model.templates) > 0
         assert len(bdd_model.stories) > 0
+        assert len(bdd_model.stories[0].scenarios) > 0
+        assert len(bdd_model.stories[0].scenarios[0].variations) > 0

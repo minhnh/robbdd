@@ -4,6 +4,11 @@ Model:
 
 namespaces=NamespaceDeclare*
 
+model=SceneModel
+;
+
+SceneModel:
+'scene' name=ID '{'
 (
 objects+=Object
 |
@@ -11,7 +16,7 @@ workspaces+=Workspace
 |
 agents+=Agent
 )*
-
+'}'
 ;
 
 Object: 'object' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
