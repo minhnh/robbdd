@@ -24,6 +24,7 @@ dependencies = [
 
 [project.entry-points.textx_languages]
 bdd-tx = "bdd_textx.registration:bdd_lang"
+scene-tx = "bdd_textx.registration:scene_lang"
 
 [tool.ruff]
 line-length = 100

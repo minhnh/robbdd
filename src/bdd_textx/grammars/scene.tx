@@ -1,0 +1,19 @@
+import base
+
+Model:
+
+namespaces=NamespaceDeclare*
+
+(
+objects+=Object
+|
+workspaces+=Workspace
+|
+agents+=Agent
+)*
+
+;
+
+Object: 'object' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
+Workspace: 'workspace' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
+Agent: 'agent' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;

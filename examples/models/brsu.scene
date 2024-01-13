@@ -1,0 +1,10 @@
+ns brsu_env='https://hbrs-sesame.github.io/models/environments/brsu/'
+ns brsu_agn='https://hbrs-sesame.github.io/models/agents/brsu/'
+
+object (ns=brsu_env) box
+object (ns=brsu_env) ball
+object (ns=brsu_env) bottle
+workspace (ns=brsu_env) dining_table
+workspace (ns=brsu_env) shelf
+agent (ns=brsu_agn) freddy
+agent (ns=brsu_agn) lucy

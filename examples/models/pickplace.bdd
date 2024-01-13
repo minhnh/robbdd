@@ -1,3 +1,5 @@
+import "brsu.scene"
+
 ns bdd='https://hbrs-sesame.github.io/models/acceptance-criteria/bdd/pickplace#'
 ns bdd_tmpl='https://hbrs-sesame.github.io/models/acceptance-criteria/bdd/templates/pickplace#'
 
@@ -25,8 +27,10 @@ User Story (ns=bdd) us_pickplace_single_arm {
 
     Scenarios:
         Scenario simple_pick {
-            template: tmpl_pickplace
+            template: <tmpl_pickplace>
             When:
                 event <e_custom> occurs
+            Then:
+                <tmpl_pickplace.robot> does not drop <tmpl_pickplace.target_object> during <pick_and_place>
         }
 }

@@ -1,6 +1,8 @@
 import base
+import scene
 
 Model:
+imports*=Import
 
 namespaces=NamespaceDeclare*
 
@@ -10,9 +12,11 @@ behaviours+=Behaviour
 events+=Event
 )*
 
-templates=ScenarioTemplate*
-
-stories=UserStory*
+(
+templates+=ScenarioTemplate
+|
+stories+=UserStory
+)+
 ;
 
 Behaviour: 'Behaviour' name=ID ;
@@ -33,7 +37,7 @@ UserStory:
 
 ScenarioVariant:
 'Scenario' name=ID '{'
-    'template' ':' template=[ScenarioTemplate|FQN]
+    'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
 
     ('Given' ':' given_clauses=Clause+)?
     ('When' ':' when_event_clauses=EventWhenClause+)?
@@ -64,13 +68,16 @@ EventWhenClause: 'event' '<' event=[Event|FQN] '>' 'occurs';
 BehaviourWhenClause: AgentBehaviourWhenClause ;
 AgentBehaviourWhenClause: '<' agent=[ScenarioVariable|FQN] '>' 'executes'  '<' behaviour=[Behaviour|FQN] '>' ;
 
-Clause: LocatedAtFluentClause | TextClause;
-
-TextClause: text=STRING;
-
-TimeConstraint: BeforeBehaviour | AfterBehaviour ;
+TimeConstraint: BeforeBehaviour | AfterBehaviour | DuringBehaviour ;
 BeforeBehaviour: 'before' '<' behaviour=[Behaviour|FQN] '>';
 AfterBehaviour: 'after' '<' behaviour=[Behaviour|FQN] '>';
+DuringBehaviour: 'during' '<' behaviour=[Behaviour|FQN] '>';
+
+Clause: LocatedAtFluentClause | DoesNotDropFluentClause | TextClause;
+TextClause: text=STRING tc=TimeConstraint;
 LocatedAtFluentClause:
     '<' object=[ScenarioVariable|FQN] '>' 'is' 'located' 'at' '<' workspace=[ScenarioVariable|FQN] '>'
+    tc=TimeConstraint ;
+DoesNotDropFluentClause:
+    '<' agent=[ScenarioVariable|FQN] '>' 'does' 'not' 'drop' '<' object=[ScenarioVariable|FQN] '>'
     tc=TimeConstraint ;
