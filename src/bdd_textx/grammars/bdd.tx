@@ -38,6 +38,7 @@ UserStory:
 ScenarioVariant:
 'Scenario' name=ID '{'
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
+    'scene' ':' '<' template=[SceneModel|FQN] '>'
 
     (variations=TaskVariation+)?
 

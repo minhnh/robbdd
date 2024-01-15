@@ -28,6 +28,7 @@ User Story (ns=bdd) us_pickplace_single_arm {
     Scenarios:
         Scenario simple_pick {
             template: <tmpl_pickplace>
+            scene: <brsu_scene>
 
             var <tmpl_pickplace.target_object> can be:
                 - obj <brsu_scene.box>
