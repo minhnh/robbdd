@@ -1,7 +1,9 @@
 from os.path import abspath, dirname, join
-from textx import LanguageDesc, metamodel_from_file
+from textx import LanguageDesc, GeneratorDesc, metamodel_from_file
 import textx.scoping.providers as scoping_providers
+from textxjinja import textx_jinja_generator
 from bdd_textx.classes.bdd import UserStory, ScenarioTemplate
+from bdd_textx.generator.utils import prepare_context_data
 
 
 CWD = abspath(dirname(__file__))
@@ -40,4 +42,16 @@ bdd_lang = LanguageDesc(
     pattern="*.bdd",
     description="Behaviour-Driven Development language",
     metamodel=bdd_metamodel,
+)
+
+def generator(metamodel, model, output_path, overwrite, debug):
+    template_folder = join(CWD, "generator", "template")
+    context = prepare_context_data(metamodel, model)
+    textx_jinja_generator(template_folder, output_path, context, overwrite)
+
+bddtx_jsonld_generator = GeneratorDesc(
+    language="bdd-tx",
+    target="json-ld",
+    description="Generate JSON-LD from BDD models",
+    generator=generator,
 )
