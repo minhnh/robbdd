@@ -1,0 +1,20 @@
+{
+    "@context": [
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/agent.json",
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/bdd.json",
+        {
+            "{{ agents_file }}": "{{ agents_ns.uri }}",
+            "scene-lab": "https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/secorolab/",
+            "scene": "https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/isaac/"
+        }
+    ],
+    "@graph": [
+        {% for agent in scene.model.agents %}
+        {
+            "@id": "scene:scn-pickplace-{{ agents_file }}-{{ agent.name }}", "@type": "bdd:SceneHasAgents",
+            "of-scene": "scene-lab:scn-pickplace",
+            "has-agent": [ "{{ agents_file }}:{{ agent.name }}" ]
+        }{% if not loop.last %}, {% endif %}
+        {% endfor %}
+    ]
+}

@@ -1,0 +1,58 @@
+{
+    "@context": [
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/bdd.json",
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/task.json",
+        {
+            "@base": "https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/",
+            "tmpl": "https://secorolab.github.io/models/acceptance-criteria/bdd/templates/",
+            "isaac": "https://secorolab.github.io/models/agents/isaac-sim/",
+            "lab": "https://secorolab.github.io/models/environments/secorolab/",
+            "scene-lab": "https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/secorolab/",
+            "scene-isaac": "https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/isaac/"
+        }
+    ],
+    "@graph": [
+        {
+            "@id": "var-target-obj", "@type": "bdd:TaskVariation",
+            "of-task": "tmpl:task-pickplace",
+            "of-variable": "tmpl:var-target-obj",
+            "can-be": [ "lab:obj-bottle", "lab:obj-ball" ]
+        },
+        {
+            "@id": "var-agent", "@type": "bdd:TaskVariation",
+            "of-task": "tmpl:task-pickplace",
+            "of-variable": "tmpl:var-agent",
+            "can-be": [ "isaac:panda" ]
+        },
+        {
+            "@id": "var-pick-ws", "@type": "bdd:TaskVariation",
+            "of-task": "tmpl:task-pickplace",
+            "of-variable": "tmpl:var-pick-ws",
+            "can-be": [ "lab:ws-table", "lab:ws-shelf" ]
+        },
+        {
+            "@id": "var-place-ws", "@type": "bdd:TaskVariation",
+            "of-task": "tmpl:task-pickplace",
+            "of-variable": "tmpl:var-place-ws",
+            "can-be": [ "lab:ws-table", "lab:ws-shelf" ]
+        },
+        {
+            "@id": "scr-var-panda-pickplace", "@type": "bdd:ScenarioVariant",
+            "of-template": "tmpl:tmpl-pickplace",
+            "has-scene": [
+                "scene-lab:scn-pickplace-secorolab-objects",
+                "scene-lab:scn-pickplace-secorolab-workspaces",
+                "scene-isaac:scn-pickplace-isaac-panda"
+            ],
+            "has-variation": [
+                "var-target-obj", "var-agent", "var-pick-ws", "var-place-ws"
+            ]
+        },
+        {
+            "@id": "us-pickplace", "@type": "bdd:UserStory",
+            "has-criteria": [
+                "scr-var-panda-pickplace"
+            ]
+        }
+    ]
+}

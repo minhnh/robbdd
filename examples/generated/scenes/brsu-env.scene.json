@@ -1,0 +1,28 @@
+{
+    "@context": [
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/environment.json",
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/bdd.json",
+        {
+            "lab": "https://hbrs-sesame.github.io/models/environments/brsu/",
+            "scene": "https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/secorolab/"
+        }
+    ],
+    "@graph": [
+        { "@id": "scene:scn-pickplace", "@type": "bdd:Scene" },
+        {
+            "@id": "scene:scn-pickplace-secorolab-objects", "@type": "bdd:SceneHasObjects",
+            "of-scene": "scene:scn-pickplace",
+            "has-object": [
+                "lab:obj-box", "lab:obj-ball", "lab:obj-bottle", 
+                "lab:obj-dining_table", "lab:obj-shelf"
+            ]
+        },
+        {
+            "@id": "scene:scn-pickplace-secorolab-workspaces", "@type": "bdd:SceneHasWorkspaces",
+            "of-scene": "scene:scn-pickplace",
+            "has-workspace": [
+                "lab:obj-dining_table", "lab:obj-shelf"
+            ]
+        }
+    ]
+}

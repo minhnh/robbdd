@@ -1,0 +1,11 @@
+{
+    "@context": {
+        "@base": "{{agents_ns.uri}}",
+        "agn": "https://secorolab.github.io/metamodels/agent#"
+    },
+    "@graph": [
+        {% for agent in scene.model.agents %}
+        { "@id": "{{ agent.name }}", "@type": [ "agn:Agent", "agn:{{ agent.name|capitalize }}"] }{% if not loop.last %},{% endif +%}
+        {% endfor %}
+    ]
+}

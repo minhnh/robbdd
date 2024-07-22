@@ -25,6 +25,7 @@ def prepare_context_data(metamodel, model):
             context['environments_ns'] = ns_item
             context['environments_file'] = ns_item.name.split("_")[0]
 
-    pprint(context['scene'].__dict__)
+    # Add behaviour filename to context
+    context['behaviour_file'] = context['behaviours'][0].name
 
     return context
