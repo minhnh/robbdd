@@ -1,7 +1,7 @@
 {
     "@context": {
-        "@base": "{{agents_ns.uri}}",
-        "agn": "https://secorolab.github.io/metamodels/agent#"
+        "@base": "{{ agents_ns.uri }}",
+        "agn": "{{ secoro_mm }}/agent#"
     },
     "@graph": [
         {% for agent in scene.model.agents %}

@@ -1,4 +1,5 @@
 from pprint import pprint
+from rdf_utils.uri import URL_SECORO_M, URL_SECORO_MM
 
 def prepare_context_data(metamodel, model):
     "Prepare and populate the context for jinja template"
@@ -10,6 +11,10 @@ def prepare_context_data(metamodel, model):
         'stories': model.stories,
         'templates': model.templates,
     }
+
+    # Add Secoro namespaces to context
+    context['secoro_m'] = URL_SECORO_M
+    context['secoro_mm'] = URL_SECORO_MM
     
     # Add scene model to context
     for import_item in model.imports:
