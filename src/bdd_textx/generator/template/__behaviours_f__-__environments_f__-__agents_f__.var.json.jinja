@@ -1,0 +1,52 @@
+{
+    "@context": [
+        "{{ secoro_mm }}/acceptance-criteria/bdd/bdd.json",
+        "{{ secoro_mm }}/acceptance-criteria/bdd/task.json",
+        {
+            "@base": "{{ namespaces.bdd.uri }}",
+            "{{ namespaces.tmpl.name }}": "{{ namespaces.tmpl.uri }}",
+            "{{ namespaces.agents.name }}": "{{ namespaces.agents.uri }}",
+            "{{ namespaces.environments.name }}": "{{ namespaces.environments.uri }}",
+            "scene-lab": "{{ secoro_m }}/acceptance-criteria/bdd/scenes/secorolab/",
+            "scene-isaac": "{{ secoro_m }}/acceptance-criteria/bdd/scenes/isaac/"
+        }
+    ],
+    "@graph": [
+        {% for story in stories %}
+        {% for scenario in story.scenarios %}
+        {% for variation in scenario.variations %}
+        {
+            "@id": "var-{{ variation.variable.name }}", "@type": "bdd:TaskVariation",
+            "of-task": "{{ namespaces.tmpl.name }}:{{ scenario.template[0].name }}",
+            "of-variable": "{{ namespaces.tmpl.name }}:{{ variation.variable.name }}",
+            {% if variation.objects|length > 0  %}
+            "can-be": [ {% for object in variation.objects %}"{{ namespaces.environments.name }}:{{ object.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]
+            {% elif variation.workspaces|length > 0 %}
+            "can-be": [ {% for workspace in variation.workspaces %}"{{ namespaces.environments.name }}:{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]
+            {% else %}
+            "can-be": [ {% for agent in variation.agents %}"{{ namespaces.agents.name }}:{{ agent.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]
+            {% endif %}
+        },
+        {% endfor %}
+        {
+            "@id": "scr-var-{{ scenario.name }}", "@type": "bdd:ScenarioVariant",
+            "of-template": "{{ namespaces.tmpl.name }}:{{ scenario.template[0].name }}",
+            "has-scene": [
+                "scene-lab:scn-pickplace-secorolab-objects",
+                "scene-lab:scn-pickplace-secorolab-workspaces",
+                "scene-isaac:scn-pickplace-isaac-panda"
+            ],
+            "has-variation": [
+                {%+ for variation in scenario.variations %}"var-{{ variation.variable.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
+            ]
+        },
+        {% endfor %}
+        {
+            "@id": "{{ story.name }}", "@type": "bdd:UserStory",
+            "has-criteria": [
+                {%+ for scenario in story.scenarios %}"scr-var-{{ scenario.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
+            ]
+        }
+        {% endfor %}
+    ]
+}

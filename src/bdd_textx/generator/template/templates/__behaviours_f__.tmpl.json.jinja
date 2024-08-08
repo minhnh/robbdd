@@ -1,0 +1,93 @@
+{
+   "@context": [
+      "{{ secoro_mm }}/acceptance-criteria/bdd/bdd.json",
+      "{{ secoro_mm }}/acceptance-criteria/bdd/behaviour.json",
+      "{{ secoro_mm }}/acceptance-criteria/bdd/task.json",
+      "{{ secoro_mm }}/acceptance-criteria/bdd/time.json",
+      {
+         "{{ namespaces.tmpl.name }}": "{{ namespaces.tmpl.uri }}",
+         "scene": "{{ secoro_m }}/acceptance-criteria/bdd/scenes/secorolab/"
+      }
+   ],
+   "@graph": [
+      {% for behaviour in behaviours %}
+      { "@id": "{{ namespaces.tmpl.name }}:behaviour-{{ behaviour.name }}", "@type": "bhv:Behaviour" },
+      { "@id": "{{ namespaces.tmpl.name }}:task-{{ behaviour.name }}", "@type": "task:Task" },
+
+      {% for event in events %}
+      { "@id": "{{ namespaces.tmpl.name }}:evt-{{ event.name }}", "@type": "time:Event" },
+      {% endfor %}
+
+      {% for template in templates %}
+      { "@id": "{{ namespaces.tmpl.name }}:{{ template.name }}-given", "@type": "bdd:Given" },
+      { "@id": "{{ namespaces.tmpl.name }}:{{ template.name }}-when", "@type": "bdd:When" },
+      { "@id": "{{ namespaces.tmpl.name }}:{{ template.name }}-then", "@type": "bdd:Then" },
+      {
+         "@id": "{{ namespaces.tmpl.name }}:scenario-{{ template.name }}", "@type": "bdd:Scenario",
+         "of-behaviour": "{{ namespaces.tmpl.name }}:bhv-{{ behaviour.name }}",
+         "given": "{{ namespaces.tmpl.name }}:{{ template.name }}-given",
+         "when": "{{ namespaces.tmpl.name }}:{{ template.name }}-when",
+         "then": "{{ namespaces.tmpl.name }}:{{ template.name }}-then"
+      },
+
+      {% for variable in template.variables %}
+      { "@id": "{{ namespaces.tmpl.name }}:var-{{ variable.name }}", "@type": "bdd:ScenarioVariable" },
+      {% endfor %}
+
+      {
+         "@id": "{{ namespaces.tmpl.name }}:fl-located-at", "@type": ["bdd:Fluent", "bdd:LocatedAtPredicate"]
+      },
+
+      {
+         "@id": "{{ namespaces.tmpl.name }}:ftc-before-pick", "@type": "time:TimeConstraint"
+      },
+      {
+         "@id": "{{ namespaces.tmpl.name }}:ftc-after-place", "@type": "time:TimeConstraint"
+      },
+
+      {
+         "@id": "{{ namespaces.tmpl.name }}:bec-before-evt-pick", "@type": "time:BeforeEventConstraint",
+         "ref-event": "{{ namespaces.tmpl.name }}:evt-pick-start",
+         "of-constraint": "{{ namespaces.tmpl.name }}:ftc-before-pick"
+      },
+      {
+         "@id": "{{ namespaces.tmpl.name }}:bec-after-evt-place", "@type": "time:AfterEventConstraint",
+         "ref-event": "{{ namespaces.tmpl.name }}:evt-place-end",
+         "of-constraint": "{{ namespaces.tmpl.name }}:ftc-after-place"
+      },
+
+      {% for given_clause in template.given_clauses %}
+      {
+         "@id": "{{ namespaces.tmpl.name }}:flc-located-at-{{ given_clause.workspace.name }}", "@type": "bdd:FluentClause",
+         "clause-of": "{{ namespaces.tmpl.name }}:{{ template.name }}-given",
+         "holds": "{{ namespaces.tmpl.name }}:fl-located-at",
+         "holds-at": "{{ namespaces.tmpl.name }}:ftc-before-pick",
+         "ref-object": "{{ namespaces.tmpl.name }}:var-{{ given_clause.object.name }}",
+         "ref-workspace": "{{ namespaces.tmpl.name }}:var-{{ given_clause.workspace.name }}"
+      },
+      {% endfor %}
+
+      {% for then_clause in template.then_clauses %}
+      {
+         "@id": "{{ namespaces.tmpl.name }}:flc-located-at-{{ then_clause.workspace.name }}", "@type": "bdd:FluentClause",
+         "clause-of": "{{ namespaces.tmpl.name }}:{{ template.name }}-then",
+         "holds": "{{ namespaces.tmpl.name }}:fl-located-at",
+         "holds-at": "{{ namespaces.tmpl.name }}:ftc-after-place",
+         "ref-object": "{{ namespaces.tmpl.name }}:var-{{ then_clause.object.name }}",
+         "ref-workspace": "{{ namespaces.tmpl.name }}:var-{{ then_clause.workspace.name }}"
+      },
+      {% endfor %}
+
+      {
+         "@id": "{{ namespaces.tmpl.name }}:{{ namespaces.tmpl.name }}-{{ template.name }}", "@type": "bdd:ScenarioTemplate",
+         "of-scenario": "{{ namespaces.tmpl.name }}:scenario-{{ template.name }}",
+         "has-scene": "scene:scn-pickplace",
+         "has-clause": [
+            {%+ for given_clause in template.given_clauses %}"{{ namespaces.tmpl.name }}:flc-located-at-{{ given_clause.workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor %},
+            {%- for then_clause in template.then_clauses %}"{{ namespaces.tmpl.name }}:flc-located-at-{{ then_clause.workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
+         ]
+      }
+      {% endfor %}
+      {% endfor %}
+   ]
+}

@@ -3,8 +3,8 @@
         "{{ secoro_mm }}/acceptance-criteria/bdd/environment.json",
         "{{ secoro_mm }}/acceptance-criteria/bdd/bdd.json",
         {
-            "lab": "{{ environments_ns.uri }}",
-            "scene": "https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/secorolab/"
+            "{{ namespaces.environments.name }}": "{{ namespaces.environments.uri }}",
+            "scene": "{{ secoro_m }}/acceptance-criteria/bdd/scenes/secorolab/"
         }
     ],
     "@graph": [
@@ -13,15 +13,15 @@
             "@id": "scene:scn-pickplace-secorolab-objects", "@type": "bdd:SceneHasObjects",
             "of-scene": "scene:scn-pickplace",
             "has-object": [
-                {%+ for object in scene.model.objects %}"lab:obj-{{ object.name }}", {% endfor +%}
-                {%+ for workspace in scene.model.workspaces %}"lab:obj-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
+                {%+ for object in scene.model.objects %}"{{ namespaces.environments.name }}:obj-{{ object.name }}", {% endfor +%}
+                {%+ for workspace in scene.model.workspaces %}"{{ namespaces.environments.name }}:obj-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
             ]
         },
         {
             "@id": "scene:scn-pickplace-secorolab-workspaces", "@type": "bdd:SceneHasWorkspaces",
             "of-scene": "scene:scn-pickplace",
             "has-workspace": [
-                {%+ for workspace in scene.model.workspaces %}"lab:obj-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
+                {%+ for workspace in scene.model.workspaces %}"{{ namespaces.environments.name }}:obj-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
             ]
         }
     ]

@@ -7,14 +7,22 @@ def prepare_context_data(metamodel, model):
     context = {
         'behaviours': model.behaviours,
         'events': model.events,
-        'namespaces': model.namespaces,
         'stories': model.stories,
         'templates': model.templates,
     }
 
+    pprint(model.__dict__)
+    pprint(model.namespaces[0].__dict__)
+    pprint(model.namespaces[1].__dict__)
+
     # Add Secoro namespaces to context
     context['secoro_m'] = URL_SECORO_M
     context['secoro_mm'] = URL_SECORO_MM
+
+    context['namespaces'] = {
+        'bdd': model.namespaces[0],
+        'tmpl': model.namespaces[1],
+    }
     
     # Add scene model to context
     for import_item in model.imports:
@@ -24,13 +32,13 @@ def prepare_context_data(metamodel, model):
     # Add agents and environments namespaces to context
     for ns_item in context['scene'].namespaces:
         if "_agn" in ns_item.name:
-            context['agents_ns'] = ns_item
-            context['agents_file'] = ns_item.name.split("_")[0]
+            context['namespaces']['agents'] = ns_item
+            context['agents_f'] = ns_item.name.split("_")[0]
         elif "_env" in ns_item.name:
-            context['environments_ns'] = ns_item
-            context['environments_file'] = ns_item.name.split("_")[0]
+            context['namespaces']['environments'] = ns_item
+            context['environments_f'] = ns_item.name.split("_")[0]
 
     # Add behaviour filename to context
-    context['behaviour_file'] = context['behaviours'][0].name
+    context['behaviours_f'] = context['behaviours'][0].name
 
     return context

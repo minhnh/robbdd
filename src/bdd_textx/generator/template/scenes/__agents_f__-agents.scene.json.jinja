@@ -3,9 +3,9 @@
         "{{ secoro_mm }}/acceptance-criteria/bdd/agent.json",
         "{{ secoro_mm }}/acceptance-criteria/bdd/bdd.json",
         {
-            "{{ agents_file }}": "{{ agents_ns.uri }}",
-            "scene-lab": "https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/secorolab/",
-            "scene": "https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/isaac/"
+            "{{ namespaces.agents.name }}": "{{ namespaces.agents.uri }}",
+            "scene-lab": "{{ secoro_m }}/acceptance-criteria/bdd/scenes/secorolab/",
+            "scene": "{{ secoro_m }}/acceptance-criteria/bdd/scenes/isaac/"
         }
     ],
     "@graph": [
@@ -13,7 +13,7 @@
         {
             "@id": "scene:scn-pickplace-{{ agents_file }}-{{ agent.name }}", "@type": "bdd:SceneHasAgents",
             "of-scene": "scene-lab:scn-pickplace",
-            "has-agent": [ "{{ agents_file }}:{{ agent.name }}" ]
+            "has-agent": [ "{{ namespaces.agents.name }}:{{ agent.name }}" ]
         }{% if not loop.last %}, {% endif %}
         {% endfor %}
     ]
