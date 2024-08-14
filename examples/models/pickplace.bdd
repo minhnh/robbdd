@@ -1,7 +1,7 @@
-import "brsu.scene"
+import "lab.scene"
 
-ns bdd='https://hbrs-sesame.github.io/models/acceptance-criteria/bdd/pickplace#'
-ns bdd_tmpl='https://hbrs-sesame.github.io/models/acceptance-criteria/bdd/templates/pickplace#'
+ns bdd='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/'
+ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
 
 Behaviour pick_and_place
 Event e_custom
@@ -28,21 +28,21 @@ User Story (ns=bdd) us_pickplace_single_arm {
     Scenarios:
         Scenario simple_pick {
             template: <tmpl_pickplace>
-            scene: <brsu_scene>
+            scene: <lab_scene>
 
             var <tmpl_pickplace.target_object> can be:
-                - obj <brsu_scene.box>
-                - obj <brsu_scene.ball>
-                - obj <brsu_scene.bottle>
+                - obj <lab_scene.box>
+                - obj <lab_scene.ball>
+                - obj <lab_scene.bottle>
             var <tmpl_pickplace.pick_ws> can be:
-                - ws <brsu_scene.dining_table>
-                - ws <brsu_scene.shelf>
+                - ws <lab_scene.dining_table>
+                - ws <lab_scene.shelf>
             var <tmpl_pickplace.place_ws> can be:
-                - ws <brsu_scene.shelf>
-                - ws <brsu_scene.dining_table>
+                - ws <lab_scene.shelf>
+                - ws <lab_scene.dining_table>
             var <tmpl_pickplace.robot> can be:
-                - agn <brsu_scene.freddy>
-                - agn <brsu_scene.lucy>
+                - agn <lab_scene.freddy>
+                - agn <lab_scene.lucy>
 
             When:
                 event <e_custom> occurs
