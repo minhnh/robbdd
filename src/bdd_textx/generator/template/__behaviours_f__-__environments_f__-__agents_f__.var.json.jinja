@@ -46,7 +46,7 @@
             "has-criteria": [
                 {%+ for scenario in story.scenarios %}"scr-var-{{ scenario.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
             ]
-        }
+        }{% if not loop.last %}, {% endif +%}
         {% endfor %}
     ]
 }
