@@ -86,7 +86,7 @@
             {%+ for given_clause in template.given_clauses %}"{{ namespaces.tmpl.name }}:flc-located-at-{{ given_clause.workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor %},
             {%- for then_clause in template.then_clauses %}"{{ namespaces.tmpl.name }}:flc-located-at-{{ then_clause.workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
          ]
-      }{% if not loop.last %}, {% endif +%}
+      }{% if not loop.last %},{% endif +%}
       {% endfor %}
       {% endfor %}
    ]

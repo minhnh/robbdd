@@ -8,18 +8,18 @@
         }
     ],
     "@graph": [
-        { "@id": "scene:scn-pickplace", "@type": "bdd:Scene" },
+        { "@id": "scene:{{ scene.model.name }}", "@type": "bdd:Scene" },
         {
-            "@id": "scene:scn-pickplace-secorolab-objects", "@type": "bdd:SceneHasObjects",
-            "of-scene": "scene:scn-pickplace",
+            "@id": "scene:{{ scene.model.name }}-{{ namespaces.environments.name }}-objects", "@type": "bdd:SceneHasObjects",
+            "of-scene": "scene:{{ scene.model.name }}",
             "has-object": [
                 {%+ for object in scene.model.objects %}"{{ namespaces.environments.name }}:obj-{{ object.name }}", {% endfor +%}
                 {%+ for workspace in scene.model.workspaces %}"{{ namespaces.environments.name }}:obj-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
             ]
         },
         {
-            "@id": "scene:scn-pickplace-secorolab-workspaces", "@type": "bdd:SceneHasWorkspaces",
-            "of-scene": "scene:scn-pickplace",
+            "@id": "scene:{{ scene.model.name }}-{{ namespaces.environments.name }}-workspaces", "@type": "bdd:SceneHasWorkspaces",
+            "of-scene": "scene:{{ scene.model.name }}",
             "has-workspace": [
                 {%+ for workspace in scene.model.workspaces %}"{{ namespaces.environments.name }}:obj-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
             ]

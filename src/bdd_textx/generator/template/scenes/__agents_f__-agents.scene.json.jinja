@@ -11,8 +11,8 @@
     "@graph": [
         {% for agent in scene.model.agents %}
         {
-            "@id": "scene:scn-pickplace-{{ agents_file }}-{{ agent.name }}", "@type": "bdd:SceneHasAgents",
-            "of-scene": "scene-lab:scn-pickplace",
+            "@id": "scene:{{ scene.model.name }}-{{ namespaces.agents.name }}-{{ agent.name }}", "@type": "bdd:SceneHasAgents",
+            "of-scene": "scene-lab:{{ scene.model.name }}",
             "has-agent": [ "{{ namespaces.agents.name }}:{{ agent.name }}" ]
         }{% if not loop.last %}, {% endif %}
         {% endfor %}

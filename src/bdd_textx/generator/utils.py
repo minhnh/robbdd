@@ -33,9 +33,11 @@ def prepare_context_data(metamodel, model):
     for ns_item in context['scene'].namespaces:
         if "_agn" in ns_item.name:
             context['namespaces']['agents'] = ns_item
+            context['namespaces']['agents'].name = ns_item.name.split("_")[0]
             context['agents_f'] = ns_item.name.split("_")[0]
         elif "_env" in ns_item.name:
             context['namespaces']['environments'] = ns_item
+            context['namespaces']['environments'].name = ns_item.name.split("_")[0]
             context['environments_f'] = ns_item.name.split("_")[0]
 
     # Add behaviour filename to context
