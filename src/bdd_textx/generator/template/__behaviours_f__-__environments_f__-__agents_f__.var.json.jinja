@@ -7,8 +7,8 @@
             "{{ namespaces.tmpl.name }}": "{{ namespaces.tmpl.uri }}",
             "{{ namespaces.agents.name }}": "{{ namespaces.agents.uri }}",
             "{{ namespaces.environments.name }}": "{{ namespaces.environments.uri }}",
-            "scene-lab": "{{ secoro_m }}/acceptance-criteria/bdd/scenes/secorolab/",
-            "scene-isaac": "{{ secoro_m }}/acceptance-criteria/bdd/scenes/isaac/"
+            "{{ namespaces.scene_env.name }}": "{{ namespaces.scene_env.uri }}",
+            "{{ namespaces.scene.name }}": "{{ namespaces.scene.uri }}"
         }
     ],
     "@graph": [
@@ -32,10 +32,10 @@
             "@id": "scr-var-{{ scenario.name }}", "@type": "bdd:ScenarioVariant",
             "of-template": "{{ namespaces.tmpl.name }}:{{ scenario.template[0].name }}",
             "has-scene": [
-                "scene-lab:{{ scenario.template[1].name }}-{{ namespaces.environments.name }}-objects",
-                "scene-lab:{{ scenario.template[1].name }}-{{ namespaces.environments.name }}-workspaces",
+                "{{ namespaces.scene_env.name }}:{{ scenario.template[1].name }}-{{ namespaces.environments.name }}-objects",
+                "{{ namespaces.scene_env.name }}:{{ scenario.template[1].name }}-{{ namespaces.environments.name }}-workspaces",
                 {% for agent in scenario.template[1].agents %}
-                "scene-isaac:{{ scenario.template[1].name }}-{{ namespaces.agents.name }}-{{ agent.name }}"{% if not loop.last %},{% endif +%}
+                "{{ namespaces.scene.name }}:{{ scenario.template[1].name }}-{{ namespaces.agents.name }}-{{ agent.name }}"{% if not loop.last %},{% endif +%}
                 {% endfor %}
             ],
             "has-variation": [

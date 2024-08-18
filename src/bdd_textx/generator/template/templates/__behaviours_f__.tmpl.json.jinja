@@ -6,7 +6,7 @@
       "{{ secoro_mm }}/acceptance-criteria/bdd/time.json",
       {
          "{{ namespaces.tmpl.name }}": "{{ namespaces.tmpl.uri }}",
-         "scene": "{{ secoro_m }}/acceptance-criteria/bdd/scenes/secorolab/"
+         "{{ namespaces.scene_env.name }}": "{{ namespaces.scene_env.uri }}"
       }
    ],
    "@graph": [
@@ -81,7 +81,7 @@
       {
          "@id": "{{ namespaces.tmpl.name }}:{{ namespaces.tmpl.name }}-{{ template.name }}", "@type": "bdd:ScenarioTemplate",
          "of-scenario": "{{ namespaces.tmpl.name }}:scenario-{{ template.name }}",
-         "has-scene": "scene:scn-pickplace",
+         "has-scene": "{{ namespaces.scene_env.name }}:{{ scene.model.name }}",
          "has-clause": [
             {%+ for given_clause in template.given_clauses %}"{{ namespaces.tmpl.name }}:flc-located-at-{{ given_clause.workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor %},
             {%- for then_clause in template.then_clauses %}"{{ namespaces.tmpl.name }}:flc-located-at-{{ then_clause.workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}

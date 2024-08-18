@@ -11,10 +11,6 @@ def prepare_context_data(metamodel, model):
         'templates': model.templates,
     }
 
-    pprint(model.__dict__)
-    pprint(model.namespaces[0].__dict__)
-    pprint(model.namespaces[1].__dict__)
-
     # Add Secoro namespaces to context
     context['secoro_m'] = URL_SECORO_M
     context['secoro_mm'] = URL_SECORO_MM
@@ -39,6 +35,10 @@ def prepare_context_data(metamodel, model):
             context['namespaces']['environments'] = ns_item
             context['namespaces']['environments'].name = ns_item.name.split("_")[0]
             context['environments_f'] = ns_item.name.split("_")[0]
+        elif "scene" == ns_item.name:
+            context['namespaces']['scene'] = ns_item
+        elif "scene_" + context['namespaces']['environments'].name == ns_item.name:
+            context['namespaces']['scene_env'] = ns_item
 
     # Add behaviour filename to context
     context['behaviours_f'] = context['behaviours'][0].name
