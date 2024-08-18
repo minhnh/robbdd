@@ -21,7 +21,7 @@
             "@id": "{{ namespaces.scene_env.name }}:{{ scene.model.name }}-{{ namespaces.environments.name }}-workspaces", "@type": "bdd:SceneHasWorkspaces",
             "of-scene": "{{ namespaces.scene_env.name }}:{{ scene.model.name }}",
             "has-workspace": [
-                {%+ for workspace in scene.model.workspaces %}"{{ namespaces.environments.name }}:obj-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
+                {%+ for workspace in scene.model.workspaces %}"{{ namespaces.environments.name }}:ws-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
             ]
         }
     ]
