@@ -10,6 +10,8 @@ namespaces=NamespaceDeclare*
 behaviours+=Behaviour
 |
 events+=Event
+|
+tasks+=Task
 )*
 
 (
@@ -22,6 +24,8 @@ stories+=UserStory
 Behaviour: 'Behaviour' name=ID ;
 
 Event: 'Event' name=ID ;
+
+Task: 'Task' name=ID ;
 
 UserStory:
 'User' 'Story' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')'  name=ID '{'
@@ -38,7 +42,7 @@ UserStory:
 ScenarioVariant:
 'Scenario' name=ID '{'
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
-    'scene' ':' '<' template=[SceneModel|FQN] '>'
+    'scene' ':' '<' scene=[SceneModel|FQN] '>'
 
     (variations=TaskVariation+)?
 
@@ -48,7 +52,7 @@ ScenarioVariant:
 '}'
 ;
 
-TaskVariation: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'can' 'be' ':'
+TaskVariation: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'of' '<' task=[Task|FQN] '>' 'can' 'be' ':'
 (
 '-' 'obj' '<' objects+=[Object|FQN] '>'
 |
