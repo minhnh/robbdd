@@ -6,6 +6,7 @@ def prepare_context_data(metamodel, model):
 
     context = {
         'behaviours': model.behaviours,
+        'tasks': model.tasks,
         'events': model.events,
         'stories': model.stories,
         'templates': model.templates,
@@ -35,10 +36,10 @@ def prepare_context_data(metamodel, model):
             context['namespaces']['environments'] = ns_item
             context['namespaces']['environments'].name = ns_item.name.split("_")[0]
             context['environments_f'] = ns_item.name.split("_")[0]
-        elif "scene" == ns_item.name:
-            context['namespaces']['scene'] = ns_item
-        elif "scene_" + context['namespaces']['environments'].name == ns_item.name:
-            context['namespaces']['scene_env'] = ns_item
+
+    print(context['scene'].model.agent_ns)
+    context['namespaces']['scene'] = context['scene'].model.agent_ns[0].ns
+    context['namespaces']['scene_env'] = context['scene'].model.environment_ns[0].ns
 
     # Add behaviour filename to context
     context['behaviours_f'] = context['behaviours'][0].name
