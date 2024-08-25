@@ -37,9 +37,11 @@
       { "@id": "{{ namespaces.tmpl.name }}:{{ variable.name }}", "@type": "bdd:ScenarioVariable" },
       {% endfor %}
 
+      {% for fluent in fluents %}
       {
-         "@id": "{{ namespaces.tmpl.name }}:fl-located-at", "@type": ["bdd:Fluent", "bdd:LocatedAtPredicate"]
+         "@id": "{{ namespaces.tmpl.name }}:{{ fluent.name }}", "@type": ["bdd:Fluent", "bdd:{{ fluent.type }}"]{% if not loop.last %},{% endif +%}
       },
+      {% endfor %}
 
       {
          "@id": "{{ namespaces.tmpl.name }}:ftc-before-pick", "@type": "time:TimeConstraint"

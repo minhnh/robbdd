@@ -84,13 +84,13 @@ ScenarioVariable: 'var' name=ID;
 EventWhenClause: 'event' '<' event=[Event|FQN] '>' 'occurs';
 
 BehaviourWhenClause: AgentBehaviourWhenClause ;
-AgentBehaviourWhenClause: '<' agent=[ScenarioVariable|FQN] '>' 'executes'  '<' behaviour=[Behaviour|FQN] '>' ;
+AgentBehaviourWhenClause: '<' behaviour=[Behaviour|FQN] '>' 'occurs' ;
 
 // Time constraints
-TimeConstraint: BeforeBehaviour | AfterBehaviour | DuringBehaviour ;
-BeforeBehaviour: 'before' '<' behaviour=[Behaviour|FQN] '>';
-AfterBehaviour: 'after' '<' behaviour=[Behaviour|FQN] '>';
-DuringBehaviour: 'during' '<' behaviour=[Behaviour|FQN] '>';
+TimeConstraint: BeforeEvent | AfterEvent | DuringEvent ;
+BeforeEvent: 'before' '<' event=[Event|FQN] '>';
+AfterEvent: 'after' '<' event=[Event|FQN] '>';
+DuringEvent: 'during' '<' event=[Event|FQN] '>';
 
 // Given/Then clauses
 Clause: LocatedAtFluentClause | DoesNotDropFluentClause | TextClause;
