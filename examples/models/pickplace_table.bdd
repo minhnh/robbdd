@@ -1,0 +1,51 @@
+import "lab.scene"
+
+ns bdd='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/'
+ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
+
+Behaviour bhv_pickplace
+Task tsk_pickplace
+Event evt_pick_start
+Event evt_place_end
+
+Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
+    var var_target_object
+    var var_robot
+    var var_pick_ws
+    var var_place_ws
+
+    Given:
+        <var_target_object> is located at <var_pick_ws> before <evt_pick_start>
+    When:
+        <bhv_pickplace> occurs
+    Then:
+        <var_target_object> is located at <var_place_ws> after <evt_place_end>
+}
+
+User Story (ns=bdd) us_pickplace_single_arm {
+    As A "Function Developer"
+    I Want "Pick and place behaviour"
+    So That "I can transport objects"
+
+    Scenarios:
+        Scenario simple_pick {
+            template: <tmpl_pickplace>
+            scene: <lab_scene>
+
+            variation of <tsk_pickplace>:
+                - <tmpl_pickplace.var_target_object> is obj <lab_scene.box>
+                - <tmpl_pickplace.var_pick_ws> is ws <lab_scene.dining_table>
+                - <tmpl_pickplace.var_place_ws> is ws <lab_scene.shelf>
+                - <tmpl_pickplace.var_robot> is agn <lab_scene.freddy>
+            variation of <tsk_pickplace>:
+                - <tmpl_pickplace.var_target_object> is obj <lab_scene.ball>
+                - <tmpl_pickplace.var_pick_ws> is ws <lab_scene.shelf>
+                - <tmpl_pickplace.var_place_ws> is ws <lab_scene.dining_table>
+                - <tmpl_pickplace.var_robot> is agn <lab_scene.lucy>
+            variation of <tsk_pickplace>:
+                - <tmpl_pickplace.var_target_object> is obj <lab_scene.bottle>
+                - <tmpl_pickplace.var_pick_ws> is ws <lab_scene.dining_table>
+                - <tmpl_pickplace.var_place_ws> is ws <lab_scene.shelf>
+                - <tmpl_pickplace.var_robot> is agn <lab_scene.freddy>
+        }
+}

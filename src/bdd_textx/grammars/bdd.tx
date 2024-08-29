@@ -44,7 +44,7 @@ ScenarioVariant:
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
     'scene' ':' '<' scene=[SceneModel|FQN] '>'
 
-    (variations=TaskVariation+)?
+    (variations=TableVariation+ | TaskVariation+)?
 
     ('Given' ':' given_clauses=Clause+)?
     ('When' ':' when_event_clauses=EventWhenClause+)?
@@ -60,6 +60,14 @@ TaskVariation: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'of' '<' task=[Task
 |
 '-' 'agn' '<' agents+=[Agent|FQN] '>'
 )*
+;
+
+TableVariation: 'variation' 'of' '<' task=[Task|FQN] '>' ':'
+'-' '<' variable=[ScenarioVariable|FQN] '>' 'is' 'obj' '<' object=[Object|FQN] '>'
+|
+'-' '<' variable=[ScenarioVariable|FQN] '>' 'is' 'ws' '<' workspace=[Workspace|FQN] '>'
+|
+'-' '<' variable=[ScenarioVariable|FQN] '>' 'is' 'agn' '<' agent=[Agent|FQN] '>'
 ;
 
 ScenarioTemplate:
