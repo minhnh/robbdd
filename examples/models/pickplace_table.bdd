@@ -32,17 +32,17 @@ User Story (ns=bdd) us_pickplace_single_arm {
             template: <tmpl_pickplace>
             scene: <lab_scene>
 
-            variation of <tsk_pickplace>:
+            var of <tsk_pickplace>:
                 - <tmpl_pickplace.var_target_object> is obj <lab_scene.box>
                 - <tmpl_pickplace.var_pick_ws> is ws <lab_scene.dining_table>
                 - <tmpl_pickplace.var_place_ws> is ws <lab_scene.shelf>
                 - <tmpl_pickplace.var_robot> is agn <lab_scene.freddy>
-            variation of <tsk_pickplace>:
+            var of <tsk_pickplace>:
                 - <tmpl_pickplace.var_target_object> is obj <lab_scene.ball>
                 - <tmpl_pickplace.var_pick_ws> is ws <lab_scene.shelf>
                 - <tmpl_pickplace.var_place_ws> is ws <lab_scene.dining_table>
                 - <tmpl_pickplace.var_robot> is agn <lab_scene.lucy>
-            variation of <tsk_pickplace>:
+            var of <tsk_pickplace>:
                 - <tmpl_pickplace.var_target_object> is obj <lab_scene.bottle>
                 - <tmpl_pickplace.var_pick_ws> is ws <lab_scene.dining_table>
                 - <tmpl_pickplace.var_place_ws> is ws <lab_scene.shelf>

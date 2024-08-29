@@ -14,9 +14,7 @@ def main():
     print(
         f"found variant '{scenario_variant.name}' of template '{scenario_variant.template.name}', variations:"
     )
-    #pprint(scenario_variant.__dict__)
     for variation in scenario_variant.variations:
-        #pprint(variation.__dict__)
         if type(variation).__name__ == "TaskVariation":
             print(
                 f"- of '{variation.variable.name}':"
@@ -25,11 +23,14 @@ def main():
                 f" agents=({', '.join([x.name for x in variation.agents])})"
             )
         elif type(variation).__name__ == "TableVariation":
-            print(
-                f"variating task '{variation.task}'"
-                f" {variation.variable.name} is"
-                f" {variation.object} or {variation.workspace} or {variation.agent}"
-            )
+            print(f"found variation for task {variation.task.name}:")
+            for var_entry in variation.var_entries:
+                print(
+                    f"- '{var_entry.variable[0].name}' is:"
+                    f" objects=({', '.join([x.name for x in var_entry.object])})"
+                    f" workspaces=({', '.join([x.name for x in var_entry.workspace])})"
+                    f" agents=({', '.join([x.name for x in var_entry.agent])})"
+                )
 
 if __name__ == "__main__":
     main()

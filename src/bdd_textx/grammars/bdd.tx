@@ -44,13 +44,15 @@ ScenarioVariant:
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
     'scene' ':' '<' scene=[SceneModel|FQN] '>'
 
-    (variations=TableVariation+ | TaskVariation+)?
+    (variations=Variation+)?
 
     ('Given' ':' given_clauses=Clause+)?
     ('When' ':' when_event_clauses=EventWhenClause+)?
     ('Then' ':' then_clauses=Clause+)?
 '}'
 ;
+
+Variation: TaskVariation | TableVariation ;
 
 TaskVariation: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'of' '<' task=[Task|FQN] '>' 'can' 'be' ':'
 (
@@ -62,12 +64,20 @@ TaskVariation: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'of' '<' task=[Task
 )*
 ;
 
-TableVariation: 'variation' 'of' '<' task=[Task|FQN] '>' ':'
-'-' '<' variable=[ScenarioVariable|FQN] '>' 'is' 'obj' '<' object=[Object|FQN] '>'
+TableVariation: 'var' 'of' '<' task=[Task|FQN] '>' ':'
+(
+'-' var_entries+=VarEntry
+)*
+;
+
+VarEntry:
+(
+'<' variable=[ScenarioVariable|FQN] '>' 'is' 'obj' '<' object=[Object|FQN] '>'
 |
-'-' '<' variable=[ScenarioVariable|FQN] '>' 'is' 'ws' '<' workspace=[Workspace|FQN] '>'
+'<' variable=[ScenarioVariable|FQN] '>' 'is' 'ws' '<' workspace=[Workspace|FQN] '>'
 |
-'-' '<' variable=[ScenarioVariable|FQN] '>' 'is' 'agn' '<' agent=[Agent|FQN] '>'
+'<' variable=[ScenarioVariable|FQN] '>' 'is' 'agn' '<' agent=[Agent|FQN] '>'
+)*
 ;
 
 ScenarioTemplate:
