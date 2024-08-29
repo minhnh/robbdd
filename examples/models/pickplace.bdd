@@ -3,21 +3,23 @@ import "lab.scene"
 ns bdd='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/'
 ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
 
-Behaviour pick_and_place
-Event e_custom
+Behaviour bhv_pickplace
+Task tsk_pickplace
+Event evt_pick_start
+Event evt_place_end
 
 Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
-    var target_object
-    var robot
-    var pick_ws
-    var place_ws
+    var var_target_object
+    var var_robot
+    var var_pick_ws
+    var var_place_ws
 
     Given:
-        <target_object> is located at <pick_ws> before <pick_and_place>
+        <var_target_object> is located at <var_pick_ws> before <evt_pick_start>
     When:
-        <robot> executes <pick_and_place>
+        <bhv_pickplace> occurs
     Then:
-        <target_object> is located at <place_ws> after <pick_and_place>
+        <var_target_object> is located at <var_place_ws> after <evt_place_end>
 }
 
 User Story (ns=bdd) us_pickplace_single_arm {
@@ -30,23 +32,18 @@ User Story (ns=bdd) us_pickplace_single_arm {
             template: <tmpl_pickplace>
             scene: <lab_scene>
 
-            var <tmpl_pickplace.target_object> can be:
+            var <tmpl_pickplace.var_target_object> of <tsk_pickplace> can be:
                 - obj <lab_scene.box>
                 - obj <lab_scene.ball>
                 - obj <lab_scene.bottle>
-            var <tmpl_pickplace.pick_ws> can be:
+            var <tmpl_pickplace.var_pick_ws> of <tsk_pickplace> can be:
                 - ws <lab_scene.dining_table>
                 - ws <lab_scene.shelf>
-            var <tmpl_pickplace.place_ws> can be:
+            var <tmpl_pickplace.var_place_ws> of <tsk_pickplace> can be:
                 - ws <lab_scene.shelf>
                 - ws <lab_scene.dining_table>
-            var <tmpl_pickplace.robot> can be:
+            var <tmpl_pickplace.var_robot> of <tsk_pickplace> can be:
                 - agn <lab_scene.freddy>
                 - agn <lab_scene.lucy>
-
-            When:
-                event <e_custom> occurs
-            Then:
-                <tmpl_pickplace.robot> does not drop <tmpl_pickplace.target_object> during <pick_and_place>
         }
 }

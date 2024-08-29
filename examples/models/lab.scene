@@ -1,9 +1,11 @@
 ns lab_env='https://secorolab.github.io/models/environments/secorolab/'
 ns isaac_agn='https://secorolab.github.io/models/agents/isaac-sim/'
 ns scene_lab='https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/secorolab/'
-ns scene='https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/isaac/'
+ns scene_isaac='https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/isaac/'
 
 scene lab_scene {
+    environment ns scene_lab
+    agent ns scene_isaac
     object (ns=lab_env) box
     object (ns=lab_env) ball
     object (ns=lab_env) bottle
