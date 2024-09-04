@@ -45,7 +45,7 @@ ScenarioVariant:
     'scene' ':' '<' scene=[SceneModel|FQN] '>'
     'task' ':' '<' task=[Task|FQN] '>'
 
-    (variations=TaskVariation+)?
+    (variation=TaskVariation)?
 
     ('Given' ':' given_clauses=Clause+)?
     ('When' ':' when_event_clauses=EventWhenClause+)?
@@ -55,7 +55,9 @@ ScenarioVariant:
 
 TaskVariation: CartesianProductVariation | TableVariation ;
 
-CartesianProductVariation: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'can' 'be' ':'
+CartesianProductVariation: var_entries+=VarEntry ;
+
+VarEntry: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'can' 'be' ':'
 (
 '-' 'obj' '<' objects+=[Object|FQN] '>'
 |
@@ -73,13 +75,13 @@ Cell: Value '|' ;
 
 Value:
 (
-'var' '<' value=[ScenarioVariable|FQN] '>'
+'var' '<' variable=[ScenarioVariable|FQN] '>'
 |
-'obj' '<' value=[Object|FQN] '>'
+'obj' '<' object=[Object|FQN] '>'
 |
-'ws' '<' value=[Workspace|FQN] '>'
+'ws' '<' workspace=[Workspace|FQN] '>'
 |
-'agn' '<' value=[Agent|FQN] '>'
+'agn' '<' agent=[Agent|FQN] '>'
 )
 ;
 

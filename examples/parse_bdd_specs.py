@@ -15,17 +15,17 @@ def main():
     print(
         f"found variant '{scenario_variant.name}' of template '{scenario_variant.template.name}', variations:"
     )
-    for variation in scenario_variant.variations:
-        if type(variation).__name__ == "CartesianProductVariation":
+    if type(scenario_variant.variation).__name__ == "CartesianProductVariation":
+        for var_entry in scenario_variant.variation.var_entries:
             print(
-                f"- of '{variation.variable.name}':"
-                f" objects=({', '.join([x.name for x in variation.objects])})"
-                f" workspaces=({', '.join([x.name for x in variation.workspaces])})"
-                f" agents=({', '.join([x.name for x in variation.agents])})"
+                f"- of '{var_entry.variable.name}':"
+                f" objects=({', '.join([x.name for x in var_entry.objects])})"
+                f" workspaces=({', '.join([x.name for x in var_entry.workspaces])})"
+                f" agents=({', '.join([x.name for x in var_entry.agents])})"
             )
-        elif type(variation).__name__ == "TableVariation":
-            for row in variation.rows:
-                print([cell.value.name for cell in row.cells])
+    elif type(scenario_variant.variation).__name__ == "TableVariation":
+        for row in scenario_variant.variation.rows:
+            print([cell.value.name for cell in row.cells])
 
 if __name__ == "__main__":
     main()

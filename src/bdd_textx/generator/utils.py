@@ -43,6 +43,18 @@ def create_clause_data(tc_type, clause_type):
         clause_data['fl_name'] = clause_type
     return clause_data
 
+def create_variation_data(var_type):
+    "Create variation data based on variation type"
+
+    variation_data = {
+        'var_type': var_type
+    }
+    if var_type == 'CartesianProductVariation':
+        variation_data['var_name'] = 'var-product'
+    elif var_type == 'TableVariation':
+        variation_data['var_name'] = 'var-table'
+    return variation_data
+
 def prepare_context_data(metamodel, model):
     "Prepare and populate the context for jinja template"
 
@@ -108,27 +120,17 @@ def prepare_context_data(metamodel, model):
             fl_then_clause = create_clause_data(tc_type, clause_type)
             context['fl_templates'][i]['then_clauses'].append(fl_then_clause)
 
-    # Prepare variations and check for task/table variations
+    # Prepare variations and check for product/table variations
     context['var_stories'] = []
     for i in range(len(context['stories'])):
+        story = context['stories'][i]
         context['var_stories'].append({
             'scenarios': [],
         })
-        scenarios = context['stories'][i].scenarios
-        for j in range(len(scenarios)):
-            scenarios.append({
-                'variations': [],
-            })
-            variations = scenarios[j].variations
-            for k in range(len(variations)):
-                variation = context['stories'][i].scenarios[j].variations[k]
-                var_variation = {}
-
-                var_variation['type'] =  type(variation).__name__
-
-                variations.append({
-                    'type': '',
-                })
+        for j in range(len(story.scenarios)):
+            scenario = story.scenarios[j]
+            var_type = type(scenario.variation).__name__
+            context['var_stories'][i]['scenarios'].append(create_variation_data(var_type))
 
     # Add behaviour filename to context
     file_name, _ = path.splitext(path.basename(model._tx_filename))

@@ -13,21 +13,43 @@
     ],
     "@graph": [
         {% for story in stories %}
+        {% set story_loop = loop %}
         {% for scenario in story.scenarios %}
-        {% for variation in scenario.variations %}
+        {% set scenario_loop = loop %}
+
         {
-            "@id": "{{ variation.variable.name }}-{{ scenario.name }}-{{ story.name }}", "@type": "bdd:TaskVariation",
-            "of-task": "{{ namespaces.tmpl.name }}:{{ variation.task.name }}",
-            "of-variable": "{{ namespaces.tmpl.name }}:{{ variation.variable.name }}",
-            {% if variation.objects|length > 0  %}
-            "can-be": [ {% for object in variation.objects %}"{{ namespaces.environments.name }}:obj-{{ object.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]
-            {% elif variation.workspaces|length > 0 %}
-            "can-be": [ {% for workspace in variation.workspaces %}"{{ namespaces.environments.name }}:ws-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]
-            {% else %}
-            "can-be": [ {% for agent in variation.agents %}"{{ namespaces.agents.name }}:{{ agent.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]
+            "@id": "{{ var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_name }}", "@type": [ "bdd:TaskVariation", "bdd:{{ var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_type }}" ],
+            "of-task": "{{ namespaces.tmpl.name }}:{{ scenario.task.name }}",
+            {% if var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_type == "CartesianProductVariation" %}
+            "variable-list": [ {% for var_entry in scenario.variation.var_entries %}"{{ namespaces.tmpl.name }}:{{ var_entry.variable.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ],
+            "of-sets": [
+                {% for var_entry in scenario.variation.var_entries %}
+                {% if var_entry.objects|length > 0 %}
+                [ {% for object in var_entry.objects %}"{{ namespaces.environments.name }}:obj-{{ object.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]{% if not loop.last %}, {% endif +%}
+                {% elif var_entry.workspaces|length > 0 %}
+                [ {% for workspace in var_entry.workspaces %}"{{ namespaces.environments.name }}:ws-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]{% if not loop.last %}, {% endif +%}
+                {% elif var_entry.agents|length > 0 %}
+                [ {% for agent in var_entry.agents %}"{{ namespaces.agents.name }}:{{ agent.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]{% if not loop.last %}, {% endif +%}
+                {% endif %}
+                {% endfor %}
+            ]
+            {% elif var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_type == "TableVariation" %}
+            "variable-list": [ {% for cell in scenario.variation.rows[0].cells %}"{{ namespaces.tmpl.name }}:{{ cell.variable.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ],
+            "rows": [
+                {% for row in scenario.variation.rows %}
+                {% if loop.index != 1 %}
+                [ {% for cell in row.cells %}
+                {% if cell.object %}"{{ namespaces.environments.name }}:obj-{{ cell.object.name }}"
+                {%- elif cell.workspace %}"{{ namespaces.environments.name }}:ws-{{ cell.workspace.name }}"
+                {%- elif cell.agent %}"{{ namespaces.agents.name }}:{{ cell.agent.name }}"
+                {%- endif %}{% if not loop.last %}, {% endif %}
+                {% endfor %} ]{% if not loop.last %}, {% endif +%}
+                {% endif %}
+                {% endfor %}
+            ]
             {% endif %}
         },
-        {% endfor %}
+
         {
             "@id": "{{ scenario.name }}", "@type": "bdd:ScenarioVariant",
             "of-template": "{{ namespaces.tmpl.name }}:{{ scenario.template.name }}",
@@ -38,9 +60,7 @@
                 "{{ namespaces.scene.name }}:{{ scenario.scene.name }}-{{ namespaces.agents.name }}-{{ agent.name }}"{% if not loop.last %},{% endif +%}
                 {% endfor %}
             ],
-            "has-variation": [
-                {%+ for variation in scenario.variations %}"{{ variation.variable.name }}-{{ scenario.name }}-{{ story.name }}"{% if not loop.last %}, {% endif %}{% endfor +%}
-            ]
+            "has-variation": "{{ var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_name }}"
         },
         {% endfor %}
         {
