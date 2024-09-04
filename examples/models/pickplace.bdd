@@ -31,18 +31,19 @@ User Story (ns=bdd) us_pickplace_single_arm {
         Scenario simple_pick {
             template: <tmpl_pickplace>
             scene: <lab_scene>
+            task: <tsk_pickplace>
 
-            var <tmpl_pickplace.var_target_object> of <tsk_pickplace> can be:
+            var <tmpl_pickplace.var_target_object> can be:
                 - obj <lab_scene.box>
                 - obj <lab_scene.ball>
                 - obj <lab_scene.bottle>
-            var <tmpl_pickplace.var_pick_ws> of <tsk_pickplace> can be:
+            var <tmpl_pickplace.var_pick_ws> can be:
                 - ws <lab_scene.dining_table>
                 - ws <lab_scene.shelf>
-            var <tmpl_pickplace.var_place_ws> of <tsk_pickplace> can be:
+            var <tmpl_pickplace.var_place_ws> can be:
                 - ws <lab_scene.shelf>
                 - ws <lab_scene.dining_table>
-            var <tmpl_pickplace.var_robot> of <tsk_pickplace> can be:
+            var <tmpl_pickplace.var_robot> can be:
                 - agn <lab_scene.freddy>
                 - agn <lab_scene.lucy>
         }

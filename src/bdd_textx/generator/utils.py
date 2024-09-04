@@ -108,6 +108,28 @@ def prepare_context_data(metamodel, model):
             fl_then_clause = create_clause_data(tc_type, clause_type)
             context['fl_templates'][i]['then_clauses'].append(fl_then_clause)
 
+    # Prepare variations and check for task/table variations
+    context['var_stories'] = []
+    for i in range(len(context['stories'])):
+        context['var_stories'].append({
+            'scenarios': [],
+        })
+        scenarios = context['stories'][i].scenarios
+        for j in range(len(scenarios)):
+            scenarios.append({
+                'variations': [],
+            })
+            variations = scenarios[j].variations
+            for k in range(len(variations)):
+                variation = context['stories'][i].scenarios[j].variations[k]
+                var_variation = {}
+
+                var_variation['type'] =  type(variation).__name__
+
+                variations.append({
+                    'type': '',
+                })
+
     # Add behaviour filename to context
     file_name, _ = path.splitext(path.basename(model._tx_filename))
     context['behaviours_f'] = file_name

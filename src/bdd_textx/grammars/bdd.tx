@@ -43,8 +43,9 @@ ScenarioVariant:
 'Scenario' name=ID '{'
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
     'scene' ':' '<' scene=[SceneModel|FQN] '>'
+    'task' ':' '<' task=[Task|FQN] '>'
 
-    (variations=Variation+)?
+    (variations=TaskVariation+)?
 
     ('Given' ':' given_clauses=Clause+)?
     ('When' ':' when_event_clauses=EventWhenClause+)?
@@ -52,9 +53,9 @@ ScenarioVariant:
 '}'
 ;
 
-Variation: TaskVariation | TableVariation ;
+TaskVariation: CartesianProductVariation | TableVariation ;
 
-TaskVariation: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'of' '<' task=[Task|FQN] '>' 'can' 'be' ':'
+CartesianProductVariation: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'can' 'be' ':'
 (
 '-' 'obj' '<' objects+=[Object|FQN] '>'
 |
@@ -64,20 +65,22 @@ TaskVariation: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'of' '<' task=[Task
 )*
 ;
 
-TableVariation: 'var' 'of' '<' task=[Task|FQN] '>' ':'
-(
-'-' var_entries+=VarEntry
-)*
-;
+TableVariation: rows+=Row ;
 
-VarEntry:
+Row: '|' cells+=Cell ;
+
+Cell: Value '|' ;
+
+Value:
 (
-'<' variable=[ScenarioVariable|FQN] '>' 'is' 'obj' '<' object=[Object|FQN] '>'
+'var' '<' value=[ScenarioVariable|FQN] '>'
 |
-'<' variable=[ScenarioVariable|FQN] '>' 'is' 'ws' '<' workspace=[Workspace|FQN] '>'
+'obj' '<' value=[Object|FQN] '>'
 |
-'<' variable=[ScenarioVariable|FQN] '>' 'is' 'agn' '<' agent=[Agent|FQN] '>'
-)*
+'ws' '<' value=[Workspace|FQN] '>'
+|
+'agn' '<' value=[Agent|FQN] '>'
+)
 ;
 
 ScenarioTemplate:

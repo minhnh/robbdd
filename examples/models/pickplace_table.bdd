@@ -31,21 +31,11 @@ User Story (ns=bdd) us_pickplace_single_arm {
         Scenario simple_pick {
             template: <tmpl_pickplace>
             scene: <lab_scene>
+            task: <tsk_pickplace>
 
-            var of <tsk_pickplace>:
-                - <tmpl_pickplace.var_target_object> is obj <lab_scene.box>
-                - <tmpl_pickplace.var_pick_ws> is ws <lab_scene.dining_table>
-                - <tmpl_pickplace.var_place_ws> is ws <lab_scene.shelf>
-                - <tmpl_pickplace.var_robot> is agn <lab_scene.freddy>
-            var of <tsk_pickplace>:
-                - <tmpl_pickplace.var_target_object> is obj <lab_scene.ball>
-                - <tmpl_pickplace.var_pick_ws> is ws <lab_scene.shelf>
-                - <tmpl_pickplace.var_place_ws> is ws <lab_scene.dining_table>
-                - <tmpl_pickplace.var_robot> is agn <lab_scene.lucy>
-            var of <tsk_pickplace>:
-                - <tmpl_pickplace.var_target_object> is obj <lab_scene.bottle>
-                - <tmpl_pickplace.var_pick_ws> is ws <lab_scene.dining_table>
-                - <tmpl_pickplace.var_place_ws> is ws <lab_scene.shelf>
-                - <tmpl_pickplace.var_robot> is agn <lab_scene.freddy>
+            | var <tmpl_pickplace.var_target_object> | var <tmpl_pickplace.var_pick_ws> | var <tmpl_pickplace.var_place_ws> | var <tmpl_pickplace.var_robot> |
+            | obj <lab_scene.box> | ws <lab_scene.dining_table> | ws <lab_scene.shelf> | agn <lab_scene.freddy> |
+            | obj <lab_scene.ball> | ws <lab_scene.shelf> | ws <lab_scene.dining_table> | agn <lab_scene.lucy> |
+            | obj <lab_scene.bottle> | ws <lab_scene.dining_table> | ws <lab_scene.shelf> | agn <lab_scene.freddy> |
         }
 }
