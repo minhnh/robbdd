@@ -4,6 +4,7 @@
         "{{ secoro_mm }}/acceptance-criteria/bdd/task.json",
         {
             "@base": "{{ namespaces.bdd.uri }}",
+            "var": "{{ namespaces.bdd.uri }}",
             "{{ namespaces.tmpl.name }}": "{{ namespaces.tmpl.uri }}",
             "{{ namespaces.agents.name }}": "{{ namespaces.agents.uri }}",
             "{{ namespaces.environments.name }}": "{{ namespaces.environments.uri }}",
@@ -25,11 +26,9 @@
             "of-sets": [
                 {% for var_entry in scenario.variation.var_entries %}
                 {% if var_entry.objects|length > 0 %}
-                [ {% for object in var_entry.objects %}"{{ namespaces.environments.name }}:obj-{{ object.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]{% if not loop.last %}, {% endif +%}
+                [ {% for object in var_entry.objects %}"{{ namespaces.environments.name }}:obj-{{ object.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]{% if not loop.last %},{% endif +%}
                 {% elif var_entry.workspaces|length > 0 %}
-                [ {% for workspace in var_entry.workspaces %}"{{ namespaces.environments.name }}:ws-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]{% if not loop.last %}, {% endif +%}
-                {% elif var_entry.agents|length > 0 %}
-                [ {% for agent in var_entry.agents %}"{{ namespaces.agents.name }}:{{ agent.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]{% if not loop.last %}, {% endif +%}
+                [ {% for workspace in var_entry.workspaces %}"{{ namespaces.environments.name }}:ws-{{ workspace.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ]{% if loop.index < scenario.variation.var_entries|length-1 %},{% endif +%}
                 {% endif %}
                 {% endfor %}
             ]
@@ -41,8 +40,7 @@
                 [ {% for cell in row.cells %}
                 {% if cell.object %}"{{ namespaces.environments.name }}:obj-{{ cell.object.name }}"
                 {%- elif cell.workspace %}"{{ namespaces.environments.name }}:ws-{{ cell.workspace.name }}"
-                {%- elif cell.agent %}"{{ namespaces.agents.name }}:{{ cell.agent.name }}"
-                {%- endif %}{% if not loop.last %}, {% endif %}
+                {%- endif %}{% if loop.index < row.cells|length-1 %}, {% endif %}
                 {% endfor %} ]{% if not loop.last %}, {% endif +%}
                 {% endif %}
                 {% endfor %}
