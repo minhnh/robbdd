@@ -19,7 +19,7 @@
         {% set scenario_loop = loop %}
 
         {
-            "@id": "{{ var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_name }}", "@type": [ "bdd:TaskVariation", "bdd:{{ var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_type }}" ],
+            "@id": "{{ var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_name }}-{{ scenario.name }}", "@type": [ "bdd:TaskVariation", "bdd:{{ var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_type }}" ],
             "of-task": "{{ namespaces.tmpl.name }}:{{ scenario.task.name }}",
             {% if var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_type == "CartesianProductVariation" %}
             "variable-list": [ {% for var_entry in scenario.variation.var_entries %}"{{ namespaces.tmpl.name }}:{{ var_entry.variable.name }}"{% if not loop.last %}, {% endif %}{% endfor %} ],
@@ -58,7 +58,7 @@
                 "{{ namespaces.scene.name }}:{{ scenario.scene.name }}-{{ namespaces.agents.name }}-{{ agent.name }}"{% if not loop.last %},{% endif +%}
                 {% endfor %}
             ],
-            "has-variation": "{{ var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_name }}"
+            "has-variation": "{{ var_stories[story_loop.index0].scenarios[scenario_loop.index0].var_name }}-{{ scenario.name }}"
         },
         {% endfor %}
         {
