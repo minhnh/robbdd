@@ -14,7 +14,7 @@
             "@id": "{{ namespaces.scene.name }}:{{ scene.model.name }}-{{ namespaces.agents.name }}-{{ agent.name }}", "@type": "bdd:SceneHasAgents",
             "of-scene": "{{ namespaces.scene_env.name }}:{{ scene.model.name }}",
             "has-agent": [ "{{ namespaces.agents.name }}:{{ agent.name }}" ]
-        }{% if not loop.last %}, {% endif %}
+        }{% if not loop.last %}, {% endif +%}
         {% endfor %}
     ]
 }
