@@ -189,7 +189,7 @@ ForAllExpr:
 '}'
 ;
 ExistsExpr:
-  var=ScenarioVariable 'exists' 'in' '<' set=[ScenarioVariable|FQN] '>' 'such' 'that' '{'
+'(' var=ScenarioVariable 'exists' 'in' '<' set=[ScenarioVariable|FQN] '>' ')' 'such' 'that' '{'
     fluent_expr=FluentLogicExpr
 '}'
 ;
