@@ -5,18 +5,27 @@ ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/template
 
 Behaviour bhv_pickplace
 Task tsk_pickplace
+Event evt_scenario_start
 Event evt_pick_start
 Event evt_place_end
+Event evt_scenario_end
 
 Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
     var var_target_objects
     var var_robot
     var var_pick_ws
     var var_place_ws
+    var var_conveyor_speed
 
+    Given:
+        holds(<var_pick_ws> has config <var_conveyor_speed>, before <evt_scenario_start>)
     for all ( var x in <var_target_objects> ) {
         Given:
-            holds(<x> is located at <var_pick_ws>, every 5 s)
+        (
+            holds(<x> is located at <var_pick_ws>, before <evt_pick_start>)
+            and
+            holds(<var_robot> can reach <x>, before <evt_pick_start>)
+        )
         When:
             <bhv_pickplace> occurs
         Then:
@@ -25,7 +34,7 @@ Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
             }
     }
     Then:
-        <var_target_objects> is located at <var_place_ws> after <evt_place_end>
+        holds(<var_target_objects> is sorted into <var_place_ws>, after <evt_place_end>)
 }
 
 User Story (ns=bdd) us_pickplace_single_arm {

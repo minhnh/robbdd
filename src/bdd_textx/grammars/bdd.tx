@@ -113,12 +113,10 @@ BehaviourWhenClause: AgentBehaviourWhenClause ;
 AgentBehaviourWhenClause: '<' behaviour=[Behaviour|FQN] '>' 'occurs' ;
 
 // Time constraints
-TimeConstraint: BeforeEvent | AfterEvent | DuringEvent | PeriodicConstraint ;
+TimeConstraint: BeforeEvent | AfterEvent | DuringEvent ;
 BeforeEvent: 'before' '<' event=[Event|FQN] '>';
 AfterEvent: 'after' '<' event=[Event|FQN] '>';
 DuringEvent: 'during' '<' event=[Event|FQN] '>';
-PeriodicConstraint: 'every' period=TimeExpr ;
-TimeExpr: (hour=INT 'h')? (minute=INT 'm')? (second=FLOAT 's') ;
 
 // Given/Then clauses
 Clause: LocatedAtFluentClause | DoesNotDropFluentClause | TextClause | FluentLogicExpr | ExistsExpr ;
@@ -139,8 +137,8 @@ WhenExpr:
 ;
 ThenExpr: 'Then' ':' then=Clause ;
 GivenWhenThenExpr:
+    (GivenExpr)?
     (
-    GivenExpr
     WhenExpr
     |
     forall=ForAllExpr
@@ -149,7 +147,10 @@ GivenWhenThenExpr:
 ;
 
 // First Order Logic terms
-FOLExpr: LocatedAtPred | IsHeldPred | DoesNotDropPred ;
+FOLExpr: LocatedAtPred | IsHeldPred | DoesNotDropPred | CanReachPred | HasConfigPred | IsSortedPred ;
+CanReachPred:
+    '<' robot=[ScenarioVariable|FQN] '>' 'can' 'reach' '<' object=[ScenarioVariable|FQN] '>'
+;
 LocatedAtPred:
     '<' object=[ScenarioVariable|FQN] '>' 'is' 'located' 'at' '<' workspace=[ScenarioVariable|FQN] '>'
 ;
@@ -158,6 +159,12 @@ DoesNotDropPred:
 ;
 IsHeldPred:
     '<' object=[ScenarioVariable|FQN] '>' 'is' 'held' 'by' '<' agent=[ScenarioVariable|FQN] '>'
+;
+HasConfigPred:
+    '<' subject=[ScenarioVariable|FQN] '>' 'has' 'config' '<' config=[ScenarioVariable|FQN] '>'
+;
+IsSortedPred:
+    '<' objects=[ScenarioVariable|FQN] '>' 'is' 'sorted' 'into' '<' workspaces=[ScenarioVariable|FQN] '>'
 ;
 
 // Fluent logic terms composing holds clauses with basic logic operators
