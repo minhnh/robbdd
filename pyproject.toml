@@ -19,7 +19,7 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
-  'textx', 'rdflib'
+  'textx', 'textX-jinja', 'rdflib'
 ]
 
 [project.entry-points.textx_languages]

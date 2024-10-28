@@ -88,7 +88,7 @@ Value:
 ScenarioTemplate:
 'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
     variables=ScenarioVariable*
-
+    (
     'Given' ':'
         given_clauses=Clause+
 
@@ -98,6 +98,9 @@ ScenarioTemplate:
 
     'Then' ':'
         then_clauses=Clause+
+    |
+    GivenWhenThenExpr
+    )
 '}'
 ;
 
@@ -110,13 +113,15 @@ BehaviourWhenClause: AgentBehaviourWhenClause ;
 AgentBehaviourWhenClause: '<' behaviour=[Behaviour|FQN] '>' 'occurs' ;
 
 // Time constraints
-TimeConstraint: BeforeEvent | AfterEvent | DuringEvent ;
+TimeConstraint: BeforeEvent | AfterEvent | DuringEvent | PeriodicConstraint ;
 BeforeEvent: 'before' '<' event=[Event|FQN] '>';
 AfterEvent: 'after' '<' event=[Event|FQN] '>';
 DuringEvent: 'during' '<' event=[Event|FQN] '>';
+PeriodicConstraint: 'every' period=TimeExpr ;
+TimeExpr: (hour=INT 'h')? (minute=INT 'm')? (second=FLOAT 's') ;
 
 // Given/Then clauses
-Clause: LocatedAtFluentClause | DoesNotDropFluentClause | TextClause;
+Clause: LocatedAtFluentClause | DoesNotDropFluentClause | TextClause | FluentLogicExpr | ExistsExpr ;
 TextClause: text=STRING tc=TimeConstraint;
 LocatedAtFluentClause:
     '<' object=[ScenarioVariable|FQN] '>' 'is' 'located' 'at' '<' workspace=[ScenarioVariable|FQN] '>'
@@ -124,3 +129,67 @@ LocatedAtFluentClause:
 DoesNotDropFluentClause:
     '<' agent=[ScenarioVariable|FQN] '>' 'does' 'not' 'drop' '<' object=[ScenarioVariable|FQN] '>'
     tc=TimeConstraint ;
+
+// Scenario terms
+GivenExpr: 'Given' ':' given=Clause ;
+WhenExpr:
+    'When' ':'
+        when_events=EventWhenClause*
+        when_bhv=BehaviourWhenClause
+;
+ThenExpr: 'Then' ':' then=Clause ;
+GivenWhenThenExpr:
+    (
+    GivenExpr
+    WhenExpr
+    |
+    forall=ForAllExpr
+    )
+    (ThenExpr)?
+;
+
+// First Order Logic terms
+FOLExpr: LocatedAtPred | IsHeldPred | DoesNotDropPred ;
+LocatedAtPred:
+    '<' object=[ScenarioVariable|FQN] '>' 'is' 'located' 'at' '<' workspace=[ScenarioVariable|FQN] '>'
+;
+DoesNotDropPred:
+    '<' agent=[ScenarioVariable|FQN] '>' 'does' 'not' 'drop' '<' object=[ScenarioVariable|FQN] '>'
+;
+IsHeldPred:
+    '<' object=[ScenarioVariable|FQN] '>' 'is' 'held' 'by' '<' agent=[ScenarioVariable|FQN] '>'
+;
+
+// Fluent logic terms composing holds clauses with basic logic operators
+FluentLogicExpr: FluentAndExpr | FluentOrExpr | FluentNotExpr | HoldsExpr ;
+HoldsExpr:
+'holds' '(' predicate=FOLExpr ',' tc=TimeConstraint ')'
+;
+FluentAndExpr:
+'('
+  first=FluentLogicExpr
+  ('and' rest=FluentLogicExpr)*
+')'
+;
+FluentOrExpr:
+'('
+  first=FluentLogicExpr
+  ('or' rest=FluentLogicExpr)*
+')'
+;
+FluentNotExpr:
+'(' 'not' expr=FluentLogicExpr ')'
+;
+
+
+// quantifiers over fluent logic expressions
+ForAllExpr:
+'for' 'all' '(' var=ScenarioVariable 'in' '<' set=[ScenarioVariable|FQN] '>' ')' '{'
+    GivenWhenThenExpr
+'}'
+;
+ExistsExpr:
+  var=ScenarioVariable 'exists' 'in' '<' set=[ScenarioVariable|FQN] '>' 'such' 'that' '{'
+    fluent_expr=FluentLogicExpr
+'}'
+;
