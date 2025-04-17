@@ -88,19 +88,7 @@ Value:
 ScenarioTemplate:
 'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
     variables=ScenarioVariable*
-    (
-    'Given' ':'
-        given_clauses=Clause+
-
-    'When' ':'
-        when_event_clauses=EventWhenClause*
-        when_behaviour=BehaviourWhenClause
-
-    'Then' ':'
-        then_clauses=Clause+
-    |
-    GivenWhenThenExpr
-    )
+    gwt_expr=GivenWhenThenExpr
 '}'
 ;
 
@@ -137,7 +125,7 @@ WhenExpr:
 ;
 ThenExpr: 'Then' ':' then=Clause ;
 GivenWhenThenExpr:
-    (GivenExpr)?
+    given_expr?=GivenExpr
     (
     WhenExpr
     |
