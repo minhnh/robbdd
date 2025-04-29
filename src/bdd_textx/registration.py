@@ -1,8 +1,19 @@
 from os.path import abspath, dirname, join
+from rdflib import Graph
 from textx import LanguageDesc, GeneratorDesc, metamodel_from_file
 import textx.scoping.providers as scoping_providers
 from textxjinja import textx_jinja_generator
-from bdd_textx.classes.bdd import UserStory, ScenarioTemplate
+from bdd_textx.classes.bdd import (
+    Clause,
+    FluentAndExpr,
+    FluentLogicExpr,
+    FluentNotExpr,
+    FluentOrExpr,
+    HoldsExpr,
+    UserStory,
+    ScenarioTemplate,
+)
+from bdd_textx.graph import add_bdd_model_to_graph
 from bdd_textx.generator.utils import prepare_context_data
 
 
@@ -21,7 +32,17 @@ def scene_metamodel():
 
 def bdd_metamodel():
     mm_bdd = metamodel_from_file(
-        join(CWD, "grammars", "bdd.tx"), classes=[UserStory, ScenarioTemplate]
+        join(CWD, "grammars", "bdd.tx"),
+        classes=[
+            UserStory,
+            ScenarioTemplate,
+            Clause,
+            FluentLogicExpr,
+            HoldsExpr,
+            FluentAndExpr,
+            FluentOrExpr,
+            FluentNotExpr,
+        ],
     )
     mm_bdd.register_scope_providers(
         {
@@ -44,10 +65,14 @@ bdd_lang = LanguageDesc(
     metamodel=bdd_metamodel,
 )
 
+
 def generator(metamodel, model, output_path, overwrite, debug):
+    g = Graph()
+    add_bdd_model_to_graph(graph=g, model=model)
     template_folder = join(CWD, "generator", "template")
     context = prepare_context_data(metamodel, model)
     textx_jinja_generator(template_folder, output_path, context, overwrite)
+
 
 bddtx_jsonld_generator = GeneratorDesc(
     language="bdd-tx",

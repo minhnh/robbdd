@@ -125,13 +125,13 @@ WhenExpr:
 ;
 ThenExpr: 'Then' ':' then=Clause ;
 GivenWhenThenExpr:
-    given_expr?=GivenExpr
+    (given_expr=GivenExpr)?
     (
-    WhenExpr
+    when_expr=WhenExpr
     |
-    forall=ForAllExpr
+    forall_expr=ForAllExpr
     )
-    (ThenExpr)?
+    (then_expr=ThenExpr)?
 ;
 
 // First Order Logic terms

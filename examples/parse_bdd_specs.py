@@ -17,7 +17,7 @@ def main():
     model = bdd_tx_mm.model_from_file(argv[1])
     g = Graph()
     add_bdd_model_to_graph(graph=g, model=model)
-    # print(g.serialize(format="json-ld"))
+    print(g.serialize(format="json-ld"))
     install_resolver()
     check_shacl_constraints(graph=g, shacl_dict=BDD_SHACL_URLS)
 
