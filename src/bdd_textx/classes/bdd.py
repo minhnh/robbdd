@@ -13,8 +13,8 @@ class UserStory(object):
         self.scenarios = scenarios
 
         self.ns = ns
-        _ns_obj = Namespace(ns.uri)
-        self.uri = _ns_obj[self.name]
+        self.ns_obj = Namespace(ns.uri)
+        self.uri = self.ns_obj[self.name]
 
 
 class ScenarioTemplate(object):

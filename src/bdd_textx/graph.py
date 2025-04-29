@@ -5,9 +5,11 @@ from rdflib import BNode, Graph, RDF, Literal, Namespace, Node, URIRef
 from rdflib.collection import Collection
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_CLAUSE_OF,
+    URI_BDD_PRED_HAS_AC,
     URI_BDD_PRED_HAS_CLAUSE,
     URI_BDD_PRED_HAS_SCENE,
     URI_BDD_PRED_OF_SCENARIO,
+    URI_BDD_PRED_OF_TMPL,
     URI_BDD_TYPE_FLUENT_CLAUSE,
     URI_BDD_TYPE_IS_HELD,
     URI_BDD_TYPE_LOCATED_AT,
@@ -16,6 +18,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_WHEN,
     URI_BDD_PRED_THEN,
     URI_BDD_TYPE_GIVEN,
+    URI_BDD_TYPE_SCENARIO_VARIANT,
     URI_BDD_TYPE_WHEN,
     URI_BDD_TYPE_THEN,
     URI_BDD_TYPE_SCENARIO_TMPL,
@@ -46,7 +49,12 @@ def add_literal_list_pred(
     )
 
 
-def get_fluent_clause_pred_type(clause: HoldsExpr) -> URIRef:
+def get_fluent_clause_uri(clause: HoldsExpr, parent_ns: Namespace) -> URIRef:
+    id_str = f"fc-{type(clause.predicate).__name__}-{type(clause.tc).__name__}-{clause.uuid}"
+    return parent_ns[id_str]
+
+
+def add_fluent_clause_pred(clause: HoldsExpr) -> URIRef:
     pred_type_str = type(clause.predicate).__name__
     if "LocatedAtPred" in pred_type_str:
         return URI_BDD_TYPE_LOCATED_AT
@@ -63,19 +71,14 @@ def get_fluent_clause_pred_type(clause: HoldsExpr) -> URIRef:
     raise ValueError(f"unhandled predicate type: {pred_type_str}")
 
 
-def get_fluent_clause_uri(clause: HoldsExpr, parent_ns: Namespace) -> URIRef:
-    id_str = f"fc-{type(clause.predicate).__name__}-{type(clause.tc).__name__}-{clause.uuid}"
-    return parent_ns[id_str]
-
-
 def add_clause_expr(
     graph: Graph, clause: Any, parent_ns: Namespace, clause_of_uri: URIRef, clause_col: Collection
 ):
     if isinstance(clause, HoldsExpr):
         uri = get_fluent_clause_uri(clause=clause, parent_ns=parent_ns)
         graph.add((uri, RDF.type, URI_BDD_TYPE_FLUENT_CLAUSE))
-        graph.add((uri, RDF.type, get_fluent_clause_pred_type(clause=clause)))
         graph.add((uri, URI_BDD_PRED_CLAUSE_OF, clause_of_uri))
+        graph.add((uri, RDF.type, add_fluent_clause_pred(clause=clause)))
         clause_col.append(uri)
     else:
         raise ValueError(f"clause expression of type '{type(clause)}' is not handled: {clause}")
@@ -122,7 +125,7 @@ def add_gwt_expr(
         )
 
 
-def add_tmpl_to_graph(graph: Graph, tmpl: ScenarioTemplate):
+def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
     graph.add(triple=(tmpl.uri, RDF.type, URI_BDD_TYPE_SCENARIO_TMPL))
 
     # scenario
@@ -161,6 +164,12 @@ def add_tmpl_to_graph(graph: Graph, tmpl: ScenarioTemplate):
 def add_us_to_graph(graph: Graph, us: UserStory):
     graph.add(triple=(us.uri, RDF.type, URI_BDD_TYPE_US))
 
+    for scr_var in us.scenarios:
+        var_uri = us.ns_obj[scr_var.name]
+        graph.add((var_uri, RDF.type, URI_BDD_TYPE_SCENARIO_VARIANT))
+        graph.add((var_uri, URI_BDD_PRED_OF_TMPL, scr_var.template.uri))
+        graph.add((us.uri, URI_BDD_PRED_HAS_AC, var_uri))
+
 
 def add_bdd_model_to_graph(graph: Graph, model: object):
     # TODO(minhnh) behaviours
@@ -170,7 +179,7 @@ def add_bdd_model_to_graph(graph: Graph, model: object):
     templates = getattr(model, "templates", None)
     assert templates is not None and isinstance(templates, list), "no list of user stories in model"
     for tmpl in templates:
-        add_tmpl_to_graph(graph=graph, tmpl=tmpl)
+        add_scenario_tmpl(graph=graph, tmpl=tmpl)
 
     stories = getattr(model, "stories", None)
     assert stories is not None and isinstance(stories, list), "no list of user stories in model"
