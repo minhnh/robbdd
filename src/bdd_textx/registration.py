@@ -4,12 +4,19 @@ from textx import LanguageDesc, GeneratorDesc, metamodel_from_file
 import textx.scoping.providers as scoping_providers
 from textxjinja import textx_jinja_generator
 from bdd_textx.classes.bdd import (
+    AfterEvent,
+    BeforeEvent,
+    Behaviour,
     Clause,
+    DuringEvent,
+    Event,
     FluentAndExpr,
     FluentLogicExpr,
     FluentNotExpr,
     FluentOrExpr,
     HoldsExpr,
+    Task,
+    TimeConstraint,
     UserStory,
     ScenarioTemplate,
 )
@@ -36,12 +43,19 @@ def bdd_metamodel():
         classes=[
             UserStory,
             ScenarioTemplate,
+            Behaviour,
+            Event,
+            Task,
             Clause,
             FluentLogicExpr,
             HoldsExpr,
             FluentAndExpr,
             FluentOrExpr,
             FluentNotExpr,
+            TimeConstraint,
+            BeforeEvent,
+            AfterEvent,
+            DuringEvent,
         ],
     )
     mm_bdd.register_scope_providers(

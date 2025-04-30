@@ -21,11 +21,11 @@ stories+=UserStory
 )+
 ;
 
-Behaviour: 'Behaviour' name=ID ;
+Behaviour: 'Behaviour' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
 
-Event: 'Event' name=ID ;
+Event: 'Event' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
 
-Task: 'Task' name=ID ;
+Task: 'Task' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
 
 UserStory:
 'User' 'Story' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')'  name=ID '{'
@@ -43,7 +43,6 @@ ScenarioVariant:
 'Scenario' name=ID '{'
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
     'scene' ':' '<' scene=[SceneModel|FQN] '>'
-    'task' ':' '<' task=[Task|FQN] '>'
 
     (variation=TaskVariation)?
 
@@ -87,6 +86,8 @@ Value:
 
 ScenarioTemplate:
 'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+    'task' ':' '<' task=[Task|FQN] '>'
+
     variables=ScenarioVariable*
     gwt_expr=GivenWhenThenExpr
 '}'
@@ -104,7 +105,7 @@ AgentBehaviourWhenClause: '<' behaviour=[Behaviour|FQN] '>' 'occurs' ;
 TimeConstraint: BeforeEvent | AfterEvent | DuringEvent ;
 BeforeEvent: 'before' '<' event=[Event|FQN] '>';
 AfterEvent: 'after' '<' event=[Event|FQN] '>';
-DuringEvent: 'during' '<' event=[Event|FQN] '>';
+DuringEvent: 'from' '<' start_event=[Event|FQN] '>' 'until' '<' end_event=[Event|FQN] '>';
 
 // Given/Then clauses
 Clause: LocatedAtFluentClause | DoesNotDropFluentClause | TextClause | FluentLogicExpr | ExistsExpr ;

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any
 from bdd_dsl.models.namespace import NS_MM_BDD
+from rdf_utils.namespace import NS_MM_TIME
 from rdflib import BNode, Graph, RDF, Literal, Namespace, Node, URIRef
 from rdflib.collection import Collection
 from bdd_dsl.models.urirefs import (
@@ -8,6 +9,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_AC,
     URI_BDD_PRED_HAS_CLAUSE,
     URI_BDD_PRED_HAS_SCENE,
+    URI_BDD_PRED_HOLDS_AT,
     URI_BDD_PRED_OF_SCENARIO,
     URI_BDD_PRED_OF_TMPL,
     URI_BDD_TYPE_FLUENT_CLAUSE,
@@ -23,10 +25,26 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_TYPE_THEN,
     URI_BDD_TYPE_SCENARIO_TMPL,
     URI_BDD_TYPE_SCENE,
-    URI_BDD_TYPE_SCENARIO_VARIABLE,
     URI_BDD_TYPE_US,
+    URI_BHV_TYPE_BHV,
+    URI_TASK_PRED_OF_TASK,
+    URI_TASK_TYPE_TASK,
+    URI_TIME_PRED_AFTER_EVT,
+    URI_TIME_PRED_BEFORE_EVT,
+    URI_TIME_TYPE_AFTER_EVT,
+    URI_TIME_TYPE_BEFORE_EVT,
+    URI_TIME_TYPE_DURING,
 )
-from bdd_textx.classes.bdd import HoldsExpr, ScenarioTemplate, UserStory
+from bdd_textx.classes.bdd import (
+    AfterEvent,
+    BeforeEvent,
+    Clause,
+    DuringEvent,
+    HoldsExpr,
+    ScenarioTemplate,
+    TimeConstraint,
+    UserStory,
+)
 
 
 def add_node_list_pred(
@@ -49,37 +67,73 @@ def add_literal_list_pred(
     )
 
 
-def get_fluent_clause_uri(clause: HoldsExpr, parent_ns: Namespace) -> URIRef:
-    id_str = f"fc-{type(clause.predicate).__name__}-{type(clause.tc).__name__}-{clause.uuid}"
-    return parent_ns[id_str]
-
-
-def add_fluent_clause_pred(clause: HoldsExpr) -> URIRef:
+def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
     pred_type_str = type(clause.predicate).__name__
+
     if "LocatedAtPred" in pred_type_str:
-        return URI_BDD_TYPE_LOCATED_AT
+        graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_LOCATED_AT))
+        return
 
     if "IsHeldPred" in pred_type_str:
-        return URI_BDD_TYPE_IS_HELD
+        graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_IS_HELD))
+        return
 
     if "HasConfigPred" in pred_type_str:
-        return NS_MM_BDD["HasConfigPredicate"]
+        graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["HasConfigPredicate"]))
+        return
 
     if "IsSortedPred" in pred_type_str:
-        return NS_MM_BDD["IsSortedPredicate"]
+        graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["IsSortedPredicate"]))
+        return
 
     raise ValueError(f"unhandled predicate type: {pred_type_str}")
 
 
+def add_fc_time_constraint(
+    graph: Graph, tc: TimeConstraint, parent_ns: Namespace, clause_uri: URIRef
+):
+    tc_uri = tc.get_uri(ns=parent_ns, prefix=f"tc-{type(tc).__name__}")
+
+    graph.add(triple=(tc_uri, RDF.type, NS_MM_TIME["TimeConstraint"]))
+    graph.add(triple=(clause_uri, URI_BDD_PRED_HOLDS_AT, tc_uri))
+
+    if isinstance(tc, BeforeEvent):
+        graph.add(triple=(tc_uri, RDF.type, URI_TIME_TYPE_BEFORE_EVT))
+        graph.add(triple=(tc_uri, URI_TIME_PRED_BEFORE_EVT, tc.event.uri))
+        return
+
+    if isinstance(tc, AfterEvent):
+        graph.add(triple=(tc_uri, RDF.type, URI_TIME_TYPE_AFTER_EVT))
+        graph.add(triple=(tc_uri, URI_TIME_PRED_AFTER_EVT, tc.event.uri))
+        return
+
+    if isinstance(tc, DuringEvent):
+        graph.add(triple=(tc_uri, RDF.type, URI_TIME_TYPE_DURING))
+        graph.add(triple=(tc_uri, URI_TIME_PRED_AFTER_EVT, tc.start_event.uri))
+        graph.add(triple=(tc_uri, URI_TIME_PRED_BEFORE_EVT, tc.end_event.uri))
+        return
+
+    raise ValueError(f"unhandled time constraint type: {type(tc)}")
+
+
 def add_clause_expr(
-    graph: Graph, clause: Any, parent_ns: Namespace, clause_of_uri: URIRef, clause_col: Collection
+    graph: Graph,
+    clause: Clause,
+    parent_ns: Namespace,
+    clause_of_uri: URIRef,
+    clause_col: Collection,
 ):
     if isinstance(clause, HoldsExpr):
-        uri = get_fluent_clause_uri(clause=clause, parent_ns=parent_ns)
-        graph.add((uri, RDF.type, URI_BDD_TYPE_FLUENT_CLAUSE))
-        graph.add((uri, URI_BDD_PRED_CLAUSE_OF, clause_of_uri))
-        graph.add((uri, RDF.type, add_fluent_clause_pred(clause=clause)))
-        clause_col.append(uri)
+        prefix = f"fc-{type(clause.predicate).__name__}-{type(clause.tc).__name__}"
+        fc_uri = clause.get_uri(ns=parent_ns, prefix=prefix)
+
+        graph.add((fc_uri, RDF.type, URI_BDD_TYPE_FLUENT_CLAUSE))
+        graph.add((fc_uri, URI_BDD_PRED_CLAUSE_OF, clause_of_uri))
+
+        add_fc_predicate(graph=graph, clause=clause, clause_uri=fc_uri)
+        add_fc_time_constraint(graph=graph, tc=clause.tc, clause_uri=fc_uri, parent_ns=parent_ns)
+
+        clause_col.append(fc_uri)
     else:
         raise ValueError(f"clause expression of type '{type(clause)}' is not handled: {clause}")
 
@@ -136,9 +190,10 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
     graph.add(triple=(tmpl.scenario_uri, URI_BDD_PRED_GIVEN, tmpl.given_uri))
     graph.add(triple=(tmpl.scenario_uri, URI_BDD_PRED_WHEN, tmpl.when_uri))
     graph.add(triple=(tmpl.scenario_uri, URI_BDD_PRED_THEN, tmpl.then_uri))
-    # TODO(minhnh) of-task
-    # TODO(minhnh) of-behaviour
     graph.add(triple=(tmpl.uri, URI_BDD_PRED_OF_SCENARIO, tmpl.scenario_uri))
+
+    # task
+    graph.add(triple=(tmpl.scenario_uri, URI_TASK_PRED_OF_TASK, tmpl.task.uri))
 
     # scene
     graph.add(triple=(tmpl.scene_uri, RDF.type, URI_BDD_TYPE_SCENE))
@@ -147,7 +202,7 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
     # variables
     for var in tmpl.variables:
         var_uri = tmpl.ns_obj[var.name]
-        graph.add(triple=(var_uri, RDF.type, URI_BDD_TYPE_SCENARIO_VARIABLE))
+        graph.add(triple=(var_uri, RDF.type, NS_MM_BDD["ScenarioVariable"]))
 
     # clauses
     add_gwt_expr(
@@ -172,12 +227,25 @@ def add_us_to_graph(graph: Graph, us: UserStory):
 
 
 def add_bdd_model_to_graph(graph: Graph, model: object):
-    # TODO(minhnh) behaviours
-    # TODO(minhnh) events
-    # TODO(minhnh) tasks
+    behaviours = getattr(model, "behaviours", None)
+    assert behaviours is not None and isinstance(behaviours, list), "no list of behaviours in model"
+    for bhv in behaviours:
+        graph.add(triple=(bhv.uri, RDF.type, URI_BHV_TYPE_BHV))
+
+    events = getattr(model, "events", None)
+    assert events is not None and isinstance(events, list), "no list of events in model"
+    for evt in events:
+        graph.add(triple=(evt.uri, RDF.type, NS_MM_TIME["Event"]))
+
+    tasks = getattr(model, "tasks", None)
+    assert tasks is not None and isinstance(tasks, list), "no list of tasks in model"
+    for task in tasks:
+        graph.add(triple=(task.uri, RDF.type, URI_TASK_TYPE_TASK))
 
     templates = getattr(model, "templates", None)
-    assert templates is not None and isinstance(templates, list), "no list of user stories in model"
+    assert templates is not None and isinstance(
+        templates, list
+    ), "no list of scenario templates in model"
     for tmpl in templates:
         add_scenario_tmpl(graph=graph, tmpl=tmpl)
 
