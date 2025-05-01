@@ -56,7 +56,7 @@ TaskVariation: CartesianProductVariation | TableVariation ;
 
 CartesianProductVariation: var_entries+=VarEntry ;
 
-VarEntry: 'var' '<' variable=[ScenarioVariable|FQN] '>' 'can' 'be' ':'
+VarEntry: 'var' '<' variable=[VariableBase|FQN] '>' 'can' 'be' ':'
 (
 '-' 'obj' '<' objects+=[Object|FQN] '>'
 |
@@ -74,7 +74,7 @@ Cell: Value '|' ;
 
 Value:
 (
-'var' '<' variable=[ScenarioVariable|FQN] '>'
+'var' '<' variable=[VariableBase|FQN] '>'
 |
 'obj' '<' object=[Object|FQN] '>'
 |
@@ -88,12 +88,20 @@ ScenarioTemplate:
 'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
     'task' ':' '<' task=[Task|FQN] '>'
 
-    variables=ScenarioVariable*
+    variables=VariableBase*
     gwt_expr=GivenWhenThenExpr
 '}'
 ;
 
-ScenarioVariable: 'var' name=ID;
+SetBase: ConstantSet | ScenarioSetVariable ;
+ConstantSet:
+'const' 'set' name=ID '{'
+'}'
+;
+
+VariableBase: ScenarioVariable | ScenarioSetVariable ;
+ScenarioSetVariable: 'set' 'var' name=ID ;
+ScenarioVariable: 'var' name=ID ;
 
 // When Clauses
 EventWhenClause: 'event' '<' event=[Event|FQN] '>' 'occurs';
@@ -111,10 +119,10 @@ DuringEvent: 'from' '<' start_event=[Event|FQN] '>' 'until' '<' end_event=[Event
 Clause: LocatedAtFluentClause | DoesNotDropFluentClause | TextClause | FluentLogicExpr | ExistsExpr ;
 TextClause: text=STRING tc=TimeConstraint;
 LocatedAtFluentClause:
-    '<' object=[ScenarioVariable|FQN] '>' 'is' 'located' 'at' '<' workspace=[ScenarioVariable|FQN] '>'
+    '<' object=[VariableBase|FQN] '>' 'is' 'located' 'at' '<' workspace=[VariableBase|FQN] '>'
     tc=TimeConstraint ;
 DoesNotDropFluentClause:
-    '<' agent=[ScenarioVariable|FQN] '>' 'does' 'not' 'drop' '<' object=[ScenarioVariable|FQN] '>'
+    '<' agent=[VariableBase|FQN] '>' 'does' 'not' 'drop' '<' object=[VariableBase|FQN] '>'
     tc=TimeConstraint ;
 
 // Scenario terms
@@ -138,22 +146,22 @@ GivenWhenThenExpr:
 // First Order Logic terms
 FOLExpr: LocatedAtPred | IsHeldPred | DoesNotDropPred | CanReachPred | HasConfigPred | IsSortedPred ;
 CanReachPred:
-    '<' robot=[ScenarioVariable|FQN] '>' 'can' 'reach' '<' object=[ScenarioVariable|FQN] '>'
+    '<' robot=[VariableBase|FQN] '>' 'can' 'reach' '<' object=[VariableBase|FQN] '>'
 ;
 LocatedAtPred:
-    '<' object=[ScenarioVariable|FQN] '>' 'is' 'located' 'at' '<' workspace=[ScenarioVariable|FQN] '>'
+    '<' object=[VariableBase|FQN] '>' 'is' 'located' 'at' '<' workspace=[VariableBase|FQN] '>'
 ;
 DoesNotDropPred:
-    '<' agent=[ScenarioVariable|FQN] '>' 'does' 'not' 'drop' '<' object=[ScenarioVariable|FQN] '>'
+    '<' agent=[VariableBase|FQN] '>' 'does' 'not' 'drop' '<' object=[VariableBase|FQN] '>'
 ;
 IsHeldPred:
-    '<' object=[ScenarioVariable|FQN] '>' 'is' 'held' 'by' '<' agent=[ScenarioVariable|FQN] '>'
+    '<' object=[VariableBase|FQN] '>' 'is' 'held' 'by' '<' agent=[VariableBase|FQN] '>'
 ;
 HasConfigPred:
-    '<' subject=[ScenarioVariable|FQN] '>' 'has' 'config' '<' config=[ScenarioVariable|FQN] '>'
+    '<' subject=[VariableBase|FQN] '>' 'has' 'config' '<' config=[VariableBase|FQN] '>'
 ;
 IsSortedPred:
-    '<' objects=[ScenarioVariable|FQN] '>' 'is' 'sorted' 'into' '<' workspaces=[ScenarioVariable|FQN] '>'
+    '<' objects=[ScenarioSetVariable|FQN] '>' 'are' 'sorted' 'into' '<' workspaces=[ScenarioSetVariable|FQN] '>'
 ;
 
 // Fluent logic terms composing holds clauses with basic logic operators
@@ -180,12 +188,12 @@ FluentNotExpr:
 
 // quantifiers over fluent logic expressions
 ForAllExpr:
-'for' 'all' '(' var=ScenarioVariable 'in' '<' set=[ScenarioVariable|FQN] '>' ')' '{'
+'for' 'all' '(' var=ScenarioVariable 'in' '<' set=[SetBase|FQN] '>' ')' '{'
     GivenWhenThenExpr
 '}'
 ;
 ExistsExpr:
-'(' var=ScenarioVariable 'exists' 'in' '<' set=[ScenarioVariable|FQN] '>' ')' 'such' 'that' '{'
+'(' var=ScenarioVariable 'exists' 'in' '<' set=[SetBase|FQN] '>' ')' 'such' 'that' '{'
     fluent_expr=FluentLogicExpr
 '}'
 ;

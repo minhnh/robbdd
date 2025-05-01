@@ -13,30 +13,30 @@ Event (ns=bdd_tmpl) evt_scenario_end
 Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
     task: <tsk_pickplace>
 
-    var var_target_objects
-    var var_robot
+    set var target_objects
+    set var place_workspaces
+    var robot
     var var_pick_ws
-    var var_place_ws
     var var_conveyor_speed
 
     Given:
         holds(<var_pick_ws> has config <var_conveyor_speed>, before <evt_scenario_start>)
-    for all ( var x in <var_target_objects> ) {
+    for all ( var x in <target_objects> ) {
         Given:
         (
             holds(<x> is located at <var_pick_ws>, before <evt_pick_start>)
             and
-            holds(<var_robot> can reach <x>, before <evt_pick_start>)
+            holds(<robot> can reach <x>, before <evt_pick_start>)
         )
         When:
             <bhv_pickplace> occurs
         Then:
-            ( var y exists in <var_place_ws> ) such that {
+            ( var y exists in <place_workspaces> ) such that {
                 holds(<x> is located at <y>, after <evt_place_end>)
             }
     }
     Then:
-        holds(<var_target_objects> is sorted into <var_place_ws>, after <evt_place_end>)
+        holds(<target_objects> are sorted into <place_workspaces>, after <evt_place_end>)
 }
 
 User Story (ns=bdd) us_pickplace_single_arm {
@@ -49,7 +49,7 @@ User Story (ns=bdd) us_pickplace_single_arm {
             template: <tmpl_pickplace>
             scene: <lab_scene>
 
-            | var <tmpl_pickplace.var_target_objects> | var <tmpl_pickplace.var_pick_ws> | var <tmpl_pickplace.var_place_ws> | var <tmpl_pickplace.var_robot> |
+            | var <tmpl_pickplace.target_objects> | var <tmpl_pickplace.var_pick_ws> | var <tmpl_pickplace.place_workspaces> | var <tmpl_pickplace.robot> |
             | obj <lab_scene.box> | ws <lab_scene.dining_table> | ws <lab_scene.shelf> | agn <lab_scene.freddy> |
             | obj <lab_scene.ball> | ws <lab_scene.shelf> | ws <lab_scene.dining_table> | agn <lab_scene.lucy> |
             | obj <lab_scene.bottle> | ws <lab_scene.dining_table> | ws <lab_scene.shelf> | agn <lab_scene.freddy> |

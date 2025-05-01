@@ -12,6 +12,8 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HOLDS_AT,
     URI_BDD_PRED_OF_SCENARIO,
     URI_BDD_PRED_OF_TMPL,
+    URI_BDD_PRED_REF_OBJ,
+    URI_BDD_PRED_REF_WS,
     URI_BDD_TYPE_FLUENT_CLAUSE,
     URI_BDD_TYPE_IS_HELD,
     URI_BDD_TYPE_LOCATED_AT,
@@ -41,9 +43,11 @@ from bdd_textx.classes.bdd import (
     Clause,
     DuringEvent,
     HoldsExpr,
+    ScenarioSetVariable,
     ScenarioTemplate,
     TimeConstraint,
     UserStory,
+    VariableBase,
 )
 
 
@@ -72,6 +76,18 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
 
     if "LocatedAtPred" in pred_type_str:
         graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_LOCATED_AT))
+
+        obj_var = getattr(clause.predicate, "object", None)
+        assert (
+            obj_var is not None and isinstance(obj_var, VariableBase)
+        ), f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_OBJ, obj_var.uri))
+
+        ws_var = getattr(clause.predicate, "workspace", None)
+        assert (
+            ws_var is not None and isinstance(ws_var, VariableBase)
+        ), f"unexpected 'workspace' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {ws_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_WS, ws_var.uri))
         return
 
     if "IsHeldPred" in pred_type_str:
@@ -84,6 +100,18 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
 
     if "IsSortedPred" in pred_type_str:
         graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["IsSortedPredicate"]))
+
+        obj_var = getattr(clause.predicate, "objects", None)
+        assert (
+            obj_var is not None and isinstance(obj_var, ScenarioSetVariable)
+        ), f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_OBJ, obj_var.uri))
+
+        ws_var = getattr(clause.predicate, "workspaces", None)
+        assert (
+            ws_var is not None and isinstance(ws_var, ScenarioSetVariable)
+        ), f"unexpected 'workspaces' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {ws_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_WS, ws_var.uri))
         return
 
     raise ValueError(f"unhandled predicate type: {pred_type_str}")
@@ -201,8 +229,9 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
 
     # variables
     for var in tmpl.variables:
-        var_uri = tmpl.ns_obj[var.name]
-        graph.add(triple=(var_uri, RDF.type, NS_MM_BDD["ScenarioVariable"]))
+        graph.add(triple=(var.uri, RDF.type, NS_MM_BDD["ScenarioVariable"]))
+        if isinstance(var, ScenarioSetVariable):
+            graph.add(triple=(var.uri, RDF.type, NS_MM_BDD["Set"]))
 
     # clauses
     add_gwt_expr(

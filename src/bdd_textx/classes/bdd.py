@@ -33,6 +33,43 @@ class Task(IHasNamespaceDeclare):
         self.parent = parent
 
 
+class VariableBase(object):
+    _uri: Optional[URIRef]
+
+    def __init__(self, parent, name) -> None:
+        self.parent = parent
+        self.name = name
+        self._uri = None
+
+    @property
+    def uri(self) -> URIRef:
+        """URIRef corresponding to the variable's name.
+
+        Inherits namespace from parent. This needs to be a property since textX doesn't/may not call
+        the the constructor of parent classes before the creation of this class, resulting in the
+        'ns' property not being available at runtime.
+        """
+        if self._uri is not None:
+            return self._uri
+
+        assert isinstance(
+            self.parent, IHasNamespaceDeclare
+        ), f"parent of variable '{self.name}' is not of type  IHasNamespaceDeclare: {self.parent}"
+
+        self._uri = self.parent.ns_obj[self.name]
+        return self._uri
+
+
+class ScenarioVariable(VariableBase):
+    def __init__(self, parent, name) -> None:
+        super().__init__(parent, name)
+
+
+class ScenarioSetVariable(VariableBase):
+    def __init__(self, parent, name) -> None:
+        super().__init__(parent, name)
+
+
 class UserStory(IHasNamespaceDeclare):
     def __init__(self, parent, ns, name, role, feature, benefit, scenarios):
         super().__init__(ns=ns, name=name)
@@ -45,6 +82,7 @@ class UserStory(IHasNamespaceDeclare):
 
 class ScenarioTemplate(IHasNamespaceDeclare):
     task: Task
+    variables: list[VariableBase]
 
     def __init__(
         self,

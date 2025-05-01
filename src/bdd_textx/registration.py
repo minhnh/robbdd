@@ -15,10 +15,13 @@ from bdd_textx.classes.bdd import (
     FluentNotExpr,
     FluentOrExpr,
     HoldsExpr,
+    ScenarioSetVariable,
+    ScenarioVariable,
     Task,
     TimeConstraint,
     UserStory,
     ScenarioTemplate,
+    VariableBase,
 )
 from bdd_textx.graph import add_bdd_model_to_graph
 from bdd_textx.generator.utils import prepare_context_data
@@ -46,6 +49,9 @@ def bdd_metamodel():
             Behaviour,
             Event,
             Task,
+            VariableBase,
+            ScenarioVariable,
+            ScenarioSetVariable,
             Clause,
             FluentLogicExpr,
             HoldsExpr,
