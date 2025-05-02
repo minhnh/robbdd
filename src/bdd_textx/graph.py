@@ -2,7 +2,7 @@
 from typing import Any
 from bdd_dsl.models.namespace import NS_MM_BDD
 from rdf_utils.namespace import NS_MM_TIME
-from rdflib import BNode, Graph, RDF, Literal, Namespace, Node, URIRef
+from rdflib import BNode, Graph, RDF, Literal, Node, URIRef
 from rdflib.collection import Collection
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_CLAUSE_OF,
@@ -10,11 +10,15 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_CLAUSE,
     URI_BDD_PRED_HAS_SCENE,
     URI_BDD_PRED_HOLDS_AT,
+    URI_BDD_PRED_IN_SET,
     URI_BDD_PRED_OF_SCENARIO,
     URI_BDD_PRED_OF_TMPL,
     URI_BDD_PRED_REF_OBJ,
+    URI_BDD_PRED_REF_VAR,
     URI_BDD_PRED_REF_WS,
+    URI_BDD_TYPE_EXISTS,
     URI_BDD_TYPE_FLUENT_CLAUSE,
+    URI_BDD_TYPE_FORALL,
     URI_BDD_TYPE_IS_HELD,
     URI_BDD_TYPE_LOCATED_AT,
     URI_BDD_TYPE_SCENARIO,
@@ -42,6 +46,9 @@ from bdd_textx.classes.bdd import (
     BeforeEvent,
     Clause,
     DuringEvent,
+    ExistsExpr,
+    FluentAndExpr,
+    ForAllExpr,
     HoldsExpr,
     ScenarioSetVariable,
     ScenarioTemplate,
@@ -92,9 +99,38 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
 
     if "IsHeldPred" in pred_type_str:
         graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_IS_HELD))
+
+        obj_var = getattr(clause.predicate, "object", None)
+        assert (
+            obj_var is not None and isinstance(obj_var, VariableBase)
+        ), f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_OBJ, obj_var.uri))
+
+        agent_var = getattr(clause.predicate, "agent", None)
+        assert (
+            agent_var is not None and isinstance(agent_var, VariableBase)
+        ), f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_WS, agent_var.uri))
+        return
+
+    if "CanReachPred" in pred_type_str:
+        graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["CanReach"]))
+
+        obj_var = getattr(clause.predicate, "object", None)
+        assert (
+            obj_var is not None and isinstance(obj_var, VariableBase)
+        ), f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_OBJ, obj_var.uri))
+
+        agent_var = getattr(clause.predicate, "agent", None)
+        assert (
+            agent_var is not None and isinstance(agent_var, VariableBase)
+        ), f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_WS, agent_var.uri))
         return
 
     if "HasConfigPred" in pred_type_str:
+        # TODO(minhnh): handle vars
         graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["HasConfigPredicate"]))
         return
 
@@ -117,28 +153,24 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
     raise ValueError(f"unhandled predicate type: {pred_type_str}")
 
 
-def add_fc_time_constraint(
-    graph: Graph, tc: TimeConstraint, parent_ns: Namespace, clause_uri: URIRef
-):
-    tc_uri = tc.get_uri(ns=parent_ns, prefix=f"tc-{type(tc).__name__}")
-
-    graph.add(triple=(tc_uri, RDF.type, NS_MM_TIME["TimeConstraint"]))
-    graph.add(triple=(clause_uri, URI_BDD_PRED_HOLDS_AT, tc_uri))
+def add_fc_time_constraint(graph: Graph, tc: TimeConstraint, clause_uri: URIRef):
+    graph.add(triple=(tc.uri, RDF.type, NS_MM_TIME["TimeConstraint"]))
+    graph.add(triple=(clause_uri, URI_BDD_PRED_HOLDS_AT, tc.uri))
 
     if isinstance(tc, BeforeEvent):
-        graph.add(triple=(tc_uri, RDF.type, URI_TIME_TYPE_BEFORE_EVT))
-        graph.add(triple=(tc_uri, URI_TIME_PRED_BEFORE_EVT, tc.event.uri))
+        graph.add(triple=(tc.uri, RDF.type, URI_TIME_TYPE_BEFORE_EVT))
+        graph.add(triple=(tc.uri, URI_TIME_PRED_BEFORE_EVT, tc.event.uri))
         return
 
     if isinstance(tc, AfterEvent):
-        graph.add(triple=(tc_uri, RDF.type, URI_TIME_TYPE_AFTER_EVT))
-        graph.add(triple=(tc_uri, URI_TIME_PRED_AFTER_EVT, tc.event.uri))
+        graph.add(triple=(tc.uri, RDF.type, URI_TIME_TYPE_AFTER_EVT))
+        graph.add(triple=(tc.uri, URI_TIME_PRED_AFTER_EVT, tc.event.uri))
         return
 
     if isinstance(tc, DuringEvent):
-        graph.add(triple=(tc_uri, RDF.type, URI_TIME_TYPE_DURING))
-        graph.add(triple=(tc_uri, URI_TIME_PRED_AFTER_EVT, tc.start_event.uri))
-        graph.add(triple=(tc_uri, URI_TIME_PRED_BEFORE_EVT, tc.end_event.uri))
+        graph.add(triple=(tc.uri, RDF.type, URI_TIME_TYPE_DURING))
+        graph.add(triple=(tc.uri, URI_TIME_PRED_AFTER_EVT, tc.start_event.uri))
+        graph.add(triple=(tc.uri, URI_TIME_PRED_BEFORE_EVT, tc.end_event.uri))
         return
 
     raise ValueError(f"unhandled time constraint type: {type(tc)}")
@@ -147,21 +179,46 @@ def add_fc_time_constraint(
 def add_clause_expr(
     graph: Graph,
     clause: Clause,
-    parent_ns: Namespace,
     clause_of_uri: URIRef,
     clause_col: Collection,
 ):
     if isinstance(clause, HoldsExpr):
-        prefix = f"fc-{type(clause.predicate).__name__}-{type(clause.tc).__name__}"
-        fc_uri = clause.get_uri(ns=parent_ns, prefix=prefix)
+        fc_uri = clause.uri
 
         graph.add((fc_uri, RDF.type, URI_BDD_TYPE_FLUENT_CLAUSE))
         graph.add((fc_uri, URI_BDD_PRED_CLAUSE_OF, clause_of_uri))
 
         add_fc_predicate(graph=graph, clause=clause, clause_uri=fc_uri)
-        add_fc_time_constraint(graph=graph, tc=clause.tc, clause_uri=fc_uri, parent_ns=parent_ns)
+        add_fc_time_constraint(graph=graph, tc=clause.tc, clause_uri=fc_uri)
 
         clause_col.append(fc_uri)
+
+    elif isinstance(clause, FluentAndExpr):
+        for fc in clause.expressions:
+            add_clause_expr(
+                graph=graph,
+                clause=fc,
+                clause_of_uri=clause_of_uri,
+                clause_col=clause_col,
+            )
+
+    elif isinstance(clause, ExistsExpr):
+        graph.add(triple=(clause.uri, RDF.type, URI_BDD_TYPE_EXISTS))
+        graph.add(triple=(clause.var.uri, RDF.type, NS_MM_BDD["ScenarioVariable"]))
+        graph.add(triple=(clause.uri, URI_BDD_PRED_REF_VAR, clause.var.uri))
+        graph.add(triple=(clause.uri, URI_BDD_PRED_IN_SET, clause.in_set.uri))
+        graph.add(triple=(clause.uri, URI_BDD_PRED_CLAUSE_OF, clause_of_uri))
+        exists_clause_col = add_node_list_pred(
+            graph=graph, subject_uri=clause.uri, pred_uri=URI_BDD_PRED_HAS_CLAUSE, nodes=[]
+        )
+        add_clause_expr(
+            graph=graph,
+            clause=clause.fl_expr,
+            clause_of_uri=clause_of_uri,
+            clause_col=exists_clause_col,
+        )
+        clause_col.append(clause.uri)
+
     else:
         raise ValueError(f"clause expression of type '{type(clause)}' is not handled: {clause}")
 
@@ -169,7 +226,6 @@ def add_clause_expr(
 def add_gwt_expr(
     graph: Graph,
     gwt_expr: Any,
-    parent_ns: Namespace,
     parent_uri: URIRef,
     given_uri: URIRef,
     when_uri: URIRef,
@@ -183,13 +239,30 @@ def add_gwt_expr(
         add_clause_expr(
             graph=graph,
             clause=gwt_expr.given_expr.given,
-            parent_ns=parent_ns,
             clause_of_uri=given_uri,
             clause_col=clause_col,
         )
 
     if gwt_expr.forall_expr is not None:
-        print(gwt_expr.forall_expr)
+        assert isinstance(gwt_expr.forall_expr, ForAllExpr)
+        graph.add(triple=(gwt_expr.forall_expr.uri, RDF.type, URI_BDD_TYPE_FORALL))
+        graph.add(triple=(gwt_expr.forall_expr.var.uri, RDF.type, NS_MM_BDD["ScenarioVariable"]))
+        graph.add(
+            triple=(gwt_expr.forall_expr.uri, URI_BDD_PRED_REF_VAR, gwt_expr.forall_expr.var.uri)
+        )
+        graph.add(
+            triple=(gwt_expr.forall_expr.uri, URI_BDD_PRED_IN_SET, gwt_expr.forall_expr.in_set.uri)
+        )
+        graph.add(triple=(gwt_expr.forall_expr.uri, URI_BDD_PRED_CLAUSE_OF, when_uri))
+        clause_col.append(gwt_expr.forall_expr.uri)
+        add_gwt_expr(
+            graph=graph,
+            gwt_expr=gwt_expr.forall_expr.gwt_expr,
+            parent_uri=gwt_expr.forall_expr.uri,
+            given_uri=given_uri,
+            when_uri=when_uri,
+            then_uri=then_uri,
+        )
     elif gwt_expr.when_expr is not None:
         print(gwt_expr.when_expr)
     else:
@@ -201,7 +274,6 @@ def add_gwt_expr(
         add_clause_expr(
             graph=graph,
             clause=gwt_expr.then_expr.then,
-            parent_ns=parent_ns,
             clause_of_uri=then_uri,
             clause_col=clause_col,
         )
@@ -237,7 +309,6 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
     add_gwt_expr(
         graph=graph,
         gwt_expr=tmpl.gwt_expr,
-        parent_ns=tmpl.ns_obj,
         parent_uri=tmpl.uri,
         given_uri=tmpl.given_uri,
         when_uri=tmpl.when_uri,
@@ -249,7 +320,7 @@ def add_us_to_graph(graph: Graph, us: UserStory):
     graph.add(triple=(us.uri, RDF.type, URI_BDD_TYPE_US))
 
     for scr_var in us.scenarios:
-        var_uri = us.ns_obj[scr_var.name]
+        var_uri = us.namespace[scr_var.name]
         graph.add((var_uri, RDF.type, URI_BDD_TYPE_SCENARIO_VARIANT))
         graph.add((var_uri, URI_BDD_PRED_OF_TMPL, scr_var.template.uri))
         graph.add((us.uri, URI_BDD_PRED_HAS_AC, var_uri))
