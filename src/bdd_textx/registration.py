@@ -27,6 +27,8 @@ from bdd_textx.classes.bdd import (
     UserStory,
     ScenarioTemplate,
     VariableBase,
+    WhenBehaviourClause,
+    WhenExpr,
 )
 from bdd_textx.graph import add_bdd_model_to_graph
 from bdd_textx.generator.utils import prepare_context_data
@@ -57,8 +59,10 @@ def bdd_metamodel():
             VariableBase,
             ScenarioVariable,
             ScenarioSetVariable,
+            WhenBehaviourClause,
             ForAllExpr,
             GivenExpr,
+            WhenExpr,
             ThenExpr,
             GivenWhenThenExpr,
             Clause,

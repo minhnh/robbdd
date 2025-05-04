@@ -77,14 +77,11 @@ class VariableBase(object):
         the the constructor of parent classes before the creation of this class, resulting in the
         'ns' property not being available.
         """
-        if self._uri is not None:
-            return self._uri
-
-        assert isinstance(
-            self.parent, IHasNamespace
-        ), f"parent of variable '{self.name}' not an instance of 'IHasNamespace': {self.parent}"
-
-        self._uri = self.parent.namespace[f"var-{self.name}"]
+        if self._uri is None:
+            assert isinstance(
+                self.parent, IHasNamespace
+            ), f"parent of variable '{self.name}' not an instance of 'IHasNamespace': {self.parent}"
+            self._uri = self.parent.namespace[f"var-{self.name}"]
         return self._uri
 
 
@@ -115,9 +112,8 @@ class TimeConstraint(IHasUUID, IHasNamespace):
 
     @property
     def uri(self) -> URIRef:
-        if self._uri is not None:
-            return self._uri
-        self._uri = self.namespace[f"tc-{self.__class__.__name__}-{self.uuid}"]
+        if self._uri is None:
+            self._uri = self.namespace[f"tc-{self.__class__.__name__}-{self.uuid}"]
         return self._uri
 
 
@@ -211,11 +207,10 @@ class HoldsExpr(FluentLogicExpr):
 
     @property
     def uri(self) -> URIRef:
-        if self._uri is not None:
-            return self._uri
-        self._uri = self.namespace[
-            f"fc-{self.predicate.__class__.__name__}-{self.tc.__class__.__name__}-{self.uuid}"
-        ]
+        if self._uri is None:
+            self._uri = self.namespace[
+                f"fc-{self.predicate.__class__.__name__}-{self.tc.__class__.__name__}-{self.uuid}"
+            ]
         return self._uri
 
 
@@ -233,10 +228,27 @@ class ExistsExpr(Clause):
 
     @property
     def uri(self) -> URIRef:
-        if self._uri is not None:
-            return self._uri
+        if self._uri is None:
+            self._uri = self.namespace[f"exists-{self.uuid}"]
+        return self._uri
 
-        self._uri = self.namespace[f"exists-{self.uuid}"]
+
+class WhenBehaviourClause(IHasUUID):
+    behaviour: Behaviour
+    parent: WhenExpr
+    _uri: Optional[URIRef]
+
+    def __init__(self, parent, behaviour, param_bhv) -> None:
+        super().__init__()
+        self.parent = parent
+        self.behaviour = behaviour
+        self.param_bhv = param_bhv
+        self._uri = None
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            self._uri = self.parent.namespace[f"when-bhv-{self.uuid}"]
         return self._uri
 
 
@@ -267,10 +279,8 @@ class ForAllExpr(IHasNamespace, IHasUUID):
 
     @property
     def uri(self) -> URIRef:
-        if self._uri is not None:
-            return self._uri
-
-        self._uri = self.namespace[f"forall-{self.uuid}"]
+        if self._uri is None:
+            self._uri = self.namespace[f"forall-{self.uuid}"]
         return self._uri
 
 
@@ -287,6 +297,23 @@ class GivenExpr(IHasNamespace):
         assert isinstance(
             self.parent, IHasNamespace
         ), f"parent of GivenExpr not instance of IHasNamespace: {self.parent}"
+        return self.parent.namespace
+
+
+class WhenExpr(IHasNamespace):
+    wbh_clause: WhenBehaviourClause
+
+    def __init__(self, parent, when_events, when_bhv) -> None:
+        super().__init__()
+        self.parent = parent
+        self.when_events = when_events
+        self.when_bhv = when_bhv
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, IHasNamespace
+        ), f"parent of WhenExpr not instance of IHasNamespace: {self.parent}"
         return self.parent.namespace
 
 

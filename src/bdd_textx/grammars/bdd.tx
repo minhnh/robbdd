@@ -7,8 +7,6 @@ imports*=Import
 namespaces=NamespaceDeclare*
 
 (
-behaviours+=Behaviour
-|
 events+=Event
 |
 tasks+=Task
@@ -47,7 +45,7 @@ ScenarioVariant:
     (variation=TaskVariation)?
 
     ('Given' ':' given_clauses=Clause+)?
-    ('When' ':' when_event_clauses=EventWhenClause+)?
+    ('When' ':' when_event_clauses=WhenEventClause+)?
     ('Then' ':' then_clauses=Clause+)?
 '}'
 ;
@@ -104,10 +102,22 @@ ScenarioSetVariable: 'set' 'var' name=ID ;
 ScenarioVariable: 'var' name=ID ;
 
 // When Clauses
-EventWhenClause: 'event' '<' event=[Event|FQN] '>' 'occurs';
+WhenEventClause: 'event' '<' event=[Event|FQN] '>' 'occurs';
 
-BehaviourWhenClause: AgentBehaviourWhenClause ;
-AgentBehaviourWhenClause: '<' behaviour=[Behaviour|FQN] '>' 'occurs' ;
+WhenBehaviourClause:
+behaviour=Behaviour ':' param_bhv=ParameterizedBehaviour
+;
+ParameterizedBehaviour: PickPlaceBehaviour | PickBehaviour | PlaceBehaviour ;
+PickBehaviour:
+    '<' agent=[VariableBase|FQN] '>' 'picks' '<' object=[VariableBase|FQN] '>'
+;
+PlaceBehaviour:
+    '<' agent=[VariableBase|FQN] '>' 'places' '<' object=[VariableBase|FQN] '>' 'at' '<' workspace=[VariableBase|FQN] '>'
+;
+PickPlaceBehaviour:
+    '<' agent=[VariableBase|FQN] '>' 'picks' '<' object=[VariableBase|FQN] '>' 'and'
+        'places' 'at' '<' workspace=[VariableBase|FQN] '>'
+;
 
 // Time constraints
 TimeConstraint: BeforeEvent | AfterEvent | DuringEvent ;
@@ -123,8 +133,8 @@ TextClause: text=STRING tc=TimeConstraint;
 GivenExpr: 'Given' ':' given=Clause ;
 WhenExpr:
     'When' ':'
-        when_events=EventWhenClause*
-        when_bhv=BehaviourWhenClause
+        when_events=WhenEventClause*
+        when_bhv=WhenBehaviourClause
 ;
 ThenExpr: 'Then' ':' then=Clause ;
 GivenWhenThenExpr:

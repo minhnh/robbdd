@@ -32,7 +32,14 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_TYPE_SCENARIO_TMPL,
     URI_BDD_TYPE_SCENE,
     URI_BDD_TYPE_US,
+    URI_BDD_TYPE_WHEN_BHV,
+    URI_BHV_PRED_OF_BHV,
+    URI_BHV_PRED_TARGET_AGN,
+    URI_BHV_PRED_TARGET_OBJ,
+    URI_BHV_PRED_TARGET_WS,
     URI_BHV_TYPE_BHV,
+    URI_BHV_TYPE_PICK,
+    URI_BHV_TYPE_PLACE,
     URI_TASK_PRED_OF_TASK,
     URI_TASK_TYPE_TASK,
     URI_TIME_PRED_AFTER_EVT,
@@ -55,6 +62,7 @@ from bdd_textx.classes.bdd import (
     TimeConstraint,
     UserStory,
     VariableBase,
+    WhenBehaviourClause,
 )
 
 
@@ -223,6 +231,40 @@ def add_clause_expr(
         raise ValueError(f"clause expression of type '{type(clause)}' is not handled: {clause}")
 
 
+def add_when_behaviour(graph: Graph, wbh_clause: WhenBehaviourClause, when_uri: URIRef) -> URIRef:
+    graph.add(triple=(wbh_clause.behaviour.uri, RDF.type, URI_BHV_TYPE_BHV))
+    graph.add(triple=(wbh_clause.uri, RDF.type, URI_BDD_TYPE_WHEN_BHV))
+    graph.add(triple=(wbh_clause.uri, URI_BHV_PRED_OF_BHV, wbh_clause.behaviour.uri))
+    graph.add(triple=(wbh_clause.uri, URI_BDD_PRED_CLAUSE_OF, when_uri))
+
+    param_bhv_cls_str = wbh_clause.param_bhv.__class__.__name__
+    if "PickPlaceBehaviour" in param_bhv_cls_str:
+        graph.add(triple=(wbh_clause.behaviour.uri, RDF.type, URI_BHV_TYPE_PICK))
+        graph.add(triple=(wbh_clause.behaviour.uri, RDF.type, URI_BHV_TYPE_PLACE))
+        graph.add(triple=(wbh_clause.uri, URI_BHV_PRED_TARGET_AGN, wbh_clause.param_bhv.agent.uri))
+        graph.add(triple=(wbh_clause.uri, URI_BHV_PRED_TARGET_OBJ, wbh_clause.param_bhv.object.uri))
+        graph.add(
+            triple=(wbh_clause.uri, URI_BHV_PRED_TARGET_WS, wbh_clause.param_bhv.workspace.uri)
+        )
+    elif "PickBehaviour" in param_bhv_cls_str:
+        graph.add(triple=(wbh_clause.behaviour.uri, RDF.type, URI_BHV_TYPE_PICK))
+        graph.add(triple=(wbh_clause.uri, URI_BHV_PRED_TARGET_AGN, wbh_clause.param_bhv.agent.uri))
+        graph.add(triple=(wbh_clause.uri, URI_BHV_PRED_TARGET_OBJ, wbh_clause.param_bhv.object.uri))
+    elif "PlaceBehaviour" in param_bhv_cls_str:
+        graph.add(triple=(wbh_clause.behaviour.uri, RDF.type, URI_BHV_TYPE_PLACE))
+        graph.add(triple=(wbh_clause.uri, URI_BHV_PRED_TARGET_AGN, wbh_clause.param_bhv.agent.uri))
+        graph.add(triple=(wbh_clause.uri, URI_BHV_PRED_TARGET_OBJ, wbh_clause.param_bhv.object.uri))
+        graph.add(
+            triple=(wbh_clause.uri, URI_BHV_PRED_TARGET_WS, wbh_clause.param_bhv.workspace.uri)
+        )
+    else:
+        raise ValueError(
+            f"WhenBehaviourClause '{wbh_clause.uri}' has unhandled ParameterizedBehaviour type: {param_bhv_cls_str}"
+        )
+
+    return wbh_clause.behaviour.uri
+
+
 def add_gwt_expr(
     graph: Graph,
     gwt_expr: Any,
@@ -230,7 +272,7 @@ def add_gwt_expr(
     given_uri: URIRef,
     when_uri: URIRef,
     then_uri: URIRef,
-):
+) -> URIRef:
     clause_col = add_node_list_pred(
         graph=graph, subject_uri=parent_uri, pred_uri=URI_BDD_PRED_HAS_CLAUSE, nodes=[]
     )
@@ -243,6 +285,7 @@ def add_gwt_expr(
             clause_col=clause_col,
         )
 
+    bhv_uri = None
     if gwt_expr.forall_expr is not None:
         assert isinstance(gwt_expr.forall_expr, ForAllExpr)
         graph.add(triple=(gwt_expr.forall_expr.uri, RDF.type, URI_BDD_TYPE_FORALL))
@@ -255,7 +298,7 @@ def add_gwt_expr(
         )
         graph.add(triple=(gwt_expr.forall_expr.uri, URI_BDD_PRED_CLAUSE_OF, when_uri))
         clause_col.append(gwt_expr.forall_expr.uri)
-        add_gwt_expr(
+        bhv_uri = add_gwt_expr(
             graph=graph,
             gwt_expr=gwt_expr.forall_expr.gwt_expr,
             parent_uri=gwt_expr.forall_expr.uri,
@@ -264,7 +307,11 @@ def add_gwt_expr(
             then_uri=then_uri,
         )
     elif gwt_expr.when_expr is not None:
-        print(gwt_expr.when_expr)
+        for when_evt in gwt_expr.when_expr.when_events:
+            print(when_evt)
+        bhv_uri = add_when_behaviour(
+            graph=graph, wbh_clause=gwt_expr.when_expr.when_bhv, when_uri=when_uri
+        )
     else:
         raise ValueError(
             f"Given-When-Then expression must either have a ForAll or WhenBehaviour expressions, parent: {parent_uri.n3()}"
@@ -277,6 +324,9 @@ def add_gwt_expr(
             clause_of_uri=then_uri,
             clause_col=clause_col,
         )
+
+    assert bhv_uri is not None, f"no behaviour found in GivenWhenThenExpr for '{parent_uri}'"
+    return bhv_uri
 
 
 def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
@@ -306,7 +356,7 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
             graph.add(triple=(var.uri, RDF.type, NS_MM_BDD["Set"]))
 
     # clauses
-    add_gwt_expr(
+    bhv_uri = add_gwt_expr(
         graph=graph,
         gwt_expr=tmpl.gwt_expr,
         parent_uri=tmpl.uri,
@@ -314,6 +364,7 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
         when_uri=tmpl.when_uri,
         then_uri=tmpl.then_uri,
     )
+    graph.add(triple=(tmpl.scenario_uri, URI_BHV_PRED_OF_BHV, bhv_uri))
 
 
 def add_us_to_graph(graph: Graph, us: UserStory):
@@ -327,11 +378,6 @@ def add_us_to_graph(graph: Graph, us: UserStory):
 
 
 def add_bdd_model_to_graph(graph: Graph, model: object):
-    behaviours = getattr(model, "behaviours", None)
-    assert behaviours is not None and isinstance(behaviours, list), "no list of behaviours in model"
-    for bhv in behaviours:
-        graph.add(triple=(bhv.uri, RDF.type, URI_BHV_TYPE_BHV))
-
     events = getattr(model, "events", None)
     assert events is not None and isinstance(events, list), "no list of events in model"
     for evt in events:
