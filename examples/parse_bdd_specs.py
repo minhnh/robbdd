@@ -35,8 +35,8 @@ def main():
                 f" agents=({', '.join([x.name for x in var_entry.agents])})"
             )
     elif type(scenario_variant.variation).__name__ == "TableVariation":
-        for row in scenario_variant.variation.rows:
-            print([cell.value.name for cell in row.cells])
+        for var in scenario_variant.variation.header.variables:
+            print(var.uri)
 
 
 if __name__ == "__main__":

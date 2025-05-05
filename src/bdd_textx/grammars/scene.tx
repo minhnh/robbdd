@@ -8,12 +8,8 @@ model=SceneModel
 ;
 
 SceneModel:
-'scene' name=ID '{'
+'scene' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
 (
-environment_ns=EnvironmentNs
-|
-agent_ns=AgentNs
-|
 objects+=Object
 |
 workspaces+=Workspace
@@ -23,8 +19,19 @@ agents+=Agent
 '}'
 ;
 
-EnvironmentNs: 'environment' 'ns' ns=[NamespaceDeclare|FQN] ;
-AgentNs: 'agent' 'ns' ns=[NamespaceDeclare|FQN] ;
-Object: 'object' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
-Workspace: 'workspace' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
-Agent: 'agent' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
+Object: 'object' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ';' ;
+Workspace:
+'workspace' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID
+(
+';'
+|
+'{'
+(
+objects+=Object
+|
+workspaces+=Workspace
+)*
+'}'
+)
+;
+Agent: 'agent' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ';' ;

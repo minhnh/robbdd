@@ -42,11 +42,11 @@ ScenarioVariant:
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
     'scene' ':' '<' scene=[SceneModel|FQN] '>'
 
-    (variation=TaskVariation)?
+    (given_expr=GivenExpr)?
+    ('When' ':' when_events=WhenEventClause+)?
+    (then_expr=ThenExpr)?
 
-    ('Given' ':' given_clauses=Clause+)?
-    ('When' ':' when_event_clauses=WhenEventClause+)?
-    ('Then' ':' then_clauses=Clause+)?
+    variation=TaskVariation
 '}'
 ;
 
@@ -64,22 +64,30 @@ VarEntry: 'var' '<' variable=[VariableBase|FQN] '>' 'can' 'be' ':'
 )*
 ;
 
-TableVariation: rows+=Row ;
+TableVariation:
+header=VariableHeader
+'|' ('---' '|')+
+rows=ValueRow+
+;
 
-Row: '|' cells+=Cell ;
+VariableHeader:
+    '|' ( '<' variables=[VariableBase|FQN] '>' '|' )+
+;
 
-Cell: Value '|' ;
-
-Value:
+ValidVariationValue:
 (
-'var' '<' variable=[VariableBase|FQN] '>'
+'<' fqn_val=[Object|FQN] '>'
 |
-'obj' '<' object=[Object|FQN] '>'
+'<' fqn_val=[Workspace|FQN] '>'
 |
-'ws' '<' workspace=[Workspace|FQN] '>'
+'<' fqn_val=[Agent|FQN] '>'
 |
-'agn' '<' agent=[Agent|FQN] '>'
+literal_val=STRING|NUMBER|FLOAT
 )
+;
+
+ValueRow:
+    '|' ( values+=ValidVariationValue '|' )+
 ;
 
 ScenarioTemplate:
@@ -176,13 +184,13 @@ HoldsExpr:
 FluentAndExpr:
 '('
   first=FluentLogicExpr
-  ('and' rest=FluentLogicExpr)*
+  ('and' rest=FluentLogicExpr)+
 ')'
 ;
 FluentOrExpr:
 '('
   first=FluentLogicExpr
-  ('or' rest=FluentLogicExpr)*
+  ('or' rest=FluentLogicExpr)+
 ')'
 ;
 FluentNotExpr:

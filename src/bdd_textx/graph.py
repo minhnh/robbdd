@@ -9,6 +9,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_AC,
     URI_BDD_PRED_HAS_CLAUSE,
     URI_BDD_PRED_HAS_SCENE,
+    URI_BDD_PRED_HAS_VARIATION,
     URI_BDD_PRED_HOLDS_AT,
     URI_BDD_PRED_IN_SET,
     URI_BDD_PRED_OF_SCENARIO,
@@ -16,6 +17,8 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_REF_OBJ,
     URI_BDD_PRED_REF_VAR,
     URI_BDD_PRED_REF_WS,
+    URI_BDD_PRED_ROWS,
+    URI_BDD_PRED_VAR_LIST,
     URI_BDD_TYPE_EXISTS,
     URI_BDD_TYPE_FLUENT_CLAUSE,
     URI_BDD_TYPE_FORALL,
@@ -27,6 +30,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_THEN,
     URI_BDD_TYPE_GIVEN,
     URI_BDD_TYPE_SCENARIO_VARIANT,
+    URI_BDD_TYPE_TASK_VAR,
     URI_BDD_TYPE_WHEN,
     URI_BDD_TYPE_THEN,
     URI_BDD_TYPE_SCENARIO_TMPL,
@@ -59,6 +63,9 @@ from bdd_textx.classes.bdd import (
     HoldsExpr,
     ScenarioSetVariable,
     ScenarioTemplate,
+    ScenarioVariant,
+    TableVariation,
+    TaskVariation,
     TimeConstraint,
     UserStory,
     VariableBase,
@@ -342,7 +349,9 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
     graph.add(triple=(tmpl.scenario_uri, URI_BDD_PRED_THEN, tmpl.then_uri))
     graph.add(triple=(tmpl.uri, URI_BDD_PRED_OF_SCENARIO, tmpl.scenario_uri))
 
-    # task
+    # task, if process more complex task models should make sure that
+    # this task is not already handled, like with templates
+    graph.add(triple=(tmpl.task.uri, RDF.type, URI_TASK_TYPE_TASK))
     graph.add(triple=(tmpl.scenario_uri, URI_TASK_PRED_OF_TASK, tmpl.task.uri))
 
     # scene
@@ -367,14 +376,59 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
     graph.add(triple=(tmpl.scenario_uri, URI_BHV_PRED_OF_BHV, bhv_uri))
 
 
+def add_task_variation(graph: Graph, variation: TaskVariation):
+    graph.add(triple=(variation.uri, RDF.type, URI_BDD_TYPE_TASK_VAR))
+    graph.add(triple=(variation.uri, URI_TASK_PRED_OF_TASK, variation.parent.template.task.uri))
+
+    var_list_col = add_node_list_pred(
+        graph=graph, subject_uri=variation.uri, pred_uri=URI_BDD_PRED_VAR_LIST, nodes=[]
+    )
+    if isinstance(variation, TableVariation):
+        for var in variation.header.variables:
+            assert isinstance(var, VariableBase)
+            var_list_col.append(var.uri)
+        assert len(var_list_col) == 5, f"expected 5 variables, found: {len(var_list_col)}"
+
+        rows_col = add_node_list_pred(
+            graph=graph, subject_uri=variation.uri, pred_uri=URI_BDD_PRED_ROWS, nodes=[]
+        )
+        for r in variation.rows:
+            r_first = BNode()
+            r_col = Collection(graph=graph, uri=r_first, seq=[])
+            for v in r.values:
+                if v.fqn_val is not None:
+                    assert hasattr(v.fqn_val, "uri"), f"FQN value has no URI attr: {v.fqn_val}"
+                    r_col.append(v.fqn_val.uri)
+                elif v.literal_val is not None:
+                    r_col.append(Literal(v.literal_val))
+            rows_col.append(r_first)
+    else:
+        raise ValueError(
+            f"TaskVariaiton type not handled for variant '{variation.parent.uri}': {type(variation)}"
+        )
+
+
+def add_scenario_variant(graph: Graph, variant: ScenarioVariant, templates: set[URIRef]):
+    graph.add(triple=(variant.uri, RDF.type, URI_BDD_TYPE_SCENARIO_VARIANT))
+
+    if variant.template.uri not in templates:
+        add_scenario_tmpl(graph=graph, tmpl=variant.template)
+        templates.add(variant.template.uri)
+
+    graph.add(triple=(variant.uri, URI_BDD_PRED_OF_TMPL, variant.template.uri))
+
+    add_task_variation(graph=graph, variation=variant.variation)
+
+    graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_VARIATION, variant.variation.uri))
+
+
 def add_us_to_graph(graph: Graph, us: UserStory):
     graph.add(triple=(us.uri, RDF.type, URI_BDD_TYPE_US))
+    templates = set()
 
     for scr_var in us.scenarios:
-        var_uri = us.namespace[scr_var.name]
-        graph.add((var_uri, RDF.type, URI_BDD_TYPE_SCENARIO_VARIANT))
-        graph.add((var_uri, URI_BDD_PRED_OF_TMPL, scr_var.template.uri))
-        graph.add((us.uri, URI_BDD_PRED_HAS_AC, var_uri))
+        add_scenario_variant(graph=graph, variant=scr_var, templates=templates)
+        graph.add((us.uri, URI_BDD_PRED_HAS_AC, scr_var.uri))
 
 
 def add_bdd_model_to_graph(graph: Graph, model: object):
@@ -387,13 +441,6 @@ def add_bdd_model_to_graph(graph: Graph, model: object):
     assert tasks is not None and isinstance(tasks, list), "no list of tasks in model"
     for task in tasks:
         graph.add(triple=(task.uri, RDF.type, URI_TASK_TYPE_TASK))
-
-    templates = getattr(model, "templates", None)
-    assert templates is not None and isinstance(
-        templates, list
-    ), "no list of scenario templates in model"
-    for tmpl in templates:
-        add_scenario_tmpl(graph=graph, tmpl=tmpl)
 
     stories = getattr(model, "stories", None)
     assert stories is not None and isinstance(stories, list), "no list of user stories in model"

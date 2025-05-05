@@ -21,7 +21,10 @@ from bdd_textx.classes.bdd import (
     HoldsExpr,
     ScenarioSetVariable,
     ScenarioVariable,
+    ScenarioVariant,
+    TableVariation,
     Task,
+    TaskVariation,
     ThenExpr,
     TimeConstraint,
     UserStory,
@@ -30,6 +33,7 @@ from bdd_textx.classes.bdd import (
     WhenBehaviourClause,
     WhenExpr,
 )
+from bdd_textx.classes.scene import Agent, Object, SceneModel, Workspace
 from bdd_textx.graph import add_bdd_model_to_graph
 from bdd_textx.generator.utils import prepare_context_data
 
@@ -38,7 +42,10 @@ CWD = abspath(dirname(__file__))
 
 
 def scene_metamodel():
-    mm_scene = metamodel_from_file(join(CWD, "grammars", "scene.tx"))
+    mm_scene = metamodel_from_file(
+        join(CWD, "grammars", "scene.tx"),
+        classes=[Object, Workspace, Agent, SceneModel],
+    )
     mm_scene.register_scope_providers(
         {
             "*.*": scoping_providers.FQNImportURI(),
@@ -52,6 +59,7 @@ def bdd_metamodel():
         join(CWD, "grammars", "bdd.tx"),
         classes=[
             UserStory,
+            ScenarioVariant,
             ScenarioTemplate,
             Behaviour,
             Event,
@@ -59,6 +67,8 @@ def bdd_metamodel():
             VariableBase,
             ScenarioVariable,
             ScenarioSetVariable,
+            TaskVariation,
+            TableVariation,
             WhenBehaviourClause,
             ForAllExpr,
             GivenExpr,

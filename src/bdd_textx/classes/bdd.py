@@ -1,46 +1,8 @@
 # SPDX-License-Identifier: MPL-2.0
 from __future__ import annotations
 from typing import Optional
-from uuid import UUID, uuid4
 from rdflib import Namespace, URIRef
-
-
-class IHasNamespace(object):
-    @property
-    def namespace(self) -> Namespace:
-        raise NotImplementedError(
-            f"'namespace' property not implemented for '{self.__class__.__name__}'"
-        )
-
-
-class IHasNamespaceDeclare(IHasNamespace):
-    uri: URIRef
-    _ns_obj: Namespace
-
-    def __init__(self, **kwargs) -> None:
-        self.ns = kwargs.get("ns", None)
-        assert self.ns is not None
-
-        self.name = kwargs.get("name", None)
-        assert self.name is not None
-
-        self._ns_obj = Namespace(self.ns.uri)
-        self.uri = self._ns_obj[self.name]
-
-    @property
-    def namespace(self) -> Namespace:
-        return self._ns_obj
-
-
-class IHasUUID:
-    uuid: UUID
-
-    def __init__(self) -> None:
-        self.uuid = uuid4()
-
-    @property
-    def uri(self) -> URIRef:
-        raise NotImplementedError(f"'uri' property not implemented for '{self.__class__.__name__}'")
+from bdd_textx.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasUUID
 
 
 class Behaviour(IHasNamespaceDeclare):
@@ -353,16 +315,6 @@ class GivenWhenThenExpr(IHasNamespace):
         return self.parent.namespace
 
 
-class UserStory(IHasNamespaceDeclare):
-    def __init__(self, parent, ns, name, role, feature, benefit, scenarios):
-        super().__init__(ns=ns, name=name)
-        self.parent = parent
-        self.role = role
-        self.feature = feature
-        self.benefit = benefit
-        self.scenarios = scenarios
-
-
 class ScenarioTemplate(IHasNamespaceDeclare):
     task: Task
     variables: list[VariableBase]
@@ -388,3 +340,71 @@ class ScenarioTemplate(IHasNamespaceDeclare):
         self.when_uri = self.namespace[f"{self.name}-scenario-when"]
         self.then_uri = self.namespace[f"{self.name}-scenario-then"]
         self.scene_uri = self.namespace[f"{self.name}-scene"]
+
+
+class TaskVariation(IHasUUID):
+    parent: ScenarioVariant
+    _uri: Optional[URIRef]
+
+    def __init__(self, parent) -> None:
+        super().__init__()
+        self.parent = parent
+        self._uri = None
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            self._uri = self.parent.namespace[f"tv-{self.uuid}"]
+        return self._uri
+
+
+class TableVariation(TaskVariation):
+    def __init__(self, parent, header, rows) -> None:
+        super().__init__(parent)
+        self.header = header
+        self.rows = rows
+
+
+class ScenarioVariant(IHasNamespace):
+    parent: UserStory
+    template: ScenarioTemplate
+    given_expr: GivenExpr
+    then_expr: ThenExpr
+    variation: TaskVariation
+    _uri: Optional[URIRef]
+
+    def __init__(
+        self, parent, name, template, scene, given_expr, when_events, then_expr, variation
+    ) -> None:
+        super().__init__()
+        self.parent = parent
+        self.name = name
+        self.template = template
+        self.scene = scene
+        self.given_expr = given_expr
+        self.then_expr = then_expr
+        self.when_events = when_events
+        self.variation = variation
+        self._uri = None
+
+    @property
+    def namespace(self) -> Namespace:
+        return self.parent.namespace
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            self._uri = self.namespace[self.name]
+        return self._uri
+
+
+class UserStory(IHasNamespaceDeclare):
+    scenarios: list[ScenarioVariant]
+
+    def __init__(self, parent, ns, name, role, feature, benefit, scenarios):
+        super().__init__(ns=ns, name=name)
+        self.parent = parent
+        self.role = role
+        self.feature = feature
+        self.benefit = benefit
+        self.scenarios = scenarios

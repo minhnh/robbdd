@@ -48,9 +48,14 @@ User Story (ns=bdd) us_pickplace_single_arm {
             template: <tmpl_conveyor_sort>
             scene: <lab_scene>
 
-            | var <tmpl_conveyor_sort.target_objects> | var <tmpl_conveyor_sort.conveyor> | var <tmpl_conveyor_sort.place_workspaces> | var <tmpl_conveyor_sort.robot> |
-            | obj <lab_scene.box> | ws <lab_scene.dining_table> | ws <lab_scene.shelf> | agn <lab_scene.freddy> |
-            | obj <lab_scene.ball> | ws <lab_scene.shelf> | ws <lab_scene.dining_table> | agn <lab_scene.lucy> |
-            | obj <lab_scene.bottle> | ws <lab_scene.dining_table> | ws <lab_scene.shelf> | agn <lab_scene.freddy> |
+            | <tmpl_conveyor_sort.target_objects> |
+              <tmpl_conveyor_sort.conveyor> |
+              <tmpl_conveyor_sort.place_workspaces> |
+              <tmpl_conveyor_sort.robot> |
+              <tmpl_conveyor_sort.conveyor_speed> |
+            |---|
+            | <lab_scene.box> | <lab_scene.dining_table> | <lab_scene.shelf> | <lab_scene.freddy> | 0.9 |
+            | <lab_scene.ball> | <lab_scene.shelf> | <lab_scene.dining_table> | <lab_scene.lucy> | 1.0 |
+            | <lab_scene.bottle> | <lab_scene.dining_table> | <lab_scene.shelf> | <lab_scene.freddy> | 0.8 |
         }
 }
