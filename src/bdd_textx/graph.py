@@ -350,6 +350,7 @@ def add_gwt_expr(
 
 
 def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
+    graph.bind(prefix=tmpl.ns.name, namespace=tmpl.namespace)
     graph.add(triple=(tmpl.uri, RDF.type, URI_BDD_TYPE_SCENARIO_TMPL))
 
     # scenario
@@ -401,7 +402,6 @@ def add_task_variation(graph: Graph, variation: TaskVariation):
         for var in variation.header.variables:
             assert isinstance(var, VariableBase)
             var_list_col.append(var.uri)
-        assert len(var_list_col) == 5, f"expected 5 variables, found: {len(var_list_col)}"
 
         rows_col = add_node_list_pred(
             graph=graph, subject_uri=variation.uri, pred_uri=URI_BDD_PRED_ROWS, nodes=[]
@@ -415,6 +415,10 @@ def add_task_variation(graph: Graph, variation: TaskVariation):
                     r_col.append(v.fqn_val.uri)
                 elif v.literal_val is not None:
                     r_col.append(Literal(v.literal_val))
+
+            assert len(r_col) == len(
+                var_list_col
+            ), f"number of row values ({len(r_col)}) != number of variables ({len(var_list_col)})"
             rows_col.append(r_first)
     else:
         raise ValueError(
@@ -423,21 +427,26 @@ def add_task_variation(graph: Graph, variation: TaskVariation):
 
 
 def add_scene_model(graph: Graph, scene: SceneModel):
+    graph.bind(prefix=scene.ns.name, namespace=scene.namespace)
+
     graph.add(triple=(scene.scene_obj_uri, RDF.type, URI_BDD_TYPE_SCENE_OBJ))
     graph.add(triple=(scene.scene_obj_uri, RDF.type, NS_MM_BDD["Set"]))
     for obj in scene.objects:
+        graph.bind(prefix=obj.ns.name, namespace=obj.namespace)
         graph.add(triple=(obj.uri, RDF.type, URI_ENV_TYPE_OBJ))
         graph.add(triple=(scene.scene_obj_uri, URI_ENV_PRED_HAS_OBJ, obj.uri))
 
     graph.add(triple=(scene.scene_ws_uri, RDF.type, URI_BDD_TYPE_SCENE_WS))
     graph.add(triple=(scene.scene_ws_uri, RDF.type, NS_MM_BDD["Set"]))
     for ws in scene.workspaces:
+        graph.bind(prefix=ws.ns.name, namespace=ws.namespace)
         graph.add(triple=(ws.uri, RDF.type, URI_ENV_TYPE_WS))
         graph.add(triple=(scene.scene_ws_uri, URI_ENV_PRED_HAS_WS, ws.uri))
 
     graph.add(triple=(scene.scene_agn_uri, RDF.type, URI_BDD_TYPE_SCENE_AGN))
     graph.add(triple=(scene.scene_agn_uri, RDF.type, NS_MM_BDD["Set"]))
     for agn in scene.agents:
+        graph.bind(prefix=agn.ns.name, namespace=agn.namespace)
         graph.add(triple=(agn.uri, RDF.type, URI_AGN_TYPE_AGN))
         graph.add(triple=(scene.scene_agn_uri, URI_AGN_PRED_HAS_AGN, agn.uri))
 
@@ -479,6 +488,7 @@ def add_scenario_variant(
 
 
 def add_us_to_graph(graph: Graph, us: UserStory):
+    graph.bind(us.ns.name, us.ns.uri, override=True)
     graph.add(triple=(us.uri, RDF.type, URI_BDD_TYPE_US))
     templates = set()
     scenes = set()
@@ -487,15 +497,17 @@ def add_us_to_graph(graph: Graph, us: UserStory):
         graph.add((us.uri, URI_BDD_PRED_HAS_AC, scr_var.uri))
 
 
-def add_bdd_model_to_graph(graph: Graph, model: object):
+def add_bdd_model_to_graph(graph: Graph, model: Any):
     events = getattr(model, "events", None)
     assert events is not None and isinstance(events, list), "no list of events in model"
     for evt in events:
+        graph.bind(prefix=evt.ns.name, namespace=evt.namespace)
         graph.add(triple=(evt.uri, RDF.type, NS_MM_TIME["Event"]))
 
     tasks = getattr(model, "tasks", None)
     assert tasks is not None and isinstance(tasks, list), "no list of tasks in model"
     for task in tasks:
+        graph.bind(prefix=task.ns.name, namespace=task.namespace)
         graph.add(triple=(task.uri, RDF.type, URI_TASK_TYPE_TASK))
 
     stories = getattr(model, "stories", None)

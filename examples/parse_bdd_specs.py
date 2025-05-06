@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 import sys
 from sys import argv
-from os.path import abspath, dirname
+from os.path import abspath, dirname, join
 from urllib.request import HTTPError
+from rdf_utils.uri import URL_SECORO_M
 from rdflib import Graph
 from textx import metamodel_for_language
 from rdf_utils.resolver import install_resolver
+from rdf_utils.naming import get_valid_filename
 from bdd_dsl.models.user_story import UserStoryLoader
-from bdd_dsl.utils.jinja import prepare_jinja2_template_data
+from bdd_dsl.utils.jinja import load_template_from_url, prepare_jinja2_template_data
 from bdd_textx.graph import add_bdd_model_to_graph
 
 
 CWD = abspath(dirname(__file__))
+GENERATED_DIR = join(CWD, "generated")
 
 
 def main():
@@ -29,7 +32,19 @@ def main():
         print(f"error loading models URL '{e.url}':\n{e.info()}\n{e}")
         sys.exit(1)
 
-    _ = prepare_jinja2_template_data(us_loader, g)
+    processed_bdd_data = prepare_jinja2_template_data(us_loader, g, ns_manager=g.namespace_manager)
+
+    feature_template = load_template_from_url(
+        f"{URL_SECORO_M}/acceptance-criteria/bdd/jinja/feature.jinja"
+    )
+    for us_data in processed_bdd_data:
+        us_name = us_data["name"]
+        feature_content = feature_template.render(data=us_data)
+        feature_filename = f"{get_valid_filename(us_name)}.feature"
+        filepath = join(GENERATED_DIR, feature_filename)
+        with open(filepath, mode="w", encoding="utf-8") as of:
+            of.write(feature_content)
+            print(f"... wrote {filepath}")
 
     print(model.stories[0].uri.n3())
     scenario_variant = model.stories[0].scenarios[0]

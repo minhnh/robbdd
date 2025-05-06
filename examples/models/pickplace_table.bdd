@@ -1,28 +1,29 @@
 import "lab.scene"
 
-ns bdd='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/'
+ns bdd_var='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/'
 ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
 
-Behaviour bhv_pickplace
-Task tsk_pickplace
-Event evt_pick_start
-Event evt_place_end
+Task (ns=bdd_tmpl) tsk_pickplace
+Event (ns=bdd_tmpl) evt_pick_start
+Event (ns=bdd_tmpl) evt_place_end
 
 Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
-    var var_target_object
-    var var_robot
-    var var_pick_ws
-    var var_place_ws
+    task: <tsk_pickplace>
+
+    var target_object
+    var robot
+    var pick_ws
+    var place_ws
 
     Given:
-        <var_target_object> is located at <var_pick_ws> before <evt_pick_start>
+        holds(<target_object> is located at <pick_ws>, before <evt_pick_start>)
     When:
-        <bhv_pickplace> occurs
+        Behaviour (ns=bdd_tmpl) pickplace: <robot> picks <target_object> and places at <place_ws>
     Then:
-        <var_target_object> is located at <var_place_ws> after <evt_place_end>
+        holds(<target_object> is located at <place_ws>, after <evt_pick_start>)
 }
 
-User Story (ns=bdd) us_pickplace_single_arm {
+User Story (ns=bdd_var) us_pickplace_single_arm {
     As A "Function Developer"
     I Want "Pick and place behaviour"
     So That "I can transport objects"
@@ -31,11 +32,11 @@ User Story (ns=bdd) us_pickplace_single_arm {
         Scenario simple_pick {
             template: <tmpl_pickplace>
             scene: <lab_scene>
-            task: <tsk_pickplace>
 
-            | var <tmpl_pickplace.var_target_object> | var <tmpl_pickplace.var_pick_ws> | var <tmpl_pickplace.var_place_ws> | var <tmpl_pickplace.var_robot> |
-            | obj <lab_scene.box> | ws <lab_scene.dining_table> | ws <lab_scene.shelf> | agn <lab_scene.freddy> |
-            | obj <lab_scene.ball> | ws <lab_scene.shelf> | ws <lab_scene.dining_table> | agn <lab_scene.lucy> |
-            | obj <lab_scene.bottle> | ws <lab_scene.dining_table> | ws <lab_scene.shelf> | agn <lab_scene.freddy> |
+            | <tmpl_pickplace.target_object> | <tmpl_pickplace.pick_ws> | <tmpl_pickplace.place_ws> | <tmpl_pickplace.robot> |
+            |---|
+            | <lab_scene.box> | <lab_scene.dining_table> | <lab_scene.shelf> |  <lab_scene.freddy> |
+            | <lab_scene.ball> | <lab_scene.shelf> | <lab_scene.dining_table> |  <lab_scene.lucy> |
+            | <lab_scene.bottle> | <lab_scene.dining_table> | <lab_scene.shelf> |  <lab_scene.freddy> |
         }
 }
