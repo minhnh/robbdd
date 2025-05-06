@@ -5,6 +5,8 @@ from rdf_utils.namespace import NS_MM_TIME
 from rdflib import BNode, Graph, RDF, Literal, Node, URIRef
 from rdflib.collection import Collection
 from bdd_dsl.models.urirefs import (
+    URI_AGN_PRED_HAS_AGN,
+    URI_AGN_TYPE_AGN,
     URI_BDD_PRED_CLAUSE_OF,
     URI_BDD_PRED_HAS_AC,
     URI_BDD_PRED_HAS_CLAUSE,
@@ -13,6 +15,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HOLDS_AT,
     URI_BDD_PRED_IN_SET,
     URI_BDD_PRED_OF_SCENARIO,
+    URI_BDD_PRED_OF_SCENE,
     URI_BDD_PRED_OF_TMPL,
     URI_BDD_PRED_REF_OBJ,
     URI_BDD_PRED_REF_VAR,
@@ -30,6 +33,11 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_THEN,
     URI_BDD_TYPE_GIVEN,
     URI_BDD_TYPE_SCENARIO_VARIANT,
+    URI_BDD_TYPE_SCENE_AGN,
+    URI_BDD_TYPE_SCENE_OBJ,
+    URI_BDD_TYPE_SCENE_WS,
+    URI_BDD_TYPE_SORTED,
+    URI_BDD_TYPE_TABLE_VAR,
     URI_BDD_TYPE_TASK_VAR,
     URI_BDD_TYPE_WHEN,
     URI_BDD_TYPE_THEN,
@@ -44,6 +52,10 @@ from bdd_dsl.models.urirefs import (
     URI_BHV_TYPE_BHV,
     URI_BHV_TYPE_PICK,
     URI_BHV_TYPE_PLACE,
+    URI_ENV_PRED_HAS_OBJ,
+    URI_ENV_PRED_HAS_WS,
+    URI_ENV_TYPE_OBJ,
+    URI_ENV_TYPE_WS,
     URI_TASK_PRED_OF_TASK,
     URI_TASK_TYPE_TASK,
     URI_TIME_PRED_AFTER_EVT,
@@ -71,6 +83,7 @@ from bdd_textx.classes.bdd import (
     VariableBase,
     WhenBehaviourClause,
 )
+from bdd_textx.classes.scene import SceneModel
 
 
 def add_node_list_pred(
@@ -150,7 +163,7 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         return
 
     if "IsSortedPred" in pred_type_str:
-        graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["IsSortedPredicate"]))
+        graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_SORTED))
 
         obj_var = getattr(clause.predicate, "objects", None)
         assert (
@@ -384,6 +397,7 @@ def add_task_variation(graph: Graph, variation: TaskVariation):
         graph=graph, subject_uri=variation.uri, pred_uri=URI_BDD_PRED_VAR_LIST, nodes=[]
     )
     if isinstance(variation, TableVariation):
+        graph.add(triple=(variation.uri, RDF.type, URI_BDD_TYPE_TABLE_VAR))
         for var in variation.header.variables:
             assert isinstance(var, VariableBase)
             var_list_col.append(var.uri)
@@ -408,26 +422,68 @@ def add_task_variation(graph: Graph, variation: TaskVariation):
         )
 
 
-def add_scenario_variant(graph: Graph, variant: ScenarioVariant, templates: set[URIRef]):
+def add_scene_model(graph: Graph, scene: SceneModel):
+    graph.add(triple=(scene.scene_obj_uri, RDF.type, URI_BDD_TYPE_SCENE_OBJ))
+    graph.add(triple=(scene.scene_obj_uri, RDF.type, NS_MM_BDD["Set"]))
+    for obj in scene.objects:
+        graph.add(triple=(obj.uri, RDF.type, URI_ENV_TYPE_OBJ))
+        graph.add(triple=(scene.scene_obj_uri, URI_ENV_PRED_HAS_OBJ, obj.uri))
+
+    graph.add(triple=(scene.scene_ws_uri, RDF.type, URI_BDD_TYPE_SCENE_WS))
+    graph.add(triple=(scene.scene_ws_uri, RDF.type, NS_MM_BDD["Set"]))
+    for ws in scene.workspaces:
+        graph.add(triple=(ws.uri, RDF.type, URI_ENV_TYPE_WS))
+        graph.add(triple=(scene.scene_ws_uri, URI_ENV_PRED_HAS_WS, ws.uri))
+
+    graph.add(triple=(scene.scene_agn_uri, RDF.type, URI_BDD_TYPE_SCENE_AGN))
+    graph.add(triple=(scene.scene_agn_uri, RDF.type, NS_MM_BDD["Set"]))
+    for agn in scene.agents:
+        graph.add(triple=(agn.uri, RDF.type, URI_AGN_TYPE_AGN))
+        graph.add(triple=(scene.scene_agn_uri, URI_AGN_PRED_HAS_AGN, agn.uri))
+
+
+def add_scenario_variant(
+    graph: Graph, variant: ScenarioVariant, templates: set[URIRef], scenes: set[URIRef]
+):
     graph.add(triple=(variant.uri, RDF.type, URI_BDD_TYPE_SCENARIO_VARIANT))
 
+    # template
     if variant.template.uri not in templates:
         add_scenario_tmpl(graph=graph, tmpl=variant.template)
         templates.add(variant.template.uri)
 
     graph.add(triple=(variant.uri, URI_BDD_PRED_OF_TMPL, variant.template.uri))
 
-    add_task_variation(graph=graph, variation=variant.variation)
+    # scene
+    if variant.scene.uri not in scenes:
+        add_scene_model(graph=graph, scene=variant.scene)
+        scenes.add(variant.scene.uri)
 
+    graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_obj_uri))
+    graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_ws_uri))
+    graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_agn_uri))
+
+    graph.add(
+        triple=(variant.scene.scene_obj_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
+    )
+    graph.add(
+        triple=(variant.scene.scene_ws_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
+    )
+    graph.add(
+        triple=(variant.scene.scene_agn_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
+    )
+
+    # variation
+    add_task_variation(graph=graph, variation=variant.variation)
     graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_VARIATION, variant.variation.uri))
 
 
 def add_us_to_graph(graph: Graph, us: UserStory):
     graph.add(triple=(us.uri, RDF.type, URI_BDD_TYPE_US))
     templates = set()
-
+    scenes = set()
     for scr_var in us.scenarios:
-        add_scenario_variant(graph=graph, variant=scr_var, templates=templates)
+        add_scenario_variant(graph=graph, variant=scr_var, templates=templates, scenes=scenes)
         graph.add((us.uri, URI_BDD_PRED_HAS_AC, scr_var.uri))
 
 

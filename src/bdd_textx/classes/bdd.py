@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 from rdflib import Namespace, URIRef
 from bdd_textx.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasUUID
+from bdd_textx.classes.scene import SceneModel
 
 
 class Behaviour(IHasNamespaceDeclare):
@@ -368,6 +369,7 @@ class TableVariation(TaskVariation):
 class ScenarioVariant(IHasNamespace):
     parent: UserStory
     template: ScenarioTemplate
+    scene: SceneModel
     given_expr: GivenExpr
     then_expr: ThenExpr
     variation: TaskVariation

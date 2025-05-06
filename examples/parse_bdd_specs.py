@@ -1,11 +1,13 @@
 #!/usr/bin/env python
+import sys
 from sys import argv
 from os.path import abspath, dirname
+from urllib.request import HTTPError
 from rdflib import Graph
 from textx import metamodel_for_language
 from rdf_utils.resolver import install_resolver
-from rdf_utils.constraints import check_shacl_constraints
-from bdd_dsl.models.user_story import BDD_SHACL_URLS
+from bdd_dsl.models.user_story import UserStoryLoader
+from bdd_dsl.utils.jinja import prepare_jinja2_template_data
 from bdd_textx.graph import add_bdd_model_to_graph
 
 
@@ -19,7 +21,15 @@ def main():
     add_bdd_model_to_graph(graph=g, model=model)
     print(g.serialize(format="json-ld"))
     install_resolver()
-    check_shacl_constraints(graph=g, shacl_dict=BDD_SHACL_URLS)
+    # check_shacl_constraints(graph=g, shacl_dict=BDD_SHACL_URLS)
+
+    try:
+        us_loader = UserStoryLoader(g)
+    except HTTPError as e:
+        print(f"error loading models URL '{e.url}':\n{e.info()}\n{e}")
+        sys.exit(1)
+
+    _ = prepare_jinja2_template_data(us_loader, g)
 
     print(model.stories[0].uri.n3())
     scenario_variant = model.stories[0].scenarios[0]
