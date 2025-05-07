@@ -33,6 +33,7 @@ User Story (ns=bdd) us_pickplace_single_arm {
             scene: <lab_scene>
             task: <tsk_pickplace>
 
+            variation:
             var <tmpl_pickplace.var_target_object> can be:
                 - obj <lab_scene.box>
                 - obj <lab_scene.ball>

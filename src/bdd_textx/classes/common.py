@@ -3,7 +3,16 @@ from uuid import UUID, uuid4
 from rdflib import Namespace, URIRef
 
 
-class IHasNamespace(object):
+class IHasParent(object):
+    def __init__(self, **kwargs) -> None:
+        self.parent = kwargs.get("parent", None)
+        assert self.parent is not None, f"'parent' not handled for type '{self.__class__.__name__}'"
+
+
+class IHasNamespace(IHasParent):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
     @property
     def namespace(self) -> Namespace:
         raise NotImplementedError(
@@ -16,6 +25,7 @@ class IHasNamespaceDeclare(IHasNamespace):
     _ns_obj: Namespace
 
     def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.ns = kwargs.get("ns", None)
         assert self.ns is not None
 
@@ -30,10 +40,11 @@ class IHasNamespaceDeclare(IHasNamespace):
         return self._ns_obj
 
 
-class IHasUUID:
+class IHasUUID(IHasParent):
     uuid: UUID
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.uuid = uuid4()
 
     @property

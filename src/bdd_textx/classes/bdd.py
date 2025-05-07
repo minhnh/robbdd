@@ -2,33 +2,41 @@
 from __future__ import annotations
 from typing import Optional
 from rdflib import Namespace, URIRef
-from bdd_textx.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasUUID
+from bdd_textx.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasParent, IHasUUID
 from bdd_textx.classes.scene import SceneModel
 
 
 class Behaviour(IHasNamespaceDeclare):
     def __init__(self, parent, ns, name):
-        super().__init__(ns=ns, name=name)
-        self.parent = parent
+        super().__init__(parent=parent, ns=ns, name=name)
 
 
 class Event(IHasNamespaceDeclare):
     def __init__(self, parent, ns, name):
-        super().__init__(ns=ns, name=name)
-        self.parent = parent
+        super().__init__(parent=parent, ns=ns, name=name)
 
 
 class Task(IHasNamespaceDeclare):
     def __init__(self, parent, ns, name):
-        super().__init__(ns=ns, name=name)
-        self.parent = parent
+        super().__init__(parent=parent, ns=ns, name=name)
 
 
-class VariableBase(object):
+class SetBase(IHasParent):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+
+class ConstantSet(SetBase, IHasNamespaceDeclare):
+    def __init__(self, parent, ns, name, elems, **kwargs) -> None:
+        super().__init__(parent=parent, name=name, ns=ns, **kwargs)
+        self.elems = elems
+
+
+class VariableBase(IHasParent):
     _uri: Optional[URIRef]
 
-    def __init__(self, parent, name) -> None:
-        self.parent = parent
+    def __init__(self, name, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.name = name
         self._uri = None
 
@@ -50,20 +58,19 @@ class VariableBase(object):
 
 class ScenarioVariable(VariableBase):
     def __init__(self, parent, name) -> None:
-        super().__init__(parent, name)
+        super().__init__(parent=parent, name=name)
 
 
-class ScenarioSetVariable(VariableBase):
+class ScenarioSetVariable(VariableBase, SetBase):
     def __init__(self, parent, name) -> None:
-        super().__init__(parent, name)
+        super().__init__(parent=parent, name=name)
 
 
 class TimeConstraint(IHasUUID, IHasNamespace):
     _uri: Optional[URIRef]
 
     def __init__(self, parent) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent=parent)
         self._uri = None
 
     @property
@@ -84,7 +91,7 @@ class BeforeEvent(TimeConstraint):
     event: Event
 
     def __init__(self, parent, event) -> None:
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.event = event
 
 
@@ -92,7 +99,7 @@ class AfterEvent(TimeConstraint):
     event: Event
 
     def __init__(self, parent, event) -> None:
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.event = event
 
 
@@ -101,15 +108,14 @@ class DuringEvent(TimeConstraint):
     end_event: Event
 
     def __init__(self, parent, start_event, end_event) -> None:
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.start_event = start_event
         self.end_event = end_event
 
 
 class Clause(IHasUUID, IHasNamespace):
     def __init__(self, parent) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent=parent)
 
     @property
     def namespace(self) -> Namespace:
@@ -127,27 +133,17 @@ class FluentLogicExpr(Clause):
 class FluentAndExpr(FluentLogicExpr):
     expressions: list[FluentLogicExpr]
 
-    def __init__(self, parent, first, rest) -> None:
+    def __init__(self, parent, expressions) -> None:
         super().__init__(parent=parent)
-        self.first = first
-        self.rest = rest
-
-        self.expressions = [self.first]
-        for expr in self.rest:
-            self.expressions.append(expr)
+        self.expressions = expressions
 
 
 class FluentOrExpr(FluentLogicExpr):
     expressions: list[FluentLogicExpr]
 
-    def __init__(self, parent, first, rest) -> None:
+    def __init__(self, parent, expressions) -> None:
         super().__init__(parent=parent)
-        self.first = first
-        self.rest = rest
-
-        self.expressions = [self.first]
-        for expr in self.rest:
-            self.expressions.append(expr)
+        self.expressions = expressions
 
 
 class FluentNotExpr(FluentLogicExpr):
@@ -163,7 +159,7 @@ class HoldsExpr(FluentLogicExpr):
     _uri: Optional[URIRef]
 
     def __init__(self, parent, predicate, tc) -> None:
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.predicate = predicate
         self.tc = tc
         self._uri = None
@@ -183,7 +179,7 @@ class ExistsExpr(Clause):
     _uri: Optional[URIRef]
 
     def __init__(self, parent, var, in_set, fl_expr) -> None:
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.var = var
         self.in_set = in_set
         self.fl_expr = fl_expr
@@ -202,8 +198,7 @@ class WhenBehaviourClause(IHasUUID):
     _uri: Optional[URIRef]
 
     def __init__(self, parent, behaviour, param_bhv) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent=parent)
         self.behaviour = behaviour
         self.param_bhv = param_bhv
         self._uri = None
@@ -221,8 +216,7 @@ class ForAllExpr(IHasNamespace, IHasUUID):
     _uri: Optional[URIRef]
 
     def __init__(self, parent, var, in_set, gwt_expr) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent=parent)
         self.var = var
         self.in_set = in_set
         self.gwt_expr = gwt_expr
@@ -251,8 +245,7 @@ class GivenExpr(IHasNamespace):
     given: Clause
 
     def __init__(self, parent, given) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent=parent)
         self.given = given
 
     @property
@@ -267,8 +260,7 @@ class WhenExpr(IHasNamespace):
     wbh_clause: WhenBehaviourClause
 
     def __init__(self, parent, when_events, when_bhv) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent=parent)
         self.when_events = when_events
         self.when_bhv = when_bhv
 
@@ -284,8 +276,7 @@ class ThenExpr(IHasNamespace):
     then: Clause
 
     def __init__(self, parent, then) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent=parent)
         self.then = then
 
     @property
@@ -301,8 +292,7 @@ class GivenWhenThenExpr(IHasNamespace):
     given_expr: GivenExpr
 
     def __init__(self, parent, given_expr, when_expr, forall_expr, then_expr) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent=parent)
         self.given_expr = given_expr
         self.when_expr = when_expr
         self.forall_expr = forall_expr
@@ -329,8 +319,7 @@ class ScenarioTemplate(IHasNamespaceDeclare):
         variables,
         gwt_expr,
     ):
-        super().__init__(ns=ns, name=name)
-        self.parent = parent
+        super().__init__(parent=parent, ns=ns, name=name)
         self.task = task
         self.variables = variables
         self.gwt_expr = gwt_expr
@@ -348,8 +337,7 @@ class TaskVariation(IHasUUID):
     _uri: Optional[URIRef]
 
     def __init__(self, parent) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent=parent)
         self._uri = None
 
     @property
@@ -361,7 +349,7 @@ class TaskVariation(IHasUUID):
 
 class TableVariation(TaskVariation):
     def __init__(self, parent, header, rows) -> None:
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.header = header
         self.rows = rows
 
@@ -378,8 +366,7 @@ class ScenarioVariant(IHasNamespace):
     def __init__(
         self, parent, name, template, scene, given_expr, when_events, then_expr, variation
     ) -> None:
-        super().__init__()
-        self.parent = parent
+        super().__init__(parent=parent)
         self.name = name
         self.template = template
         self.scene = scene
@@ -404,8 +391,7 @@ class UserStory(IHasNamespaceDeclare):
     scenarios: list[ScenarioVariant]
 
     def __init__(self, parent, ns, name, role, feature, benefit, scenarios):
-        super().__init__(ns=ns, name=name)
-        self.parent = parent
+        super().__init__(parent=parent, ns=ns, name=name)
         self.role = role
         self.feature = feature
         self.benefit = benefit

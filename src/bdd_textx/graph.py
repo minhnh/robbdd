@@ -2,12 +2,13 @@
 from typing import Any
 from bdd_dsl.models.namespace import NS_MM_BDD
 from rdf_utils.namespace import NS_MM_TIME
-from rdflib import BNode, Graph, RDF, Literal, Node, URIRef
+from rdflib import BNode, Graph, RDF, IdentifiedNode, Literal, Node, URIRef
 from rdflib.collection import Collection
 from bdd_dsl.models.urirefs import (
     URI_AGN_PRED_HAS_AGN,
     URI_AGN_TYPE_AGN,
     URI_BDD_PRED_CLAUSE_OF,
+    URI_BDD_PRED_ELEMS,
     URI_BDD_PRED_HAS_AC,
     URI_BDD_PRED_HAS_CLAUSE,
     URI_BDD_PRED_HAS_SCENE,
@@ -22,6 +23,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_REF_WS,
     URI_BDD_PRED_ROWS,
     URI_BDD_PRED_VAR_LIST,
+    URI_BDD_TYPE_CONST_SET,
     URI_BDD_TYPE_EXISTS,
     URI_BDD_TYPE_FLUENT_CLAUSE,
     URI_BDD_TYPE_FORALL,
@@ -32,10 +34,12 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_WHEN,
     URI_BDD_PRED_THEN,
     URI_BDD_TYPE_GIVEN,
+    URI_BDD_TYPE_VARIABLE,
     URI_BDD_TYPE_SCENARIO_VARIANT,
     URI_BDD_TYPE_SCENE_AGN,
     URI_BDD_TYPE_SCENE_OBJ,
     URI_BDD_TYPE_SCENE_WS,
+    URI_BDD_TYPE_SET,
     URI_BDD_TYPE_SORTED,
     URI_BDD_TYPE_TABLE_VAR,
     URI_BDD_TYPE_TASK_VAR,
@@ -58,6 +62,7 @@ from bdd_dsl.models.urirefs import (
     URI_ENV_TYPE_WS,
     URI_TASK_PRED_OF_TASK,
     URI_TASK_TYPE_TASK,
+    URI_TIME_TYPE_TC,
     URI_TIME_PRED_AFTER_EVT,
     URI_TIME_PRED_BEFORE_EVT,
     URI_TIME_TYPE_AFTER_EVT,
@@ -68,6 +73,7 @@ from bdd_textx.classes.bdd import (
     AfterEvent,
     BeforeEvent,
     Clause,
+    ConstantSet,
     DuringEvent,
     ExistsExpr,
     FluentAndExpr,
@@ -182,7 +188,7 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
 
 
 def add_fc_time_constraint(graph: Graph, tc: TimeConstraint, clause_uri: URIRef):
-    graph.add(triple=(tc.uri, RDF.type, NS_MM_TIME["TimeConstraint"]))
+    graph.add(triple=(tc.uri, RDF.type, URI_TIME_TYPE_TC))
     graph.add(triple=(clause_uri, URI_BDD_PRED_HOLDS_AT, tc.uri))
 
     if isinstance(tc, BeforeEvent):
@@ -232,7 +238,7 @@ def add_clause_expr(
 
     elif isinstance(clause, ExistsExpr):
         graph.add(triple=(clause.uri, RDF.type, URI_BDD_TYPE_EXISTS))
-        graph.add(triple=(clause.var.uri, RDF.type, NS_MM_BDD["ScenarioVariable"]))
+        graph.add(triple=(clause.var.uri, RDF.type, URI_BDD_TYPE_VARIABLE))
         graph.add(triple=(clause.uri, URI_BDD_PRED_REF_VAR, clause.var.uri))
         graph.add(triple=(clause.uri, URI_BDD_PRED_IN_SET, clause.in_set.uri))
         graph.add(triple=(clause.uri, URI_BDD_PRED_CLAUSE_OF, clause_of_uri))
@@ -309,7 +315,7 @@ def add_gwt_expr(
     if gwt_expr.forall_expr is not None:
         assert isinstance(gwt_expr.forall_expr, ForAllExpr)
         graph.add(triple=(gwt_expr.forall_expr.uri, RDF.type, URI_BDD_TYPE_FORALL))
-        graph.add(triple=(gwt_expr.forall_expr.var.uri, RDF.type, NS_MM_BDD["ScenarioVariable"]))
+        graph.add(triple=(gwt_expr.forall_expr.var.uri, RDF.type, URI_BDD_TYPE_VARIABLE))
         graph.add(
             triple=(gwt_expr.forall_expr.uri, URI_BDD_PRED_REF_VAR, gwt_expr.forall_expr.var.uri)
         )
@@ -374,9 +380,9 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
 
     # variables
     for var in tmpl.variables:
-        graph.add(triple=(var.uri, RDF.type, NS_MM_BDD["ScenarioVariable"]))
+        graph.add(triple=(var.uri, RDF.type, URI_BDD_TYPE_VARIABLE))
         if isinstance(var, ScenarioSetVariable):
-            graph.add(triple=(var.uri, RDF.type, NS_MM_BDD["Set"]))
+            graph.add(triple=(var.uri, RDF.type, URI_BDD_TYPE_SET))
 
     # clauses
     bhv_uri = add_gwt_expr(
@@ -390,7 +396,54 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
     graph.add(triple=(tmpl.scenario_uri, URI_BHV_PRED_OF_BHV, bhv_uri))
 
 
-def add_task_variation(graph: Graph, variation: TaskVariation):
+def get_var_value_node(var_val: Any) -> Node:
+    if hasattr(var_val, "linked_val") and var_val.linked_val is not None:
+        assert hasattr(
+            var_val.linked_val, "uri"
+        ), f"Linked value has no URI attr: {var_val.linked_val}"
+        assert var_val.linked_val.uri is not None
+        return var_val.linked_val.uri
+
+    if hasattr(var_val, "literal_val") and var_val.literal_val is not None:
+        return Literal(var_val.literal_val)
+
+    raise ValueError(f"ValidVarValue object has unhandled attributes: {var_val}")
+
+
+def get_const_set(graph: Graph, const_set_link: Any, value_sets: set[URIRef]) -> IdentifiedNode:
+    assert hasattr(const_set_link, "linked_set") and isinstance(
+        const_set_link.linked_set, ConstantSet
+    ), f"ConstSetLink obj has no valid 'linked_set' attr: '{const_set_link}'"
+
+    if const_set_link.linked_set.uri in value_sets:
+        return const_set_link.linked_set.uri
+
+    graph.add(triple=(const_set_link.linked_set.uri, RDF.type, URI_BDD_TYPE_SET))
+    graph.add(triple=(const_set_link.linked_set.uri, RDF.type, URI_BDD_TYPE_CONST_SET))
+    for v in const_set_link.linked_set.elems:
+        graph.add(
+            triple=(
+                const_set_link.linked_set.uri,
+                URI_BDD_PRED_ELEMS,
+                get_var_value_node(var_val=v),
+            )
+        )
+    value_sets.add(const_set_link.linked_set.uri)
+    return const_set_link.linked_set.uri
+
+
+def get_set_expr_set(graph: Graph, set_expr: Any, value_sets: set[URIRef]) -> IdentifiedNode:
+    assert (
+        hasattr(set_expr, "elems") and set_expr.elems is not None
+    ), f"SetExpr object has invalid 'elems' attr: {set_expr}"
+    col_first = BNode()
+    col = Collection(graph=graph, uri=col_first, seq=[])
+    for elem in set_expr.elems:
+        col.append(get_var_value_node(var_val=elem))
+    return col_first
+
+
+def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[URIRef]):
     graph.add(triple=(variation.uri, RDF.type, URI_BDD_TYPE_TASK_VAR))
     graph.add(triple=(variation.uri, URI_TASK_PRED_OF_TASK, variation.parent.template.task.uri))
 
@@ -410,11 +463,18 @@ def add_task_variation(graph: Graph, variation: TaskVariation):
             r_first = BNode()
             r_col = Collection(graph=graph, uri=r_first, seq=[])
             for v in r.values:
-                if v.fqn_val is not None:
-                    assert hasattr(v.fqn_val, "uri"), f"FQN value has no URI attr: {v.fqn_val}"
-                    r_col.append(v.fqn_val.uri)
-                elif v.literal_val is not None:
-                    r_col.append(Literal(v.literal_val))
+                if "ValidVarValue" in v.__class__.__name__:
+                    r_col.append(get_var_value_node(var_val=v))
+                elif "ConstSetLink" in v.__class__.__name__:
+                    r_col.append(
+                        get_const_set(graph=graph, const_set_link=v, value_sets=value_sets)
+                    )
+                elif "SetExpr" in v.__class__.__name__:
+                    r_col.append(get_set_expr_set(graph=graph, set_expr=v, value_sets=value_sets))
+                else:
+                    raise ValueError(
+                        f"unhandled value type '{v.__class__.__name__}' in table variation for '{variation.uri}'"
+                    )
 
             assert len(r_col) == len(
                 var_list_col
@@ -430,21 +490,21 @@ def add_scene_model(graph: Graph, scene: SceneModel):
     graph.bind(prefix=scene.ns.name, namespace=scene.namespace)
 
     graph.add(triple=(scene.scene_obj_uri, RDF.type, URI_BDD_TYPE_SCENE_OBJ))
-    graph.add(triple=(scene.scene_obj_uri, RDF.type, NS_MM_BDD["Set"]))
+    graph.add(triple=(scene.scene_obj_uri, RDF.type, URI_BDD_TYPE_SET))
     for obj in scene.objects:
         graph.bind(prefix=obj.ns.name, namespace=obj.namespace)
         graph.add(triple=(obj.uri, RDF.type, URI_ENV_TYPE_OBJ))
         graph.add(triple=(scene.scene_obj_uri, URI_ENV_PRED_HAS_OBJ, obj.uri))
 
     graph.add(triple=(scene.scene_ws_uri, RDF.type, URI_BDD_TYPE_SCENE_WS))
-    graph.add(triple=(scene.scene_ws_uri, RDF.type, NS_MM_BDD["Set"]))
+    graph.add(triple=(scene.scene_ws_uri, RDF.type, URI_BDD_TYPE_SET))
     for ws in scene.workspaces:
         graph.bind(prefix=ws.ns.name, namespace=ws.namespace)
         graph.add(triple=(ws.uri, RDF.type, URI_ENV_TYPE_WS))
         graph.add(triple=(scene.scene_ws_uri, URI_ENV_PRED_HAS_WS, ws.uri))
 
     graph.add(triple=(scene.scene_agn_uri, RDF.type, URI_BDD_TYPE_SCENE_AGN))
-    graph.add(triple=(scene.scene_agn_uri, RDF.type, NS_MM_BDD["Set"]))
+    graph.add(triple=(scene.scene_agn_uri, RDF.type, URI_BDD_TYPE_SET))
     for agn in scene.agents:
         graph.bind(prefix=agn.ns.name, namespace=agn.namespace)
         graph.add(triple=(agn.uri, RDF.type, URI_AGN_TYPE_AGN))
@@ -452,7 +512,11 @@ def add_scene_model(graph: Graph, scene: SceneModel):
 
 
 def add_scenario_variant(
-    graph: Graph, variant: ScenarioVariant, templates: set[URIRef], scenes: set[URIRef]
+    graph: Graph,
+    variant: ScenarioVariant,
+    templates: set[URIRef],
+    scenes: set[URIRef],
+    value_sets: set[URIRef],
 ):
     graph.add(triple=(variant.uri, RDF.type, URI_BDD_TYPE_SCENARIO_VARIANT))
 
@@ -483,34 +547,46 @@ def add_scenario_variant(
     )
 
     # variation
-    add_task_variation(graph=graph, variation=variant.variation)
+    add_task_variation(graph=graph, variation=variant.variation, value_sets=value_sets)
     graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_VARIATION, variant.variation.uri))
 
 
-def add_us_to_graph(graph: Graph, us: UserStory):
+def add_us_to_graph(
+    graph: Graph,
+    us: UserStory,
+    templates: set[URIRef],
+    scenes: set[URIRef],
+    value_sets: set[URIRef],
+):
     graph.bind(us.ns.name, us.ns.uri, override=True)
     graph.add(triple=(us.uri, RDF.type, URI_BDD_TYPE_US))
-    templates = set()
-    scenes = set()
     for scr_var in us.scenarios:
-        add_scenario_variant(graph=graph, variant=scr_var, templates=templates, scenes=scenes)
+        add_scenario_variant(
+            graph=graph, variant=scr_var, templates=templates, scenes=scenes, value_sets=value_sets
+        )
         graph.add((us.uri, URI_BDD_PRED_HAS_AC, scr_var.uri))
 
 
-def add_bdd_model_to_graph(graph: Graph, model: Any):
+def create_bdd_model_graph(model: Any) -> Graph:
+    g = Graph()
     events = getattr(model, "events", None)
     assert events is not None and isinstance(events, list), "no list of events in model"
     for evt in events:
-        graph.bind(prefix=evt.ns.name, namespace=evt.namespace)
-        graph.add(triple=(evt.uri, RDF.type, NS_MM_TIME["Event"]))
+        g.bind(prefix=evt.ns.name, namespace=evt.namespace)
+        g.add(triple=(evt.uri, RDF.type, NS_MM_TIME["Event"]))
 
     tasks = getattr(model, "tasks", None)
     assert tasks is not None and isinstance(tasks, list), "no list of tasks in model"
     for task in tasks:
-        graph.bind(prefix=task.ns.name, namespace=task.namespace)
-        graph.add(triple=(task.uri, RDF.type, URI_TASK_TYPE_TASK))
+        g.bind(prefix=task.ns.name, namespace=task.namespace)
+        g.add(triple=(task.uri, RDF.type, URI_TASK_TYPE_TASK))
 
     stories = getattr(model, "stories", None)
     assert stories is not None and isinstance(stories, list), "no list of user stories in model"
+    templates = set()
+    scenes = set()
+    value_sets = set()
     for us in stories:
-        add_us_to_graph(graph=graph, us=us)
+        add_us_to_graph(graph=g, us=us, templates=templates, scenes=scenes, value_sets=value_sets)
+
+    return g

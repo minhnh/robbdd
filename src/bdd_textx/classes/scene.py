@@ -6,8 +6,7 @@ from bdd_textx.classes.common import IHasNamespaceDeclare
 
 class Object(IHasNamespaceDeclare):
     def __init__(self, parent, ns, name) -> None:
-        super().__init__(ns=ns, name=name)
-        self.parent = parent
+        super().__init__(parent=parent, ns=ns, name=name)
 
 
 class Workspace(IHasNamespaceDeclare):
@@ -15,16 +14,14 @@ class Workspace(IHasNamespaceDeclare):
     workspaces: list[Workspace]
 
     def __init__(self, parent, ns, name, objects, workspaces) -> None:
-        super().__init__(ns=ns, name=name)
-        self.parent = parent
+        super().__init__(parent=parent, ns=ns, name=name)
         self.objects = objects
         self.workspaces = workspaces
 
 
 class Agent(IHasNamespaceDeclare):
     def __init__(self, parent, ns, name) -> None:
-        super().__init__(ns=ns, name=name)
-        self.parent = parent
+        super().__init__(parent=parent, ns=ns, name=name)
 
 
 class SceneModel(IHasNamespaceDeclare):
@@ -36,8 +33,7 @@ class SceneModel(IHasNamespaceDeclare):
     scene_agn_uri: URIRef
 
     def __init__(self, parent, ns, name, objects, workspaces, agents) -> None:
-        super().__init__(ns=ns, name=name)
-        self.parent = parent
+        super().__init__(parent=parent, ns=ns, name=name)
         self.objects = objects
         self.workspaces = workspaces
         self.agents = agents

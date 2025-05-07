@@ -48,6 +48,7 @@ User Story (ns=bdd) us_pickplace_single_arm {
             template: <tmpl_conveyor_sort>
             scene: <lab_scene>
 
+            variation:
             | <tmpl_conveyor_sort.target_objects> |
               <tmpl_conveyor_sort.conveyor> |
               <tmpl_conveyor_sort.place_workspaces> |

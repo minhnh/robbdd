@@ -1,5 +1,4 @@
 from os.path import abspath, dirname, join
-from rdflib import Graph
 from textx import LanguageDesc, GeneratorDesc, metamodel_from_file
 import textx.scoping.providers as scoping_providers
 from textxjinja import textx_jinja_generator
@@ -8,6 +7,7 @@ from bdd_textx.classes.bdd import (
     BeforeEvent,
     Behaviour,
     Clause,
+    ConstantSet,
     DuringEvent,
     Event,
     ExistsExpr,
@@ -22,6 +22,7 @@ from bdd_textx.classes.bdd import (
     ScenarioSetVariable,
     ScenarioVariable,
     ScenarioVariant,
+    SetBase,
     TableVariation,
     Task,
     TaskVariation,
@@ -34,7 +35,7 @@ from bdd_textx.classes.bdd import (
     WhenExpr,
 )
 from bdd_textx.classes.scene import Agent, Object, SceneModel, Workspace
-from bdd_textx.graph import add_bdd_model_to_graph
+from bdd_textx.graph import create_bdd_model_graph
 from bdd_textx.generator.utils import prepare_context_data
 
 
@@ -65,6 +66,8 @@ def bdd_metamodel():
             Event,
             Task,
             VariableBase,
+            SetBase,
+            ConstantSet,
             ScenarioVariable,
             ScenarioSetVariable,
             TaskVariation,
@@ -111,8 +114,7 @@ bdd_lang = LanguageDesc(
 
 
 def generator(metamodel, model, output_path, overwrite, debug):
-    g = Graph()
-    add_bdd_model_to_graph(graph=g, model=model)
+    _ = create_bdd_model_graph(model=model)
     template_folder = join(CWD, "generator", "template")
     context = prepare_context_data(metamodel, model)
     textx_jinja_generator(template_folder, output_path, context, overwrite)

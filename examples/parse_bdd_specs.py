@@ -4,13 +4,12 @@ from sys import argv
 from os.path import abspath, dirname, join
 from urllib.request import HTTPError
 from rdf_utils.uri import URL_SECORO_M
-from rdflib import Graph
 from textx import metamodel_for_language
 from rdf_utils.resolver import install_resolver
 from rdf_utils.naming import get_valid_filename
 from bdd_dsl.models.user_story import UserStoryLoader
 from bdd_dsl.utils.jinja import load_template_from_url, prepare_jinja2_template_data
-from bdd_textx.graph import add_bdd_model_to_graph
+from bdd_textx.graph import create_bdd_model_graph
 
 
 CWD = abspath(dirname(__file__))
@@ -20,8 +19,7 @@ GENERATED_DIR = join(CWD, "generated")
 def main():
     bdd_tx_mm = metamodel_for_language("bdd-tx")
     model = bdd_tx_mm.model_from_file(argv[1])
-    g = Graph()
-    add_bdd_model_to_graph(graph=g, model=model)
+    g = create_bdd_model_graph(model=model)
     print(g.serialize(format="json-ld"))
     install_resolver()
     # check_shacl_constraints(graph=g, shacl_dict=BDD_SHACL_URLS)
@@ -32,7 +30,7 @@ def main():
         print(f"error loading models URL '{e.url}':\n{e.info()}\n{e}")
         sys.exit(1)
 
-    processed_bdd_data = prepare_jinja2_template_data(us_loader, g, ns_manager=g.namespace_manager)
+    processed_bdd_data = prepare_jinja2_template_data(us_loader, g)
 
     feature_template = load_template_from_url(
         f"{URL_SECORO_M}/acceptance-criteria/bdd/jinja/feature.jinja"
@@ -46,7 +44,6 @@ def main():
             of.write(feature_content)
             print(f"... wrote {filepath}")
 
-    print(model.stories[0].uri.n3())
     scenario_variant = model.stories[0].scenarios[0]
     print(
         f"found variant '{scenario_variant.name}' of template '{scenario_variant.template.name}', variations:"

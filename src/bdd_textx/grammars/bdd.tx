@@ -10,6 +10,8 @@ namespaces=NamespaceDeclare*
 events+=Event
 |
 tasks+=Task
+|
+sets+=ConstantSet
 )*
 
 (
@@ -46,7 +48,8 @@ ScenarioVariant:
     ('When' ':' when_events=WhenEventClause+)?
     (then_expr=ThenExpr)?
 
-    variation=TaskVariation
+    'variation' ':'
+        variation=TaskVariation
 '}'
 ;
 
@@ -74,20 +77,9 @@ VariableHeader:
     '|' ( '<' variables=[VariableBase|FQN] '>' '|' )+
 ;
 
-ValidVariationValue:
-(
-'<' fqn_val=[Object|FQN] '>'
-|
-'<' fqn_val=[Workspace|FQN] '>'
-|
-'<' fqn_val=[Agent|FQN] '>'
-|
-literal_val=STRING|NUMBER|FLOAT
-)
-;
-
+ValidCellValue: ValidVarValue | ConstSetLink | SetExpr ;
 ValueRow:
-    '|' ( values+=ValidVariationValue '|' )+
+'|' values+=ValidCellValue['|'] '|'
 ;
 
 ScenarioTemplate:
@@ -101,13 +93,30 @@ ScenarioTemplate:
 
 SetBase: ConstantSet | ScenarioSetVariable ;
 ConstantSet:
-'const' 'set' name=ID '{'
+'const' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+    elems+=ValidVarValue[',']
 '}'
 ;
 
 VariableBase: ScenarioVariable | ScenarioSetVariable ;
 ScenarioSetVariable: 'set' 'var' name=ID ;
 ScenarioVariable: 'var' name=ID ;
+
+ValidVarValue:
+(
+'<' linked_val=[Object|FQN] '>'
+|
+'<' linked_val=[Workspace|FQN] '>'
+|
+'<' linked_val=[Agent|FQN] '>'
+|
+literal_val=STRING|NUMBER|FLOAT
+)
+;
+
+ConstSetLink: 'set' '<' linked_set=[ConstantSet|FQN] '>' ;
+VarSetLink: 'set' '<' linked_set=[ScenarioSetVariable|FQN] '>' ;
+SetExpr: '{' elems+=ValidVarValue[','] '}' ;
 
 // When Clauses
 WhenEventClause: 'event' '<' event=[Event|FQN] '>' 'occurs';
@@ -183,14 +192,12 @@ HoldsExpr:
 ;
 FluentAndExpr:
 '('
-  first=FluentLogicExpr
-  ('and' rest=FluentLogicExpr)+
+    expressions+=FluentLogicExpr['and']
 ')'
 ;
 FluentOrExpr:
 '('
-  first=FluentLogicExpr
-  ('or' rest=FluentLogicExpr)+
+    expressions+=FluentLogicExpr['or']
 ')'
 ;
 FluentNotExpr:
