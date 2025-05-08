@@ -17,12 +17,14 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_IN_SET,
     URI_BDD_PRED_OF_SCENARIO,
     URI_BDD_PRED_OF_SCENE,
+    URI_BDD_PRED_OF_SETS,
     URI_BDD_PRED_OF_TMPL,
     URI_BDD_PRED_REF_OBJ,
     URI_BDD_PRED_REF_VAR,
     URI_BDD_PRED_REF_WS,
     URI_BDD_PRED_ROWS,
     URI_BDD_PRED_VAR_LIST,
+    URI_BDD_TYPE_CART_PRODUCT,
     URI_BDD_TYPE_CONST_SET,
     URI_BDD_TYPE_EXISTS,
     URI_BDD_TYPE_FLUENT_CLAUSE,
@@ -72,6 +74,7 @@ from bdd_dsl.models.urirefs import (
 from bdd_textx.classes.bdd import (
     AfterEvent,
     BeforeEvent,
+    CartesianProductVariation,
     Clause,
     ConstantSet,
     DuringEvent,
@@ -338,6 +341,7 @@ def add_gwt_expr(
         bhv_uri = add_when_behaviour(
             graph=graph, wbh_clause=gwt_expr.when_expr.when_bhv, when_uri=when_uri
         )
+        clause_col.append(gwt_expr.when_expr.when_bhv.uri)
     else:
         raise ValueError(
             f"Given-When-Then expression must either have a ForAll or WhenBehaviour expressions, parent: {parent_uri.n3()}"
@@ -432,7 +436,7 @@ def get_const_set(graph: Graph, const_set_link: Any, value_sets: set[URIRef]) ->
     return const_set_link.linked_set.uri
 
 
-def get_set_expr_set(graph: Graph, set_expr: Any, value_sets: set[URIRef]) -> IdentifiedNode:
+def get_set_expr_set(graph: Graph, set_expr: Any) -> IdentifiedNode:
     assert (
         hasattr(set_expr, "elems") and set_expr.elems is not None
     ), f"SetExpr object has invalid 'elems' attr: {set_expr}"
@@ -470,7 +474,7 @@ def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[U
                         get_const_set(graph=graph, const_set_link=v, value_sets=value_sets)
                     )
                 elif "SetExpr" in v.__class__.__name__:
-                    r_col.append(get_set_expr_set(graph=graph, set_expr=v, value_sets=value_sets))
+                    r_col.append(get_set_expr_set(graph=graph, set_expr=v))
                 else:
                     raise ValueError(
                         f"unhandled value type '{v.__class__.__name__}' in table variation for '{variation.uri}'"
@@ -480,6 +484,26 @@ def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[U
                 var_list_col
             ), f"number of row values ({len(r_col)}) != number of variables ({len(var_list_col)})"
             rows_col.append(r_first)
+    elif isinstance(variation, CartesianProductVariation):
+        graph.add(triple=(variation.uri, RDF.type, URI_BDD_TYPE_CART_PRODUCT))
+        sets_col = add_node_list_pred(
+            graph=graph, subject_uri=variation.uri, pred_uri=URI_BDD_PRED_OF_SETS, nodes=[]
+        )
+        for v_set in variation.var_sets:
+            var_list_col.append(v_set.variable.uri)
+            if hasattr(v_set.val_set, "elems"):
+                sets_col.append(get_set_expr_set(graph=graph, set_expr=v_set.val_set))
+            elif hasattr(v_set.val_set, "linked_set"):
+                assert isinstance(
+                    v_set.val_set.linked_set, ConstantSet
+                ), f"can't handle set type '{type(v_set.val_set.linked_set)}' for cartesian product of variation '{variation.uri}'"
+                sets_col.append(
+                    get_const_set(graph=graph, const_set_link=v_set.val_set, value_sets=value_sets)
+                )
+            else:
+                raise ValueError(
+                    f"unhandled attr '{v_set.val_set}' for VariationSet '{v_set}' in '{variation.uri}'"
+                )
     else:
         raise ValueError(
             f"TaskVariaiton type not handled for variant '{variation.parent.uri}': {type(variation)}"

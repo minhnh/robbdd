@@ -354,6 +354,12 @@ class TableVariation(TaskVariation):
         self.rows = rows
 
 
+class CartesianProductVariation(TaskVariation):
+    def __init__(self, parent, var_sets) -> None:
+        super().__init__(parent=parent)
+        self.var_sets = var_sets
+
+
 class ScenarioVariant(IHasNamespace):
     parent: UserStory
     template: ScenarioTemplate

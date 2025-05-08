@@ -39,6 +39,15 @@ UserStory:
 '}'
 ;
 
+ScenarioTemplate:
+'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+    'task' ':' '<' task=[Task|FQN] '>'
+
+    variables=VariableBase*
+    gwt_expr=GivenWhenThenExpr
+'}'
+;
+
 ScenarioVariant:
 'Scenario' name=ID '{'
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
@@ -53,70 +62,35 @@ ScenarioVariant:
 '}'
 ;
 
-TaskVariation: CartesianProductVariation | TableVariation ;
-
-CartesianProductVariation: var_entries+=VarEntry ;
-
-VarEntry: 'var' '<' variable=[VariableBase|FQN] '>' 'can' 'be' ':'
-(
-'-' 'obj' '<' objects+=[Object|FQN] '>'
-|
-'-' 'ws' '<' workspaces+=[Workspace|FQN] '>'
-|
-'-' 'agn' '<' agents+=[Agent|FQN] '>'
-)*
+// Given-When-Then expressions
+GivenWhenThenExpr:
+    (given_expr=GivenExpr)?
+    (
+    when_expr=WhenExpr
+    |
+    forall_expr=ForAllExpr
+    )
+    (then_expr=ThenExpr)?
 ;
-
-TableVariation:
-header=VariableHeader
-'|' ('---' '|')+
-rows=ValueRow+
+GivenExpr: 'Given' ':' given=Clause ;
+WhenExpr:
+    'When' ':'
+        when_events=WhenEventClause*
+        when_bhv=WhenBehaviourClause
 ;
+ThenExpr: 'Then' ':' then=Clause ;
 
-VariableHeader:
-    '|' ( '<' variables=[VariableBase|FQN] '>' '|' )+
-;
-
-ValidCellValue: ValidVarValue | ConstSetLink | SetExpr ;
-ValueRow:
-'|' values+=ValidCellValue['|'] '|'
-;
-
-ScenarioTemplate:
-'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
-    'task' ':' '<' task=[Task|FQN] '>'
-
-    variables=VariableBase*
+// Quantifiers over fluent logic expressions
+ForAllExpr:
+'for' 'all' '(' var=ScenarioVariable 'in' '<' in_set=[SetBase|FQN] '>' ')' '{'
     gwt_expr=GivenWhenThenExpr
 '}'
 ;
-
-SetBase: ConstantSet | ScenarioSetVariable ;
-ConstantSet:
-'const' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
-    elems+=ValidVarValue[',']
+ExistsExpr:
+'(' var=ScenarioVariable 'exists' 'in' '<' in_set=[SetBase|FQN] '>' ')' 'such' 'that' '{'
+    fl_expr=FluentLogicExpr
 '}'
 ;
-
-VariableBase: ScenarioVariable | ScenarioSetVariable ;
-ScenarioSetVariable: 'set' 'var' name=ID ;
-ScenarioVariable: 'var' name=ID ;
-
-ValidVarValue:
-(
-'<' linked_val=[Object|FQN] '>'
-|
-'<' linked_val=[Workspace|FQN] '>'
-|
-'<' linked_val=[Agent|FQN] '>'
-|
-literal_val=STRING|NUMBER|FLOAT
-)
-;
-
-ConstSetLink: 'set' '<' linked_set=[ConstantSet|FQN] '>' ;
-VarSetLink: 'set' '<' linked_set=[ScenarioSetVariable|FQN] '>' ;
-SetExpr: '{' elems+=ValidVarValue[','] '}' ;
 
 // When Clauses
 WhenEventClause: 'event' '<' event=[Event|FQN] '>' 'occurs';
@@ -136,33 +110,34 @@ PickPlaceBehaviour:
         'places' 'at' '<' workspace=[VariableBase|FQN] '>'
 ;
 
+// Fluent clauses
+Clause: TextClause | FluentLogicExpr | ExistsExpr ;
+TextClause: text=STRING tc=TimeConstraint;
+
+// Fluent logic terms composing holds clauses with basic logic operators
+FluentLogicExpr: FluentAndExpr | FluentOrExpr | FluentNotExpr | HoldsExpr ;
+HoldsExpr:
+'holds' '(' predicate=FOLExpr ',' tc=TimeConstraint ')'
+;
+FluentAndExpr:
+'('
+    expressions+=FluentLogicExpr['and']
+')'
+;
+FluentOrExpr:
+'('
+    expressions+=FluentLogicExpr['or']
+')'
+;
+FluentNotExpr:
+'(' 'not' expr=FluentLogicExpr ')'
+;
+
 // Time constraints
 TimeConstraint: BeforeEvent | AfterEvent | DuringEvent ;
 BeforeEvent: 'before' '<' event=[Event|FQN] '>';
 AfterEvent: 'after' '<' event=[Event|FQN] '>';
 DuringEvent: 'from' '<' start_event=[Event|FQN] '>' 'until' '<' end_event=[Event|FQN] '>';
-
-// Given/Then clauses
-Clause: TextClause | FluentLogicExpr | ExistsExpr ;
-TextClause: text=STRING tc=TimeConstraint;
-
-// Scenario terms
-GivenExpr: 'Given' ':' given=Clause ;
-WhenExpr:
-    'When' ':'
-        when_events=WhenEventClause*
-        when_bhv=WhenBehaviourClause
-;
-ThenExpr: 'Then' ':' then=Clause ;
-GivenWhenThenExpr:
-    (given_expr=GivenExpr)?
-    (
-    when_expr=WhenExpr
-    |
-    forall_expr=ForAllExpr
-    )
-    (then_expr=ThenExpr)?
-;
 
 // First Order Logic terms
 FOLExpr: LocatedAtPred | IsHeldPred | DoesNotDropPred | CanReachPred | HasConfigPred | IsSortedPred ;
@@ -185,34 +160,55 @@ IsSortedPred:
     '<' objects=[ScenarioSetVariable|FQN] '>' 'are' 'sorted' 'into' '<' workspaces=[ScenarioSetVariable|FQN] '>'
 ;
 
-// Fluent logic terms composing holds clauses with basic logic operators
-FluentLogicExpr: FluentAndExpr | FluentOrExpr | FluentNotExpr | HoldsExpr ;
-HoldsExpr:
-'holds' '(' predicate=FOLExpr ',' tc=TimeConstraint ')'
-;
-FluentAndExpr:
-'('
-    expressions+=FluentLogicExpr['and']
-')'
-;
-FluentOrExpr:
-'('
-    expressions+=FluentLogicExpr['or']
-')'
-;
-FluentNotExpr:
-'(' 'not' expr=FluentLogicExpr ')'
+// Variations
+TaskVariation: CartesianProductVariation | TableVariation ;
+
+CartesianProductVariation: var_sets+=VariationSet;
+VariationSet: 'var' '<' variable=[VariableBase|FQN] '>' ':'
+(
+val_set=ConstSetLink
+|
+val_set=SetExpr
+)
 ;
 
+TableVariation:
+header=VariableHeader
+'|' ('---' '|')+
+rows=ValueRow+
+;
+VariableHeader:
+    '|' ( '<' variables=[VariableBase|FQN] '>' '|' )+
+;
+ValueRow:
+'|' values+=ValidCellValue['|'] '|'
+;
+ValidCellValue: ValidVarValue | ConstSetLink | SetExpr ;
 
-// quantifiers over fluent logic expressions
-ForAllExpr:
-'for' 'all' '(' var=ScenarioVariable 'in' '<' in_set=[SetBase|FQN] '>' ')' '{'
-    gwt_expr=GivenWhenThenExpr
+// Sets
+SetBase: ConstantSet | ScenarioSetVariable ;
+ConstantSet:
+'const' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+    elems+=ValidVarValue[',']
 '}'
 ;
-ExistsExpr:
-'(' var=ScenarioVariable 'exists' 'in' '<' in_set=[SetBase|FQN] '>' ')' 'such' 'that' '{'
-    fl_expr=FluentLogicExpr
-'}'
+ConstSetLink: 'set' '<' linked_set=[ConstantSet|FQN] '>' ;
+SetExpr: '{' elems+=ValidVarValue[','] '}' ;
+
+// Variables
+VariableBase: ScenarioVariable | ScenarioSetVariable ;
+ScenarioSetVariable: 'set' 'var' name=ID ;
+ScenarioVariable: 'var' name=ID ;
+
+// Valid values for variables
+ValidVarValue:
+(
+'<' linked_val=[Object|FQN] '>'
+|
+'<' linked_val=[Workspace|FQN] '>'
+|
+'<' linked_val=[Agent|FQN] '>'
+|
+literal_val=STRING|NUMBER|FLOAT
+)
 ;

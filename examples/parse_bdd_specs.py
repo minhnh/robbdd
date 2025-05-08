@@ -49,13 +49,25 @@ def main():
         f"found variant '{scenario_variant.name}' of template '{scenario_variant.template.name}', variations:"
     )
     if type(scenario_variant.variation).__name__ == "CartesianProductVariation":
-        for var_entry in scenario_variant.variation.var_entries:
-            print(
-                f"- of '{var_entry.variable.name}':"
-                f" objects=({', '.join([x.name for x in var_entry.objects])})"
-                f" workspaces=({', '.join([x.name for x in var_entry.workspaces])})"
-                f" agents=({', '.join([x.name for x in var_entry.agents])})"
-            )
+        for var_set in scenario_variant.variation.var_sets:
+            if hasattr(var_set.val_set, "linked_set"):
+                print(
+                    f"- of '{var_set.variable.name}': linked set {var_set.val_set.linked_set.name}"
+                )
+
+            elif hasattr(var_set.val_set, "elems"):
+                elem_strings = []
+                for elem in var_set.val_set.elems:
+                    if elem.linked_val is not None:
+                        elem_strings.append(elem.linked_val.name)
+                    elif elem.literal_val is not None:
+                        elem_strings.append(elem.literal_val)
+                    else:
+                        raise ValueError(f"invalid element value: {elem}")
+                print(
+                    f"- of '{var_set.variable.name}':"
+                    f" elems=({', '.join([x for x in elem_strings])})"
+                )
     elif type(scenario_variant.variation).__name__ == "TableVariation":
         for var in scenario_variant.variation.header.variables:
             print(var.uri)
