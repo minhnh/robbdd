@@ -27,7 +27,9 @@ robbdd = "robbdd.registration:bdd_lang"
 robbdd-scene = "robbdd.registration:scene_lang"
 
 [project.entry-points.textx_generators]
-bdd-tx_json-ld = "robbdd.registration:bddtx_jsonld_generator"
+robbdd_console = "robbdd.registration:robbdd_console_gen"
+robbdd_graph = "robbdd.registration:robbdd_graph_gen"
+robbdd_gherkin = "robbdd.registration:robbdd_gherkin_gen"
 
 [tool.ruff]
 line-length = 100

@@ -1,7 +1,13 @@
-from os.path import abspath, dirname, join
+import sys
+from os.path import abspath, basename, dirname, exists, join, splitext
+from urllib.error import HTTPError
+from rdflib.plugin import PluginException
 from textx import LanguageDesc, GeneratorDesc, metamodel_from_file
 import textx.scoping.providers as scoping_providers
-from textxjinja import textx_jinja_generator
+from rdf_utils.naming import get_valid_filename
+from rdf_utils.resolver import install_resolver
+from bdd_dsl.models.user_story import UserStoryLoader
+from bdd_dsl.utils.jinja import load_template_from_file, prepare_jinja2_template_data
 from robbdd.classes.bdd import (
     AfterEvent,
     BeforeEvent,
@@ -39,10 +45,10 @@ from robbdd.classes.bdd import (
 )
 from robbdd.classes.scene import Agent, Object, SceneModel, Workspace
 from robbdd.graph import create_bdd_model_graph
-from robbdd.generator.utils import prepare_context_data
 
 
 CWD = abspath(dirname(__file__))
+__GRAPH_FORMAT_EXT = {"json-ld": "json", "ttl": "ttl", "xml": "xml"}
 
 
 def scene_metamodel():
@@ -119,16 +125,78 @@ bdd_lang = LanguageDesc(
 )
 
 
-def generator(metamodel, model, output_path, overwrite, debug):
-    _ = create_bdd_model_graph(model=model)
-    template_folder = join(CWD, "generator", "template")
-    context = prepare_context_data(metamodel, model)
-    textx_jinja_generator(template_folder, output_path, context, overwrite)
+def graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs):
+    g_format = kwargs.get("format", "json-ld")
+
+    g = create_bdd_model_graph(model=model)
+    try:
+        print(g.serialize(format=g_format))
+    except PluginException as e:
+        raise ValueError(
+            f"serialization format '{g_format}' not supported by rdflib, try {list(__GRAPH_FORMAT_EXT.keys())}: {e.msg}"
+        )
 
 
-bddtx_jsonld_generator = GeneratorDesc(
+def graph_gen(metamodel, model, output_path, overwrite, debug, **kwargs):
+    g_format = kwargs.get("format", "json-ld")
+    assert (
+        g_format in __GRAPH_FORMAT_EXT
+    ), f"file extension not handled for graph format '{g_format}', try {list(__GRAPH_FORMAT_EXT.keys())}"
+
+    filename = kwargs.get("filename", basename(model._tx_filename))
+    if filename is None:
+        filename = "graph"
+    full_filename = f"{splitext(filename)[0]}.{__GRAPH_FORMAT_EXT[g_format]}"
+    full_output_path = join("" if output_path is None else output_path, full_filename)
+    if exists(full_output_path) and not overwrite:
+        print(f"not overwriting existing file '{full_output_path}'")
+        return
+
+    g = create_bdd_model_graph(model=model)
+    with open(full_output_path, "w") as outfile:
+        outfile.write(g.serialize(format=g_format))
+    print(f"... wrote {full_output_path}")
+
+
+def gherkin_gen(metamodel, model, output_path, overwrite, debug):
+    g = create_bdd_model_graph(model=model)
+
+    # resolver for caching remote models
+    install_resolver()
+
+    try:
+        us_loader = UserStoryLoader(g)
+    except HTTPError as e:
+        print(f"error loading models URL '{e.url}':\n{e.info()}\n{e}")
+        sys.exit(1)
+
+    processed_bdd_data = prepare_jinja2_template_data(us_loader, g)
+    feature_template = load_template_from_file(join(CWD, "templates", "robbdd.feature.jinja"))
+    for us_data in processed_bdd_data:
+        us_name = us_data["name"]
+        feature_content = feature_template.render(data=us_data)
+        feature_filename = f"{get_valid_filename(us_name)}.feature"
+        filepath = join("" if output_path is None else output_path, feature_filename)
+        with open(filepath, mode="w", encoding="utf-8") as of:
+            of.write(feature_content)
+        print(f"... wrote {filepath}")
+
+
+robbdd_console_gen = GeneratorDesc(
     language="robbdd",
-    target="json-ld",
-    description="Generate JSON-LD from BDD models",
-    generator=generator,
+    target="console",
+    description="Print a representation of RobBDD model graph to the console, default format is JSON-LD",
+    generator=graph_gen_console,
+)
+robbdd_graph_gen = GeneratorDesc(
+    language="robbdd",
+    target="graph",
+    description="Generate a RDF serialization of the given RobBDD model graph, default format is JSON-LD",
+    generator=graph_gen,
+)
+robbdd_gherkin_gen = GeneratorDesc(
+    language="robbdd",
+    target="gherkin",
+    description="Generate Gherkin feature files from RobBDD models",
+    generator=gherkin_gen,
 )

@@ -20,9 +20,7 @@ def main():
     bdd_mm = metamodel_for_language("robbdd")
     model = bdd_mm.model_from_file(argv[1])
     g = create_bdd_model_graph(model=model)
-    print(g.serialize(format="json-ld"))
     install_resolver()
-    # check_shacl_constraints(graph=g, shacl_dict=BDD_SHACL_URLS)
 
     try:
         us_loader = UserStoryLoader(g)
