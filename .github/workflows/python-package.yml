@@ -52,4 +52,5 @@ jobs:
         pip install ./robbdd
     - name: Test with pytest
       run: |
+        cd robbdd
         pytest
