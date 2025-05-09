@@ -78,7 +78,7 @@ from bdd_dsl.models.urirefs import (
     URI_TIME_TYPE_BEFORE_EVT,
     URI_TIME_TYPE_DURING,
 )
-from bdd_textx.classes.bdd import (
+from robbdd.classes.bdd import (
     AfterEvent,
     BeforeEvent,
     CartesianProductVariation,
@@ -101,7 +101,7 @@ from bdd_textx.classes.bdd import (
     VariableBase,
     WhenBehaviourClause,
 )
-from bdd_textx.classes.scene import SceneModel
+from robbdd.classes.scene import SceneModel
 
 
 def add_node_list_pred(

@@ -2,8 +2,8 @@
 from __future__ import annotations
 from typing import Optional
 from rdflib import Namespace, URIRef
-from bdd_textx.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasParent, IHasUUID
-from bdd_textx.classes.scene import SceneModel
+from robbdd.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasParent, IHasUUID
+from robbdd.classes.scene import SceneModel
 
 
 class Behaviour(IHasNamespaceDeclare):

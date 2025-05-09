@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "bdd_textx"
+name = "robbdd"
 version = "0.0.1"
 authors = [
     { name="Minh Nguyen", email="minh@mail.minhnh.com" }
@@ -23,11 +23,11 @@ dependencies = [
 ]
 
 [project.entry-points.textx_languages]
-bdd-tx = "bdd_textx.registration:bdd_lang"
-scene-tx = "bdd_textx.registration:scene_lang"
+robbdd = "robbdd.registration:bdd_lang"
+robbdd-scene = "robbdd.registration:scene_lang"
 
 [project.entry-points.textx_generators]
-bdd-tx_json-ld = "bdd_textx.registration:bddtx_jsonld_generator"
+bdd-tx_json-ld = "robbdd.registration:bddtx_jsonld_generator"
 
 [tool.ruff]
 line-length = 100

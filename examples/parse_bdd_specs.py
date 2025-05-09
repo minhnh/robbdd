@@ -9,7 +9,7 @@ from rdf_utils.resolver import install_resolver
 from rdf_utils.naming import get_valid_filename
 from bdd_dsl.models.user_story import UserStoryLoader
 from bdd_dsl.utils.jinja import load_template_from_url, prepare_jinja2_template_data
-from bdd_textx.graph import create_bdd_model_graph
+from robbdd.graph import create_bdd_model_graph
 
 
 CWD = abspath(dirname(__file__))
@@ -17,8 +17,8 @@ GENERATED_DIR = join(CWD, "generated")
 
 
 def main():
-    bdd_tx_mm = metamodel_for_language("bdd-tx")
-    model = bdd_tx_mm.model_from_file(argv[1])
+    bdd_mm = metamodel_for_language("robbdd")
+    model = bdd_mm.model_from_file(argv[1])
     g = create_bdd_model_graph(model=model)
     print(g.serialize(format="json-ld"))
     install_resolver()

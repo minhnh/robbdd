@@ -2,7 +2,7 @@ from os.path import abspath, dirname, join
 from textx import LanguageDesc, GeneratorDesc, metamodel_from_file
 import textx.scoping.providers as scoping_providers
 from textxjinja import textx_jinja_generator
-from bdd_textx.classes.bdd import (
+from robbdd.classes.bdd import (
     AfterEvent,
     BeforeEvent,
     Behaviour,
@@ -37,9 +37,9 @@ from bdd_textx.classes.bdd import (
     WhenBehaviourClause,
     WhenExpr,
 )
-from bdd_textx.classes.scene import Agent, Object, SceneModel, Workspace
-from bdd_textx.graph import create_bdd_model_graph
-from bdd_textx.generator.utils import prepare_context_data
+from robbdd.classes.scene import Agent, Object, SceneModel, Workspace
+from robbdd.graph import create_bdd_model_graph
+from robbdd.generator.utils import prepare_context_data
 
 
 CWD = abspath(dirname(__file__))
@@ -106,13 +106,13 @@ def bdd_metamodel():
 
 
 scene_lang = LanguageDesc(
-    "scene-tx",
+    "robbdd-scene",
     pattern="*.scene",
     description="Language for describing robotic scenes",
     metamodel=scene_metamodel,
 )
 bdd_lang = LanguageDesc(
-    "bdd-tx",
+    "robbdd",
     pattern="*.bdd",
     description="Behaviour-Driven Development language",
     metamodel=bdd_metamodel,
@@ -127,7 +127,7 @@ def generator(metamodel, model, output_path, overwrite, debug):
 
 
 bddtx_jsonld_generator = GeneratorDesc(
-    language="bdd-tx",
+    language="robbdd",
     target="json-ld",
     description="Generate JSON-LD from BDD models",
     generator=generator,

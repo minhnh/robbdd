@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from __future__ import annotations
 from rdflib import URIRef
-from bdd_textx.classes.common import IHasNamespaceDeclare
+from robbdd.classes.common import IHasNamespaceDeclare
 
 
 class Object(IHasNamespaceDeclare):
