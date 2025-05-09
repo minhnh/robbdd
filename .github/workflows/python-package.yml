@@ -29,6 +29,7 @@ jobs:
       with:
         repository: minhnh/bdd-dsl
         path: bdd-dsl
+        ref: devel
     - name: Checkout robbdd
       uses: actions/checkout@v4
       with:
