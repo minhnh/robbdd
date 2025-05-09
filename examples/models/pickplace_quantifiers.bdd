@@ -1,0 +1,66 @@
+import "lab.scene"
+
+ns bdd_var='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/'
+ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
+
+Task (ns=bdd_tmpl) tsk_pickplace
+Event (ns=bdd_tmpl) evt_scenario_start
+Event (ns=bdd_tmpl) evt_pick_start
+Event (ns=bdd_tmpl) evt_place_end
+Event (ns=bdd_tmpl) evt_scenario_end
+
+const set (ns=bdd_var) obj_set {
+    <lab_scene.box1>, <lab_scene.box2>, <lab_scene.ball>, <lab_scene.bottle>
+}
+const set (ns=bdd_var) place_ws_set {
+    <lab_scene.container_1_ws>, <lab_scene.container_2_ws>
+}
+
+Scenario Template (ns=bdd_tmpl) tmpl_sort {
+    task: <tsk_pickplace>
+
+    set var target_objects
+    set var place_workspaces
+    var robot
+    var pick_ws
+
+    for all ( var x in <target_objects> ) {
+        Given:
+        (
+            holds(<x> is located at <pick_ws>, before <evt_pick_start>)
+        )
+        When:
+            Behaviour (ns=bdd_tmpl) pickplace: <robot> picks <x> and places at <place_workspaces>
+        Then:
+            ( var y exists in <place_workspaces> ) such that {
+                holds(<x> is located at <y>, after <evt_place_end>)
+            }
+    }
+    Then:
+        holds(<target_objects> are sorted into <place_workspaces>, after <evt_place_end>)
+}
+
+User Story (ns=bdd_var) us_pickplace_single_arm {
+    As A "Function Developer"
+    I Want "Pick and place behaviour"
+    So That "I can transport objects"
+
+    Scenarios:
+        Scenario simple_pick {
+            template: <tmpl_sort>
+            scene: <lab_scene>
+
+            variation:
+                set var <tmpl_sort.target_objects>: {
+                    { <lab_scene.box1>, <lab_scene.ball> },
+                    { <lab_scene.box1>, <lab_scene.bottle> }
+                }
+                var <tmpl_sort.pick_ws>: {
+                    <lab_scene.dining_table>, <lab_scene.shelf>
+                }
+                set var <tmpl_sort.place_workspaces>: select 2 combinations from <place_ws_set>
+                var <tmpl_sort.robot>: {
+                    <lab_scene.freddy>, <lab_scene.lucy>
+                }
+        }
+}

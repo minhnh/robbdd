@@ -36,7 +36,7 @@ User Story (ns=bdd_var) us_pickplace_single_arm {
             variation:
             | <tmpl_pickplace.target_object> | <tmpl_pickplace.pick_ws> | <tmpl_pickplace.place_ws> | <tmpl_pickplace.robot> |
             |---|
-            | <lab_scene.box> | <lab_scene.dining_table> | <lab_scene.shelf> |  <lab_scene.freddy> |
+            | <lab_scene.box1> | <lab_scene.dining_table> | <lab_scene.shelf> |  <lab_scene.freddy> |
             | <lab_scene.ball> | <lab_scene.shelf> | <lab_scene.dining_table> |  <lab_scene.lucy> |
             | <lab_scene.bottle> | <lab_scene.dining_table> | <lab_scene.shelf> |  <lab_scene.freddy> |
         }

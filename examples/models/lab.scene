@@ -3,13 +3,20 @@ ns isaac_agn='https://secorolab.github.io/models/agents/isaac-sim/'
 ns scene_lab='https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/secorolab/'
 
 scene (ns=scene_lab) lab_scene {
-    object (ns=lab_env) box ;
+    object (ns=lab_env) box1 ;
+    object (ns=lab_env) box2 ;
     object (ns=lab_env) ball ;
     object (ns=lab_env) bottle ;
     workspace (ns=lab_env) dining_table {
         object (ns=lab_env) table ;
     }
     workspace (ns=lab_env) shelf ;
+    workspace (ns=lab_env) container_1_ws {
+        object (ns=lab_env) container_1 ;
+    }
+    workspace (ns=lab_env) container_2_ws {
+        object (ns=lab_env) container_2 ;
+    }
     agent (ns=isaac_agn) freddy ;
     agent (ns=isaac_agn) lucy ;
 }

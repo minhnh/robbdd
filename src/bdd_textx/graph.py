@@ -1,8 +1,15 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any
+from bdd_dsl.models.combinatorics import (
+    URI_BDD_PRED_FROM,
+    URI_BDD_PRED_LENGTH,
+    URI_BDD_PRED_REP_ALLOWED,
+    URI_BDD_TYPE_COMBINATION,
+    URI_BDD_TYPE_PERMUTATION,
+)
 from bdd_dsl.models.namespace import NS_MM_BDD
 from rdf_utils.namespace import NS_MM_TIME
-from rdflib import BNode, Graph, RDF, IdentifiedNode, Literal, Node, URIRef
+from rdflib import XSD, BNode, Graph, RDF, IdentifiedNode, Literal, Node, URIRef
 from rdflib.collection import Collection
 from bdd_dsl.models.urirefs import (
     URI_AGN_PRED_HAS_AGN,
@@ -76,12 +83,14 @@ from bdd_textx.classes.bdd import (
     BeforeEvent,
     CartesianProductVariation,
     Clause,
+    Combination,
     ConstantSet,
     DuringEvent,
     ExistsExpr,
     FluentAndExpr,
     ForAllExpr,
     HoldsExpr,
+    Permutation,
     ScenarioSetVariable,
     ScenarioTemplate,
     ScenarioVariant,
@@ -414,26 +423,22 @@ def get_var_value_node(var_val: Any) -> Node:
     raise ValueError(f"ValidVarValue object has unhandled attributes: {var_val}")
 
 
-def get_const_set(graph: Graph, const_set_link: Any, value_sets: set[URIRef]) -> IdentifiedNode:
-    assert hasattr(const_set_link, "linked_set") and isinstance(
-        const_set_link.linked_set, ConstantSet
-    ), f"ConstSetLink obj has no valid 'linked_set' attr: '{const_set_link}'"
+def get_const_set(graph: Graph, const_set: ConstantSet, value_sets: set[URIRef]) -> IdentifiedNode:
+    if const_set.uri in value_sets:
+        return const_set.uri
 
-    if const_set_link.linked_set.uri in value_sets:
-        return const_set_link.linked_set.uri
-
-    graph.add(triple=(const_set_link.linked_set.uri, RDF.type, URI_BDD_TYPE_SET))
-    graph.add(triple=(const_set_link.linked_set.uri, RDF.type, URI_BDD_TYPE_CONST_SET))
-    for v in const_set_link.linked_set.elems:
+    graph.add(triple=(const_set.uri, RDF.type, URI_BDD_TYPE_SET))
+    graph.add(triple=(const_set.uri, RDF.type, URI_BDD_TYPE_CONST_SET))
+    for v in const_set.elems:
         graph.add(
             triple=(
-                const_set_link.linked_set.uri,
+                const_set.uri,
                 URI_BDD_PRED_ELEMS,
                 get_var_value_node(var_val=v),
             )
         )
-    value_sets.add(const_set_link.linked_set.uri)
-    return const_set_link.linked_set.uri
+    value_sets.add(const_set.uri)
+    return const_set.uri
 
 
 def get_set_expr_set(graph: Graph, set_expr: Any) -> IdentifiedNode:
@@ -470,8 +475,11 @@ def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[U
                 if "ValidVarValue" in v.__class__.__name__:
                     r_col.append(get_var_value_node(var_val=v))
                 elif "ConstSetLink" in v.__class__.__name__:
+                    assert hasattr(v, "linked_set") and isinstance(
+                        v.linked_set, ConstantSet
+                    ), f"ConstSetLink obj has no valid 'linked_set' attr: '{v}'"
                     r_col.append(
-                        get_const_set(graph=graph, const_set_link=v, value_sets=value_sets)
+                        get_const_set(graph=graph, const_set=v.linked_set, value_sets=value_sets)
                     )
                 elif "SetExpr" in v.__class__.__name__:
                     r_col.append(get_set_expr_set(graph=graph, set_expr=v))
@@ -492,14 +500,69 @@ def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[U
         for v_set in variation.var_sets:
             var_list_col.append(v_set.variable.uri)
             if hasattr(v_set.val_set, "elems"):
+                # explicit set
                 sets_col.append(get_set_expr_set(graph=graph, set_expr=v_set.val_set))
+            elif hasattr(v_set.val_set, "sets"):
+                # set of sets
+                set_of_sets_first = BNode()
+                set_of_sets_col = Collection(graph=graph, uri=set_of_sets_first, seq=[])
+                for set_expr in v_set.val_set.sets:
+                    set_of_sets_col.append(get_set_expr_set(graph=graph, set_expr=set_expr))
+                sets_col.append(set_of_sets_first)
+
             elif hasattr(v_set.val_set, "linked_set"):
+                # link to constant set
                 assert isinstance(
                     v_set.val_set.linked_set, ConstantSet
                 ), f"can't handle set type '{type(v_set.val_set.linked_set)}' for cartesian product of variation '{variation.uri}'"
                 sets_col.append(
-                    get_const_set(graph=graph, const_set_link=v_set.val_set, value_sets=value_sets)
+                    get_const_set(
+                        graph=graph, const_set=v_set.val_set.linked_set, value_sets=value_sets
+                    )
                 )
+
+            elif isinstance(v_set.val_set, Combination):
+                graph.add(triple=(v_set.val_set.uri, RDF.type, URI_BDD_TYPE_COMBINATION))
+                graph.add(
+                    triple=(
+                        v_set.val_set.uri,
+                        URI_BDD_PRED_LENGTH,
+                        Literal(v_set.val_set.length, datatype=XSD.positiveInteger),
+                    )
+                )
+                graph.add(
+                    triple=(
+                        v_set.val_set.uri,
+                        URI_BDD_PRED_REP_ALLOWED,
+                        Literal(v_set.val_set.repeated),
+                    )
+                )
+                graph.add(triple=(v_set.val_set.uri, URI_BDD_PRED_FROM, v_set.val_set.from_set.uri))
+                assert isinstance(
+                    v_set.val_set.from_set, ConstantSet
+                ), f"can't handle type '{type(v_set.val_set.from_set)}' of 'from' set for Combination '{v_set.val_set.uri}'"
+                _ = get_const_set(
+                    graph=graph, const_set=v_set.val_set.from_set, value_sets=value_sets
+                )
+                sets_col.append(v_set.val_set.uri)
+
+            elif isinstance(v_set.val_set, Permutation):
+                graph.add(triple=(v_set.val_set.uri, RDF.type, URI_BDD_TYPE_PERMUTATION))
+                graph.add(
+                    triple=(
+                        v_set.val_set.uri,
+                        URI_BDD_PRED_LENGTH,
+                        Literal(v_set.val_set.length, datatype=XSD.positiveInteger),
+                    )
+                )
+                graph.add(triple=(v_set.val_set.uri, URI_BDD_PRED_FROM, v_set.val_set.from_set.uri))
+                assert isinstance(
+                    v_set.val_set.from_set, ConstantSet
+                ), f"can't handle type '{type(v_set.val_set.from_set)}' of 'from' set for Permutation '{v_set.val_set.uri}'"
+                _ = get_const_set(
+                    graph=graph, const_set=v_set.val_set.from_set, value_sets=value_sets
+                )
+                sets_col.append(v_set.val_set.uri)
             else:
                 raise ValueError(
                     f"unhandled attr '{v_set.val_set}' for VariationSet '{v_set}' in '{variation.uri}'"

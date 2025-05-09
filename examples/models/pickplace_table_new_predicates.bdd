@@ -55,7 +55,7 @@ User Story (ns=bdd) us_pickplace_single_arm {
               <tmpl_conveyor_sort.robot> |
               <tmpl_conveyor_sort.conveyor_speed> |
             |---|
-            | <lab_scene.box> | <lab_scene.dining_table> | <lab_scene.shelf> | <lab_scene.freddy> | 0.9 |
+            | <lab_scene.box1> | <lab_scene.dining_table> | <lab_scene.shelf> | <lab_scene.freddy> | 0.9 |
             | <lab_scene.ball> | <lab_scene.shelf> | <lab_scene.dining_table> | <lab_scene.lucy> | 1.0 |
             | <lab_scene.bottle> | <lab_scene.dining_table> | <lab_scene.shelf> | <lab_scene.freddy> | 0.8 |
         }

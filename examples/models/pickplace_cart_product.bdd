@@ -39,7 +39,7 @@ User Story (ns=bdd_var) us_pickplace_single_arm {
 
             variation:
                 var <tmpl_pickplace.target_object>: {
-                    <lab_scene.box>, <lab_scene.ball>, <lab_scene.bottle>
+                    <lab_scene.box1>, <lab_scene.ball>, <lab_scene.bottle>
                 }
                 var <tmpl_pickplace.pick_ws>: set <ws_set>
                 var <tmpl_pickplace.place_ws>: set <ws_set>

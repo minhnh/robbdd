@@ -32,6 +32,58 @@ class ConstantSet(SetBase, IHasNamespaceDeclare):
         self.elems = elems
 
 
+class Combination(IHasUUID, IHasNamespace):
+    length: int
+    repeated: bool
+    _uri: Optional[URIRef]
+
+    def __init__(self, parent, length, repeated, from_set) -> None:
+        super().__init__(parent=parent)
+        self.length = length
+        self.repeated = repeated
+        self.from_set = from_set
+        self._uri = None
+
+    @property
+    def namespace(self) -> Namespace:
+        # expect grandparent to be a TaskVariation
+        assert isinstance(
+            self.parent.parent, IHasNamespace
+        ), f"grandparent of 'Combination' not instance of IHasNamespace: {self.parent.parent}"
+        return self.parent.parent.namespace
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            self._uri = self.namespace[f"comb-{self.uuid}"]
+        return self._uri
+
+
+class Permutation(IHasUUID, IHasNamespace):
+    length: int
+    _uri: Optional[URIRef]
+
+    def __init__(self, parent, length, from_set) -> None:
+        super().__init__(parent=parent)
+        self.length = length
+        self.from_set = from_set
+        self._uri = None
+
+    @property
+    def namespace(self) -> Namespace:
+        # expect grandparent to be a TaskVariation
+        assert isinstance(
+            self.parent.parent, IHasNamespace
+        ), f"grandparent of 'Permutation' not instance of IHasNamespace: {self.parent.parent}"
+        return self.parent.parent.namespace
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            self._uri = self.namespace[f"perm-{self.uuid}"]
+        return self._uri
+
+
 class VariableBase(IHasParent):
     _uri: Optional[URIRef]
 
@@ -332,32 +384,48 @@ class ScenarioTemplate(IHasNamespaceDeclare):
         self.scene_uri = self.namespace[f"{self.name}-scene"]
 
 
-class TaskVariation(IHasUUID):
+class TaskVariation(IHasUUID, IHasNamespace):
     parent: ScenarioVariant
-    _uri: Optional[URIRef]
 
     def __init__(self, parent) -> None:
         super().__init__(parent=parent)
         self._uri = None
 
     @property
-    def uri(self) -> URIRef:
-        if self._uri is None:
-            self._uri = self.parent.namespace[f"tv-{self.uuid}"]
-        return self._uri
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, IHasNamespace
+        ), f"parent of TaskVariation not instance of IHasNamespace: {self.parent}"
+        return self.parent.namespace
 
 
 class TableVariation(TaskVariation):
+    _uri: Optional[URIRef]
+
     def __init__(self, parent, header, rows) -> None:
         super().__init__(parent=parent)
         self.header = header
         self.rows = rows
 
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            self._uri = self.namespace[f"tv-table-{self.uuid}"]
+        return self._uri
+
 
 class CartesianProductVariation(TaskVariation):
+    _uri: Optional[URIRef]
+
     def __init__(self, parent, var_sets) -> None:
         super().__init__(parent=parent)
         self.var_sets = var_sets
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            self._uri = self.namespace[f"tv-cart_prod-{self.uuid}"]
+        return self._uri
 
 
 class ScenarioVariant(IHasNamespace):

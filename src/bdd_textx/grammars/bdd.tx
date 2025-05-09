@@ -163,12 +163,29 @@ IsSortedPred:
 // Variations
 TaskVariation: CartesianProductVariation | TableVariation ;
 
-CartesianProductVariation: var_sets+=VariationSet;
-VariationSet: 'var' '<' variable=[VariableBase|FQN] '>' ':'
+CartesianProductVariation:
+(
+var_sets=VariableVariationSet
+|
+var_sets=SetVariableVariationSet
+)+
+;
+VariableVariationSet:
+'var' '<' variable=[ScenarioVariable|FQN] '>' ':'
 (
 val_set=ConstSetLink
 |
 val_set=SetExpr
+)
+;
+SetVariableVariationSet:
+'set' 'var' '<' variable=[ScenarioSetVariable|FQN] '>' ':'
+(
+val_set=Combination
+|
+val_set=Permutation
+|
+val_set=SetOfSetsExpr
 )
 ;
 
@@ -194,6 +211,19 @@ ConstantSet:
 ;
 ConstSetLink: 'set' '<' linked_set=[ConstantSet|FQN] '>' ;
 SetExpr: '{' elems+=ValidVarValue[','] '}' ;
+SetOfSetsExpr:
+'{'
+sets+=SetExpr[',']
+'}'
+;
+
+// Set enumeration
+Combination:
+'select' length=INT repeated?='repeated' 'combinations' 'from' '<' from_set=[SetBase|FQN] '>'
+;
+Permutation:
+'select' length=INT 'permutations' 'from' '<' from_set=[SetBase|FQN] '>'
+;
 
 // Variables
 VariableBase: ScenarioVariable | ScenarioSetVariable ;
