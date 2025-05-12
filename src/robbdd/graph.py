@@ -26,6 +26,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_OF_SCENE,
     URI_BDD_PRED_OF_SETS,
     URI_BDD_PRED_OF_TMPL,
+    URI_BDD_PRED_REF_AGN,
     URI_BDD_PRED_REF_OBJ,
     URI_BDD_PRED_REF_VAR,
     URI_BDD_PRED_REF_WS,
@@ -168,7 +169,7 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         assert (
             agent_var is not None and isinstance(agent_var, VariableBase)
         ), f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
-        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_WS, agent_var.uri))
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_AGN, agent_var.uri))
         return
 
     if "CanReachPred" in pred_type_str:
@@ -184,11 +185,43 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         assert (
             agent_var is not None and isinstance(agent_var, VariableBase)
         ), f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
-        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_WS, agent_var.uri))
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_AGN, agent_var.uri))
+        return
+
+    if "DoesNotDropPred" in pred_type_str:
+        graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["DoesNotDropPredicate"]))
+
+        agent_var = getattr(clause.predicate, "agent", None)
+        assert (
+            agent_var is not None and isinstance(agent_var, VariableBase)
+        ), f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_AGN, agent_var.uri))
+
+        obj_var = getattr(clause.predicate, "object", None)
+        assert (
+            obj_var is not None and isinstance(obj_var, VariableBase)
+        ), f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_OBJ, obj_var.uri))
+        return
+
+    if "DoesNotCollidePred" in pred_type_str:
+        graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["DoesNotCollidePredicate"]))
+
+        agent_var = getattr(clause.predicate, "agent", None)
+        assert (
+            agent_var is not None and isinstance(agent_var, VariableBase)
+        ), f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_REF_AGN, agent_var.uri))
+
+        target_var = getattr(clause.predicate, "target", None)
+        assert (
+            target_var is not None and isinstance(target_var, VariableBase)
+        ), f"unexpected 'target' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        graph.add(triple=(clause_uri, NS_MM_BDD["target"], target_var.uri))
         return
 
     if "HasConfigPred" in pred_type_str:
-        # TODO(minhnh): handle vars
+        # TODO(minhnh): handle predicate
         graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["HasConfigPredicate"]))
         return
 

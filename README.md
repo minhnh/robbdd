@@ -24,7 +24,7 @@ Two custom arguments are handled by the generators:
 
 - `format`: available for `console` & `graph` generators, for specifying the RDF graph
   serialization format. See `rdflib` documentation (linked above) to see which are available.
-  Typical formats are `json-ld`, `ttl`, `xml`.
+  Typical formats are `json-ld`, `ttl`, `xml`. Default format if non specified is `json-ld`.
 - `filename`: available for `graph` & `gherkin` generators, for specifying the output file name.
   File extensions will be ignored. If not specified, the model file name will be used by default.
 
@@ -32,8 +32,8 @@ Two custom arguments are handled by the generators:
 
 The `console` generator prints graph serialization to the console. Example use:
 
-```sh
-textx generate examples/models/pickplace_quantifiers.bdd --target console --format ttl
+```console
+foo@bar:~$ textx generate examples/models/pickplace_quantifiers.bdd --target console --format ttl
 ```
 
 ### Graph
@@ -42,8 +42,8 @@ The `graph` generator dump graph serialization to a file. Only `json-ld`, `ttl`,
 are currently supported, which generate to `.json`, `.ttl`, and `.xml` file extensions,
 respectively. Example use:
 
-```sh
-textx generate examples/models/pickplace_table.bdd --target graph -o examples/generated --format ttl --filename model_graph
+```console
+foo@bar:~$ textx generate examples/models/pickplace_table.bdd --target graph -o examples/generated --format ttl --filename model_graph
 ```
 
 ### Gherkin
@@ -51,6 +51,6 @@ textx generate examples/models/pickplace_table.bdd --target graph -o examples/ge
 The `gherkin` generator create [Gherkin feature files](https://cucumber.io/docs/gherkin/reference/)
 from the models using generation mechanism from the `bdd-dsl` package. Example use:
 
-```sh
-textx generate models/pickplace_quantifiers.bdd --target gherkin -o generated
+```shell
+foo@bar:~$ textx generate models/pickplace_quantifiers.bdd --target gherkin -o generated
 ```

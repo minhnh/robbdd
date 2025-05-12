@@ -140,7 +140,7 @@ AfterEvent: 'after' '<' event=[Event|FQN] '>';
 DuringEvent: 'from' '<' start_event=[Event|FQN] '>' 'until' '<' end_event=[Event|FQN] '>';
 
 // First Order Logic terms
-FOLExpr: LocatedAtPred | IsHeldPred | DoesNotDropPred | CanReachPred | HasConfigPred | IsSortedPred ;
+FOLExpr: LocatedAtPred | IsHeldPred | DoesNotDropPred | DoesNotCollidePred | CanReachPred | HasConfigPred | IsSortedPred ;
 CanReachPred:
     '<' agent=[VariableBase|FQN] '>' 'can' 'reach' '<' object=[VariableBase|FQN] '>'
 ;
@@ -149,6 +149,9 @@ LocatedAtPred:
 ;
 DoesNotDropPred:
     '<' agent=[VariableBase|FQN] '>' 'does' 'not' 'drop' '<' object=[VariableBase|FQN] '>'
+;
+DoesNotCollidePred:
+    '<' agent=[VariableBase|FQN] '>' 'does' 'not' 'collide' '<' target=[VariableBase|FQN] '>'
 ;
 IsHeldPred:
     '<' object=[VariableBase|FQN] '>' 'is' 'held' 'by' '<' agent=[VariableBase|FQN] '>'

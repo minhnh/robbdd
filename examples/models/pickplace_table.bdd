@@ -20,7 +20,11 @@ Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
     When:
         Behaviour (ns=bdd_tmpl) pickplace: <robot> picks <target_object> and places at <place_ws>
     Then:
-        holds(<target_object> is located at <place_ws>, after <evt_pick_start>)
+        (
+            holds(<target_object> is located at <place_ws>, after <evt_pick_start>)
+            and
+            holds(<robot> can reach <target_object>, before <evt_pick_start>)
+        )
 }
 
 User Story (ns=bdd_var) us_pickplace_single_arm {
