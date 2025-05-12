@@ -1,0 +1,36 @@
+# This file is a clone of an online version maintained at
+# https://github.com/minhnh/models-bdd/blob/-/jinja/feature.jinja
+Feature: {{ data.name }}
+{%- if 'scene' in data %}
+  Background:
+    {%- if 'objects' in data.scene %}
+    Given a set of objects
+      | name |
+      {% for obj_name in data.scene.objects -%}
+        | {{ obj_name }} |
+      {% endfor %}
+    {%- endif -%}
+    {%- if 'workspaces' in data.scene %}
+    Given a set of workspaces
+      | name |
+      {% for ws_name in data.scene.workspaces -%}
+        | {{ ws_name }} |
+      {% endfor %}
+    {%- endif -%}
+    {%- if 'agents' in data.scene %}
+    Given a set of agents
+      | name |
+      {% for agn_name in data.scene.agents -%}
+        | {{ agn_name }} |
+      {% endfor %}
+    {%- endif %}
+    Given the scene is set up
+{%- endif %}
+
+{%- for scenario_data in data.criteria %}
+{% for var_data in scenario_data.variations %}
+  Scenario: {{ var_data.name }}
+    {% for clause in var_data.clauses%}
+    {{ clause|safe }}{% endfor %}
+{% endfor %}
+{%- endfor -%}

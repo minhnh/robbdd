@@ -1,0 +1,62 @@
+import "lab.scene"
+
+ns bdd='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/'
+ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
+
+Task (ns=bdd_tmpl) tsk_pickplace
+Event (ns=bdd_tmpl) evt_scenario_start
+Event (ns=bdd_tmpl) evt_pick_start
+Event (ns=bdd_tmpl) evt_place_end
+Event (ns=bdd_tmpl) evt_scenario_end
+
+Scenario Template (ns=bdd_tmpl) tmpl_conveyor_sort {
+    task: <tsk_pickplace>
+
+    set var target_objects
+    set var place_workspaces
+    var robot
+    var conveyor
+    var conveyor_speed
+
+    Given:
+        holds(<conveyor> has config <conveyor_speed>, before <evt_scenario_start>)
+    for all ( var x in <target_objects> ) {
+        Given:
+        (
+            holds(<x> is located at <conveyor>, before <evt_pick_start>)
+            and
+            holds(<robot> can reach <x>, before <evt_pick_start>)
+        )
+        When:
+            Behaviour (ns=bdd_tmpl) pickplace: <robot> picks <x> and places at <place_workspaces>
+        Then:
+            ( var y exists in <place_workspaces> ) such that {
+                holds(<x> is located at <y>, after <evt_place_end>)
+            }
+    }
+    Then:
+        holds(<target_objects> are sorted into <place_workspaces>, after <evt_place_end>)
+}
+
+User Story (ns=bdd) us_pickplace_single_arm {
+    As A "Function Developer"
+    I Want "Pick and place behaviour"
+    So That "I can transport objects"
+
+    Scenarios:
+        Scenario simple_pick {
+            template: <tmpl_conveyor_sort>
+            scene: <lab_scene>
+
+            variation:
+            | <tmpl_conveyor_sort.target_objects> |
+              <tmpl_conveyor_sort.conveyor> |
+              <tmpl_conveyor_sort.place_workspaces> |
+              <tmpl_conveyor_sort.robot> |
+              <tmpl_conveyor_sort.conveyor_speed> |
+            |---|
+            | <lab_scene.box1> | <lab_scene.dining_table> | <lab_scene.shelf> | <lab_scene.freddy> | 0.9 |
+            | <lab_scene.ball> | <lab_scene.shelf> | <lab_scene.dining_table> | <lab_scene.lucy> | 1.0 |
+            | <lab_scene.bottle> | <lab_scene.dining_table> | <lab_scene.shelf> | <lab_scene.freddy> | 0.8 |
+        }
+}
