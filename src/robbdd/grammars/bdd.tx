@@ -11,7 +11,7 @@ events+=Event
 |
 tasks+=Task
 |
-sets+=ConstantSet
+sets+=ExplicitSet
 )*
 
 (
@@ -203,13 +203,23 @@ ValueRow:
 ValidCellValue: ValidVarValue | ConstSetLink | SetExpr ;
 
 // Sets
-SetBase: ConstantSet | ScenarioSetVariable ;
-ConstantSet:
+SetBase: ExplicitSet | ObjectSet | WorkspaceSet | AgentSet | ScenarioSetVariable ;
+ExplicitSet :
 'const' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
     elems+=ValidVarValue[',']
 '}'
 ;
-ConstSetLink: 'set' '<' linked_set=[ConstantSet|FQN] '>' ;
+ConstSetLink:
+(
+'set' '<' linked_set=[ExplicitSet|FQN] '>'
+|
+'obj' 'set' '<' linked_set=[ObjectSet|FQN] '>'
+|
+'ws' 'set' '<' linked_set=[WorkspaceSet|FQN] '>'
+|
+'agn' 'set' '<' linked_set=[AgentSet|FQN] '>'
+)
+;
 SetExpr: '{' elems+=ValidVarValue[','] '}' ;
 SetOfSetsExpr:
 '{'

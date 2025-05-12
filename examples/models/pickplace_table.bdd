@@ -31,13 +31,13 @@ User Story (ns=bdd_var) us_pickplace_single_arm {
     Scenarios:
         Scenario simple_pick {
             template: <tmpl_pickplace>
-            scene: <lab_scene>
+            scene: <pickplace_scene>
 
             variation:
             | <tmpl_pickplace.target_object> | <tmpl_pickplace.pick_ws> | <tmpl_pickplace.place_ws> | <tmpl_pickplace.robot> |
             |---|
-            | <lab_scene.box1> | <lab_scene.dining_table> | <lab_scene.shelf> |  <lab_scene.freddy> |
-            | <lab_scene.ball> | <lab_scene.shelf> | <lab_scene.dining_table> |  <lab_scene.lucy> |
-            | <lab_scene.bottle> | <lab_scene.dining_table> | <lab_scene.shelf> |  <lab_scene.freddy> |
+            | <pickplace_objects.box1> | <lab_workspaces.table_ws> | <lab_workspaces.shelf_ws> |  <isaac_agents.panda> |
+            | <pickplace_objects.ball> | <lab_workspaces.shelf_ws> | <lab_workspaces.table_ws> |  <isaac_agents.ur10> |
+            | <pickplace_objects.bottle> | <lab_workspaces.table_ws> | <lab_workspaces.shelf_ws> | <isaac_agents.kinova> |
         }
 }

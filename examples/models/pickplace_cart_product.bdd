@@ -8,7 +8,7 @@ Event (ns=bdd_tmpl) evt_pick_start
 Event (ns=bdd_tmpl) evt_place_end
 
 const set (ns=bdd_var) ws_set {
-    <lab_scene.dining_table>, <lab_scene.shelf>
+    <lab_workspaces.table_ws>, <lab_workspaces.shelf_ws>
 }
 
 Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
@@ -35,16 +35,14 @@ User Story (ns=bdd_var) us_pickplace_single_arm {
     Scenarios:
         Scenario simple_pick {
             template: <tmpl_pickplace>
-            scene: <lab_scene>
+            scene: <pickplace_scene>
 
             variation:
-                var <tmpl_pickplace.target_object>: {
-                    <lab_scene.box1>, <lab_scene.ball>, <lab_scene.bottle>
-                }
+                var <tmpl_pickplace.target_object>: obj set <pickplace_objects>
                 var <tmpl_pickplace.pick_ws>: set <ws_set>
                 var <tmpl_pickplace.place_ws>: set <ws_set>
                 var <tmpl_pickplace.robot>: {
-                    <lab_scene.freddy>, <lab_scene.lucy>
+                    <isaac_agents.panda>, <isaac_agents.ur10>
                 }
         }
 }

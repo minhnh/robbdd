@@ -15,8 +15,8 @@ from robbdd.classes.bdd import (
     CartesianProductVariation,
     Clause,
     Combination,
+    ExplicitSet,
     Permutation,
-    ConstantSet,
     DuringEvent,
     Event,
     ExistsExpr,
@@ -31,7 +31,6 @@ from robbdd.classes.bdd import (
     ScenarioSetVariable,
     ScenarioVariable,
     ScenarioVariant,
-    SetBase,
     TableVariation,
     Task,
     TaskVariation,
@@ -43,7 +42,17 @@ from robbdd.classes.bdd import (
     WhenBehaviourClause,
     WhenExpr,
 )
-from robbdd.classes.scene import Agent, Object, SceneModel, Workspace
+from robbdd.classes.common import SetBase
+from robbdd.classes.scene import (
+    Agent,
+    AgentSet,
+    Object,
+    ObjectSet,
+    SceneModel,
+    Workspace,
+    WorkspaceComposition,
+    WorkspaceSet,
+)
 from robbdd.graph import create_bdd_model_graph
 
 
@@ -54,7 +63,16 @@ __GRAPH_FORMAT_EXT = {"json-ld": "json", "ttl": "ttl", "xml": "xml"}
 def scene_metamodel():
     mm_scene = metamodel_from_file(
         join(CWD, "grammars", "scene.tx"),
-        classes=[Object, Workspace, Agent, SceneModel],
+        classes=[
+            Object,
+            Workspace,
+            Agent,
+            ObjectSet,
+            WorkspaceSet,
+            AgentSet,
+            WorkspaceComposition,
+            SceneModel,
+        ],
     )
     mm_scene.register_scope_providers(
         {
@@ -76,7 +94,7 @@ def bdd_metamodel():
             Task,
             VariableBase,
             SetBase,
-            ConstantSet,
+            ExplicitSet,
             Combination,
             Permutation,
             ScenarioVariable,

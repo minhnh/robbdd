@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-from typing import Any
+from typing import Any, Optional
 from bdd_dsl.models.combinatorics import (
     URI_BDD_PRED_FROM,
     URI_BDD_PRED_LENGTH,
@@ -69,6 +69,8 @@ from bdd_dsl.models.urirefs import (
     URI_ENV_PRED_HAS_WS,
     URI_ENV_TYPE_OBJ,
     URI_ENV_TYPE_WS,
+    URI_ENV_TYPE_WS_OBJ,
+    URI_ENV_TYPE_WS_WS,
     URI_TASK_PRED_OF_TASK,
     URI_TASK_TYPE_TASK,
     URI_TIME_TYPE_TC,
@@ -84,7 +86,7 @@ from robbdd.classes.bdd import (
     CartesianProductVariation,
     Clause,
     Combination,
-    ConstantSet,
+    ExplicitSet,
     DuringEvent,
     ExistsExpr,
     FluentAndExpr,
@@ -101,7 +103,17 @@ from robbdd.classes.bdd import (
     VariableBase,
     WhenBehaviourClause,
 )
-from robbdd.classes.scene import SceneModel
+from robbdd.classes.common import SetBase
+from robbdd.classes.scene import (
+    Agent,
+    AgentSet,
+    Object,
+    ObjectSet,
+    SceneModel,
+    Workspace,
+    WorkspaceComposition,
+    WorkspaceSet,
+)
 
 
 def add_node_list_pred(
@@ -423,8 +435,8 @@ def get_var_value_node(var_val: Any) -> Node:
     raise ValueError(f"ValidVarValue object has unhandled attributes: {var_val}")
 
 
-def get_const_set(graph: Graph, const_set: ConstantSet, value_sets: set[URIRef]) -> IdentifiedNode:
-    if const_set.uri in value_sets:
+def add_explicit_set(graph: Graph, const_set: ExplicitSet, set_uris: set[URIRef]) -> IdentifiedNode:
+    if const_set.uri in set_uris:
         return const_set.uri
 
     graph.add(triple=(const_set.uri, RDF.type, URI_BDD_TYPE_SET))
@@ -437,7 +449,7 @@ def get_const_set(graph: Graph, const_set: ConstantSet, value_sets: set[URIRef])
                 get_var_value_node(var_val=v),
             )
         )
-    value_sets.add(const_set.uri)
+    set_uris.add(const_set.uri)
     return const_set.uri
 
 
@@ -452,7 +464,48 @@ def get_set_expr_set(graph: Graph, set_expr: Any) -> IdentifiedNode:
     return col_first
 
 
-def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[URIRef]):
+def add_const_set(
+    graph: Graph, scene_model: SceneModel, set_obj: SetBase, set_uris: set[URIRef]
+) -> IdentifiedNode:
+    if isinstance(set_obj, ExplicitSet):
+        return add_explicit_set(graph=graph, const_set=set_obj, set_uris=set_uris)
+
+    if isinstance(set_obj, ObjectSet):
+        add_scene_set(
+            graph=graph,
+            scn_comp_uri=scene_model.scene_obj_uri,
+            scn_set_uri=set_obj.uri,
+            set_elems=set_obj.objects,
+            set_uris=set_uris,
+        )
+        return set_obj.uri
+
+    if isinstance(set_obj, WorkspaceSet):
+        add_scene_set(
+            graph=graph,
+            scn_comp_uri=scene_model.scene_ws_uri,
+            scn_set_uri=set_obj.uri,
+            set_elems=set_obj.workspaces,
+            set_uris=set_uris,
+        )
+        return set_obj.uri
+
+    if isinstance(set_obj, AgentSet):
+        add_scene_set(
+            graph=graph,
+            scn_comp_uri=scene_model.scene_agn_uri,
+            scn_set_uri=set_obj.uri,
+            set_elems=set_obj.agents,
+            set_uris=set_uris,
+        )
+        return set_obj.uri
+
+    raise ValueError(f"ConstantSet type not handled for: {set_obj}")
+
+
+def add_task_variation(
+    graph: Graph, variation: TaskVariation, scene_model: SceneModel, set_uris: set[URIRef]
+):
     graph.add(triple=(variation.uri, RDF.type, URI_BDD_TYPE_TASK_VAR))
     graph.add(triple=(variation.uri, URI_TASK_PRED_OF_TASK, variation.parent.template.task.uri))
 
@@ -475,11 +528,16 @@ def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[U
                 if "ValidVarValue" in v.__class__.__name__:
                     r_col.append(get_var_value_node(var_val=v))
                 elif "ConstSetLink" in v.__class__.__name__:
-                    assert hasattr(v, "linked_set") and isinstance(
-                        v.linked_set, ConstantSet
-                    ), f"ConstSetLink obj has no valid 'linked_set' attr: '{v}'"
+                    assert hasattr(
+                        v, "linked_set"
+                    ), f"ConstSetLink obj has no 'linked_set' attr: '{v}'"
                     r_col.append(
-                        get_const_set(graph=graph, const_set=v.linked_set, value_sets=value_sets)
+                        add_const_set(
+                            graph=graph,
+                            scene_model=scene_model,
+                            set_obj=v.linked_set,
+                            set_uris=set_uris,
+                        )
                     )
                 elif "SetExpr" in v.__class__.__name__:
                     r_col.append(get_set_expr_set(graph=graph, set_expr=v))
@@ -512,12 +570,12 @@ def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[U
 
             elif hasattr(v_set.val_set, "linked_set"):
                 # link to constant set
-                assert isinstance(
-                    v_set.val_set.linked_set, ConstantSet
-                ), f"can't handle set type '{type(v_set.val_set.linked_set)}' for cartesian product of variation '{variation.uri}'"
                 sets_col.append(
-                    get_const_set(
-                        graph=graph, const_set=v_set.val_set.linked_set, value_sets=value_sets
+                    add_const_set(
+                        graph=graph,
+                        scene_model=scene_model,
+                        set_obj=v_set.val_set.linked_set,
+                        set_uris=set_uris,
                     )
                 )
 
@@ -538,11 +596,11 @@ def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[U
                     )
                 )
                 graph.add(triple=(v_set.val_set.uri, URI_BDD_PRED_FROM, v_set.val_set.from_set.uri))
-                assert isinstance(
-                    v_set.val_set.from_set, ConstantSet
-                ), f"can't handle type '{type(v_set.val_set.from_set)}' of 'from' set for Combination '{v_set.val_set.uri}'"
-                _ = get_const_set(
-                    graph=graph, const_set=v_set.val_set.from_set, value_sets=value_sets
+                add_const_set(
+                    graph=graph,
+                    scene_model=scene_model,
+                    set_obj=v_set.val_set.from_set,
+                    set_uris=set_uris,
                 )
                 sets_col.append(v_set.val_set.uri)
 
@@ -556,11 +614,11 @@ def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[U
                     )
                 )
                 graph.add(triple=(v_set.val_set.uri, URI_BDD_PRED_FROM, v_set.val_set.from_set.uri))
-                assert isinstance(
-                    v_set.val_set.from_set, ConstantSet
-                ), f"can't handle type '{type(v_set.val_set.from_set)}' of 'from' set for Permutation '{v_set.val_set.uri}'"
-                _ = get_const_set(
-                    graph=graph, const_set=v_set.val_set.from_set, value_sets=value_sets
+                add_const_set(
+                    graph=graph,
+                    scene_model=scene_model,
+                    set_obj=v_set.val_set.from_set,
+                    set_uris=set_uris,
                 )
                 sets_col.append(v_set.val_set.uri)
             else:
@@ -573,29 +631,105 @@ def add_task_variation(graph: Graph, variation: TaskVariation, value_sets: set[U
         )
 
 
-def add_scene_model(graph: Graph, scene: SceneModel):
+def add_scene_set(
+    graph: Graph, scn_comp_uri: URIRef, scn_set_uri: URIRef, set_elems: list, set_uris: set[URIRef]
+):
+    if scn_set_uri in set_uris:
+        return
+
+    graph.add(triple=(scn_set_uri, RDF.type, URI_BDD_TYPE_SET))
+    graph.add(triple=(scn_set_uri, RDF.type, URI_BDD_TYPE_CONST_SET))
+    for elem in set_elems:
+        if isinstance(elem, Object):
+            graph.add(triple=(elem.uri, RDF.type, URI_ENV_TYPE_OBJ))
+            graph.add(triple=(scn_comp_uri, URI_ENV_PRED_HAS_OBJ, elem.uri))
+        elif isinstance(elem, Workspace):
+            graph.add(triple=(elem.uri, RDF.type, URI_ENV_TYPE_WS))
+            graph.add(triple=(scn_comp_uri, URI_ENV_PRED_HAS_WS, elem.uri))
+        elif isinstance(elem, Agent):
+            graph.add(triple=(elem.uri, RDF.type, URI_AGN_TYPE_AGN))
+            graph.add(triple=(scn_comp_uri, URI_AGN_PRED_HAS_AGN, elem.uri))
+        else:
+            raise ValueError(f"unhandled elem type: {elem}")
+
+        graph.add(triple=(scn_set_uri, URI_BDD_PRED_ELEMS, elem.uri))
+
+    set_uris.add(scn_set_uri)
+
+
+def add_ws_comp(
+    graph: Graph,
+    scene: SceneModel,
+    ws_comp: WorkspaceComposition,
+    ws_comp_set: Optional[set[URIRef]],
+):
+    if ws_comp_set is None:
+        ws_comp_set = set()
+    if ws_comp.uri in ws_comp_set:
+        raise RuntimeError(f"add_ws_comp: loop detected at ws composition '{ws_comp.uri}'")
+    ws_comp_set.add(ws_comp.uri)
+
+    graph.add(triple=(scene.scene_ws_uri, URI_ENV_PRED_HAS_WS, ws_comp.ws.uri))
+    graph.add(triple=(ws_comp.ws.uri, RDF.type, URI_ENV_TYPE_WS))
+
+    if len(ws_comp.objects) > 0:
+        graph.add(triple=(ws_comp.uri, RDF.type, URI_ENV_TYPE_WS_OBJ))
+    if len(ws_comp.workspaces) > 0 or len(ws_comp.ws_comps):
+        graph.add(triple=(ws_comp.uri, RDF.type, URI_ENV_TYPE_WS_WS))
+
+    for obj in ws_comp.objects:
+        graph.add(triple=(obj.uri, RDF.type, URI_ENV_TYPE_OBJ))
+        graph.add(triple=(ws_comp.uri, URI_ENV_PRED_HAS_OBJ, obj.uri))
+        graph.add(triple=(scene.scene_obj_uri, URI_ENV_PRED_HAS_OBJ, obj.uri))
+
+    for ws in ws_comp.workspaces:
+        graph.add(triple=(ws.uri, RDF.type, URI_ENV_TYPE_WS))
+        graph.add(triple=(ws_comp.uri, URI_ENV_PRED_HAS_WS, ws.uri))
+        graph.add(triple=(scene.scene_ws_uri, URI_ENV_PRED_HAS_WS, ws.uri))
+
+    for child_comp in ws_comp.ws_comps:
+        graph.add(triple=(ws_comp.uri, URI_ENV_PRED_HAS_WS, child_comp.ws.uri))
+        add_ws_comp(graph=graph, scene=scene, ws_comp=child_comp, ws_comp_set=ws_comp_set)
+
+
+def add_scene_model(graph: Graph, scene: SceneModel, set_uris: set[URIRef]):
     graph.bind(prefix=scene.ns.name, namespace=scene.namespace)
 
     graph.add(triple=(scene.scene_obj_uri, RDF.type, URI_BDD_TYPE_SCENE_OBJ))
-    graph.add(triple=(scene.scene_obj_uri, RDF.type, URI_BDD_TYPE_SET))
-    for obj in scene.objects:
-        graph.bind(prefix=obj.ns.name, namespace=obj.namespace)
-        graph.add(triple=(obj.uri, RDF.type, URI_ENV_TYPE_OBJ))
-        graph.add(triple=(scene.scene_obj_uri, URI_ENV_PRED_HAS_OBJ, obj.uri))
+    for obj_set in scene.obj_sets:
+        add_scene_set(
+            graph=graph,
+            scn_comp_uri=scene.scene_obj_uri,
+            scn_set_uri=obj_set.uri,
+            set_elems=obj_set.objects,
+            set_uris=set_uris,
+        )
+        graph.bind(prefix=obj_set.ns.name, namespace=obj_set.namespace)
 
     graph.add(triple=(scene.scene_ws_uri, RDF.type, URI_BDD_TYPE_SCENE_WS))
-    graph.add(triple=(scene.scene_ws_uri, RDF.type, URI_BDD_TYPE_SET))
-    for ws in scene.workspaces:
-        graph.bind(prefix=ws.ns.name, namespace=ws.namespace)
-        graph.add(triple=(ws.uri, RDF.type, URI_ENV_TYPE_WS))
-        graph.add(triple=(scene.scene_ws_uri, URI_ENV_PRED_HAS_WS, ws.uri))
+    for ws_set in scene.ws_sets:
+        add_scene_set(
+            graph=graph,
+            scn_comp_uri=scene.scene_ws_uri,
+            scn_set_uri=ws_set.uri,
+            set_elems=ws_set.workspaces,
+            set_uris=set_uris,
+        )
+        graph.bind(prefix=ws_set.ns.name, namespace=ws_set.namespace)
 
     graph.add(triple=(scene.scene_agn_uri, RDF.type, URI_BDD_TYPE_SCENE_AGN))
-    graph.add(triple=(scene.scene_agn_uri, RDF.type, URI_BDD_TYPE_SET))
-    for agn in scene.agents:
-        graph.bind(prefix=agn.ns.name, namespace=agn.namespace)
-        graph.add(triple=(agn.uri, RDF.type, URI_AGN_TYPE_AGN))
-        graph.add(triple=(scene.scene_agn_uri, URI_AGN_PRED_HAS_AGN, agn.uri))
+    for agn_set in scene.agn_sets:
+        add_scene_set(
+            graph=graph,
+            scn_comp_uri=scene.scene_agn_uri,
+            scn_set_uri=agn_set.uri,
+            set_elems=agn_set.agents,
+            set_uris=set_uris,
+        )
+        graph.bind(prefix=agn_set.ns.name, namespace=agn_set.namespace)
+
+    for ws_comp in scene.ws_comps:
+        add_ws_comp(graph=graph, scene=scene, ws_comp=ws_comp, ws_comp_set=None)
 
 
 def add_scenario_variant(
@@ -603,7 +737,7 @@ def add_scenario_variant(
     variant: ScenarioVariant,
     templates: set[URIRef],
     scenes: set[URIRef],
-    value_sets: set[URIRef],
+    set_uris: set[URIRef],
 ):
     graph.add(triple=(variant.uri, RDF.type, URI_BDD_TYPE_SCENARIO_VARIANT))
 
@@ -616,7 +750,7 @@ def add_scenario_variant(
 
     # scene
     if variant.scene.uri not in scenes:
-        add_scene_model(graph=graph, scene=variant.scene)
+        add_scene_model(graph=graph, scene=variant.scene, set_uris=set_uris)
         scenes.add(variant.scene.uri)
 
     graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_obj_uri))
@@ -634,7 +768,9 @@ def add_scenario_variant(
     )
 
     # variation
-    add_task_variation(graph=graph, variation=variant.variation, value_sets=value_sets)
+    add_task_variation(
+        graph=graph, variation=variant.variation, scene_model=variant.scene, set_uris=set_uris
+    )
     graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_VARIATION, variant.variation.uri))
 
 
@@ -643,13 +779,13 @@ def add_us_to_graph(
     us: UserStory,
     templates: set[URIRef],
     scenes: set[URIRef],
-    value_sets: set[URIRef],
+    set_uris: set[URIRef],
 ):
     graph.bind(us.ns.name, us.ns.uri, override=True)
     graph.add(triple=(us.uri, RDF.type, URI_BDD_TYPE_US))
     for scr_var in us.scenarios:
         add_scenario_variant(
-            graph=graph, variant=scr_var, templates=templates, scenes=scenes, value_sets=value_sets
+            graph=graph, variant=scr_var, templates=templates, scenes=scenes, set_uris=set_uris
         )
         graph.add((us.uri, URI_BDD_PRED_HAS_AC, scr_var.uri))
 
@@ -672,8 +808,8 @@ def create_bdd_model_graph(model: Any) -> Graph:
     assert stories is not None and isinstance(stories, list), "no list of user stories in model"
     templates = set()
     scenes = set()
-    value_sets = set()
+    set_uris = set()
     for us in stories:
-        add_us_to_graph(graph=g, us=us, templates=templates, scenes=scenes, value_sets=value_sets)
+        add_us_to_graph(graph=g, us=us, templates=templates, scenes=scenes, set_uris=set_uris)
 
     return g

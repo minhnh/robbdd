@@ -4,34 +4,61 @@ Model:
 
 namespaces=NamespaceDeclare*
 
-model=SceneModel
+(
+obj_sets+=ObjectSet
+|
+ws_sets+=WorkspaceSet
+|
+agn_sets+=AgentSet
+)*
+
+ws_comps*=WorkspaceComposition
+
+scene_models+=SceneModel
+;
+
+ObjectSet:
+'obj' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+objects+=Object[',']
+'}'
+;
+WorkspaceSet:
+'ws' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+workspaces+=Workspace[',']
+'}'
+;
+AgentSet:
+'agn' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+agents+=Agent[',']
+'}'
+;
+
+Object: 'object' name=ID;
+Workspace: 'workspace' name=ID ;
+Agent: 'agent' name=ID ;
+
+WorkspaceComposition:
+'comp' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID 'of' 'ws' '<' ws=[Workspace|FQN] '>' '{'
+(
+'obj' '<' objects+=[Object|FQN] '>'
+|
+'ws' '<' workspaces+=[Workspace|FQN] '>'
+|
+'ws' 'comp' '<' ws_comps+=[WorkspaceComposition|FQN] '>'
+)*
+'}'
 ;
 
 SceneModel:
 'scene' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
 (
-objects+=Object
+'obj' 'set' '<' obj_sets+=[ObjectSet|FQN] '>'
 |
-workspaces+=Workspace
+'ws' 'set' '<' ws_sets+=[WorkspaceSet|FQN] '>'
 |
-agents+=Agent
+'ws' 'comp' '<' ws_comps+=[WorkspaceComposition|FQN] '>'
+|
+'agn' 'set' '<' agn_sets+=[AgentSet|FQN] '>'
 )*
 '}'
 ;
-
-Object: 'object' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ';' ;
-Workspace:
-'workspace' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID
-(
-';'
-|
-'{'
-(
-objects+=Object
-|
-workspaces+=Workspace
-)*
-'}'
-)
-;
-Agent: 'agent' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ';' ;

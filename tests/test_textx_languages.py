@@ -13,9 +13,7 @@ class TestTextXLanguages(unittest.TestCase):
         """Test scene-tx language"""
         scene_mm = metamodel_for_language("robbdd-scene")
         scene_model = scene_mm.model_from_file(join(MODELS_DIR, "lab.scene"))
-        assert len(scene_model.model.objects) > 0
-        assert len(scene_model.model.workspaces) > 0
-        assert len(scene_model.model.agents) > 0
+        assert len(scene_model.scene_models) > 0
 
     def test_robbdd(self):
         """Test RobBDD language"""

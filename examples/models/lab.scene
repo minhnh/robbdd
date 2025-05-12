@@ -2,21 +2,48 @@ ns lab_env='https://secorolab.github.io/models/environments/secorolab/'
 ns isaac_agn='https://secorolab.github.io/models/agents/isaac-sim/'
 ns scene_lab='https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/secorolab/'
 
-scene (ns=scene_lab) lab_scene {
-    object (ns=lab_env) box1 ;
-    object (ns=lab_env) box2 ;
-    object (ns=lab_env) ball ;
-    object (ns=lab_env) bottle ;
-    workspace (ns=lab_env) dining_table {
-        object (ns=lab_env) table ;
-    }
-    workspace (ns=lab_env) shelf ;
-    workspace (ns=lab_env) container_1_ws {
-        object (ns=lab_env) container_1 ;
-    }
-    workspace (ns=lab_env) container_2_ws {
-        object (ns=lab_env) container_2 ;
-    }
-    agent (ns=isaac_agn) freddy ;
-    agent (ns=isaac_agn) lucy ;
+obj set (ns=lab_env) pickplace_objects {
+    object box1,
+    object box2,
+    object ball,
+    object bottle
+}
+obj set (ns=lab_env) ws_objects {
+    object container_1,
+    object container_2,
+    object dining_table,
+    object shelf
+}
+ws set (ns=lab_env) lab_workspaces {
+    workspace table_ws,
+    workspace container_1_ws,
+    workspace container_2_ws,
+    workspace shelf_ws
+}
+agn set (ns=isaac_agn) isaac_agents {
+    agent panda,
+    agent ur10,
+    agent kinova
+}
+
+comp (ns=lab_env) comp_container1 of ws <lab_workspaces.container_1_ws> { obj <ws_objects.container_1> }
+comp (ns=lab_env) comp_container2 of ws <lab_workspaces.container_2_ws> { obj <ws_objects.container_2> }
+comp (ns=lab_env) comp_table_sort of ws <lab_workspaces.table_ws> {
+    obj <ws_objects.dining_table>
+    ws comp <comp_container1>
+    ws comp <comp_container2>
+}
+comp (ns=lab_env) comp_table_pickplace of ws <lab_workspaces.table_ws> { obj <ws_objects.dining_table> }
+comp (ns=lab_env) comp_shelf_pickplace of ws <lab_workspaces.shelf_ws> { obj <ws_objects.shelf> }
+
+scene (ns=scene_lab) pickplace_scene {
+    obj set <pickplace_objects>
+    ws comp <comp_table_pickplace>
+    ws comp <comp_shelf_pickplace>
+    agn set <isaac_agents>
+}
+scene (ns=scene_lab) sorting_scene {
+    obj set <pickplace_objects>
+    ws comp <comp_table_sort>
+    agn set <isaac_agents>
 }

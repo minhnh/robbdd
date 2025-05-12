@@ -50,3 +50,8 @@ class IHasUUID(IHasParent):
     @property
     def uri(self) -> URIRef:
         raise NotImplementedError(f"'uri' property not implemented for '{self.__class__.__name__}'")
+
+
+class SetBase(IHasParent):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)

@@ -9,11 +9,8 @@ Event (ns=bdd_tmpl) evt_pick_start
 Event (ns=bdd_tmpl) evt_place_end
 Event (ns=bdd_tmpl) evt_scenario_end
 
-const set (ns=bdd_var) obj_set {
-    <lab_scene.box1>, <lab_scene.box2>, <lab_scene.ball>, <lab_scene.bottle>
-}
-const set (ns=bdd_var) place_ws_set {
-    <lab_scene.container_1_ws>, <lab_scene.container_2_ws>
+const set (ns=bdd_var) sort_ws_set {
+    <lab_workspaces.container_1_ws>, <lab_workspaces.container_2_ws>
 }
 
 Scenario Template (ns=bdd_tmpl) tmpl_sort {
@@ -48,19 +45,14 @@ User Story (ns=bdd_var) us_pickplace_single_arm {
     Scenarios:
         Scenario simple_pick {
             template: <tmpl_sort>
-            scene: <lab_scene>
+            scene: <sorting_scene>
 
             variation:
-                set var <tmpl_sort.target_objects>: {
-                    { <lab_scene.box1>, <lab_scene.ball> },
-                    { <lab_scene.box1>, <lab_scene.bottle> }
-                }
+                set var <tmpl_sort.target_objects>: select 3 combinations from <pickplace_objects>
                 var <tmpl_sort.pick_ws>: {
-                    <lab_scene.dining_table>, <lab_scene.shelf>
+                    <lab_workspaces.table_ws>, <lab_workspaces.shelf_ws>
                 }
-                set var <tmpl_sort.place_workspaces>: select 2 combinations from <place_ws_set>
-                var <tmpl_sort.robot>: {
-                    <lab_scene.freddy>, <lab_scene.lucy>
-                }
+                set var <tmpl_sort.place_workspaces>: select 2 combinations from <sort_ws_set>
+                var <tmpl_sort.robot>: agn set <isaac_agents>
         }
 }

@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Optional
 from rdflib import Namespace, URIRef
-from robbdd.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasParent, IHasUUID
+from robbdd.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasParent, IHasUUID, SetBase
 from robbdd.classes.scene import SceneModel
 
 
@@ -21,12 +21,7 @@ class Task(IHasNamespaceDeclare):
         super().__init__(parent=parent, ns=ns, name=name)
 
 
-class SetBase(IHasParent):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-
-
-class ConstantSet(SetBase, IHasNamespaceDeclare):
+class ExplicitSet(SetBase, IHasNamespaceDeclare):
     def __init__(self, parent, ns, name, elems, **kwargs) -> None:
         super().__init__(parent=parent, name=name, ns=ns, **kwargs)
         self.elems = elems
