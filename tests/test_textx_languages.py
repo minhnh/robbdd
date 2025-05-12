@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 import unittest
 from os.path import dirname, join
+from urllib.error import HTTPError
 from textx import metamodel_for_language
+
+from rdf_utils.resolver import install_resolver
+from bdd_dsl.models.user_story import UserStoryLoader
+from robbdd.graph import create_bdd_model_graph
 
 
 ROOT_DIR = dirname(dirname(__file__))
@@ -27,3 +32,10 @@ class TestTextXLanguages(unittest.TestCase):
             assert len(bdd_model.templates) > 0
             assert len(bdd_model.stories) > 0
             assert len(bdd_model.stories[0].scenarios) > 0
+
+            g = create_bdd_model_graph(model=bdd_model)
+            install_resolver()
+            try:
+                _ = UserStoryLoader(g)
+            except HTTPError as e:
+                raise RuntimeError(f"error loading models URL '{e.url}':\n{e.info()}\n{e}")
