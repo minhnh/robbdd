@@ -51,6 +51,6 @@ foo@bar:~$ textx generate examples/models/pickplace_table.bdd --target graph -o 
 The `gherkin` generator create [Gherkin feature files](https://cucumber.io/docs/gherkin/reference/)
 from the models using generation mechanism from the `bdd-dsl` package. Example use:
 
-```shell
+```console
 foo@bar:~$ textx generate models/pickplace_quantifiers.bdd --target gherkin -o generated
 ```

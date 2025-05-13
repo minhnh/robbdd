@@ -82,12 +82,12 @@ ThenExpr: 'Then' ':' then=Clause ;
 
 // Quantifiers over fluent logic expressions
 ForAllExpr:
-'for' 'all' '(' var=ScenarioVariable 'in' '<' in_set=[SetBase|FQN] '>' ')' '{'
+'for' 'all' '(' var=ScenarioVariable 'in' '<' in_set=[ScenarioSetVariable|FQN] '>' ')' '{'
     gwt_expr=GivenWhenThenExpr
 '}'
 ;
 ExistsExpr:
-'(' var=ScenarioVariable 'exists' 'in' '<' in_set=[SetBase|FQN] '>' ')' 'such' 'that' '{'
+'(' var=ScenarioVariable 'exists' 'in' '<' in_set=[ScenarioSetVariable|FQN] '>' ')' 'such' 'that' '{'
     fl_expr=FluentLogicExpr
 '}'
 ;

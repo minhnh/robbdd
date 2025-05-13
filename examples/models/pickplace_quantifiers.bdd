@@ -3,7 +3,7 @@ import "lab.scene"
 ns bdd_var='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/'
 ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
 
-Task (ns=bdd_tmpl) tsk_pickplace
+Task (ns=bdd_tmpl) tsk_sorting
 Event (ns=bdd_tmpl) evt_scenario_start
 Event (ns=bdd_tmpl) evt_pick_start
 Event (ns=bdd_tmpl) evt_place_end
@@ -14,7 +14,7 @@ const set (ns=bdd_var) sort_ws_set {
 }
 
 Scenario Template (ns=bdd_tmpl) tmpl_sort {
-    task: <tsk_pickplace>
+    task: <tsk_sorting>
 
     set var target_objects
     set var place_workspaces
@@ -37,13 +37,13 @@ Scenario Template (ns=bdd_tmpl) tmpl_sort {
         holds(<target_objects> are sorted into <place_workspaces>, after <evt_place_end>)
 }
 
-User Story (ns=bdd_var) us_pickplace_single_arm {
+User Story (ns=bdd_var) sim_sorting {
     As A "Function Developer"
     I Want "Pick and place behaviour"
     So That "I can transport objects"
 
     Scenarios:
-        Scenario simple_pick {
+        Scenario isaac_sorting {
             template: <tmpl_sort>
             scene: <sorting_scene>
 
@@ -52,7 +52,10 @@ User Story (ns=bdd_var) us_pickplace_single_arm {
                 var <tmpl_sort.pick_ws>: {
                     <lab_workspaces.table_ws>, <lab_workspaces.shelf_ws>
                 }
-                set var <tmpl_sort.place_workspaces>: select 2 combinations from <sort_ws_set>
+                set var <tmpl_sort.place_workspaces>: {
+                    { <lab_workspaces.container_1_ws>, <lab_workspaces.container_2_ws> },
+                    { <lab_workspaces.container_2_ws>, <lab_workspaces.container_1_ws> }
+                }
                 var <tmpl_sort.robot>: agn set <isaac_agents>
         }
 }

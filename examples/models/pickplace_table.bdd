@@ -27,13 +27,13 @@ Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
         )
 }
 
-User Story (ns=bdd_var) us_pickplace_single_arm {
+User Story (ns=bdd_var) sim_pickplace {
     As A "Function Developer"
     I Want "Pick and place behaviour"
     So That "I can transport objects"
 
     Scenarios:
-        Scenario simple_pick {
+        Scenario pickplace_table {
             template: <tmpl_pickplace>
             scene: <pickplace_scene>
 
