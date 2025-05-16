@@ -68,6 +68,7 @@ from bdd_dsl.models.urirefs import (
     URI_BHV_TYPE_PLACE,
     URI_ENV_PRED_HAS_OBJ,
     URI_ENV_PRED_HAS_WS,
+    URI_ENV_PRED_OF_WS,
     URI_ENV_TYPE_OBJ,
     URI_ENV_TYPE_WS,
     URI_ENV_TYPE_WS_OBJ,
@@ -705,6 +706,7 @@ def add_ws_comp(
     graph.add(triple=(scene.scene_ws_uri, URI_ENV_PRED_HAS_WS, ws_comp.ws.uri))
     graph.add(triple=(ws_comp.ws.uri, RDF.type, URI_ENV_TYPE_WS))
 
+    graph.add(triple=(ws_comp.uri, URI_ENV_PRED_OF_WS, ws_comp.ws.uri))
     if len(ws_comp.objects) > 0:
         graph.add(triple=(ws_comp.uri, RDF.type, URI_ENV_TYPE_WS_OBJ))
     if len(ws_comp.workspaces) > 0 or len(ws_comp.ws_comps):
