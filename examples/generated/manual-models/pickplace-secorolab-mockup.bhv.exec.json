@@ -1,0 +1,26 @@
+{
+    "@context": [
+        "https://secorolab.github.io/metamodels/languages/python.json",
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/bdd.json",
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/behaviour.json",
+        {
+            "bdd_var": "https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/",
+            "bdd_tmpl": "https://secorolab.github.io/models/acceptance-criteria/bdd/templates/",
+            "exec": "https://secorolab.github.io/models/execution/isaac-pickplace/"
+        }
+    ],
+    "@graph": [
+        {
+            "@id": "exec:pickplace-bhv-mockup", "@type": [ "bdd:BehaviourImplementation", "py:ModuleAttribute" ],
+            "of-behaviour": "bdd_tmpl:pickplace",
+            "module-name": "bdd_dsl.execution.mockup", "attribute-name": "PickplaceBehaviourMockup"
+        },
+        {
+            "@id": "exec:pickplace-exec-mockup", "@type": [ "bdd:ScenarioExecution", "bdd:SimulatedExecution" ],
+            "of-variant": [
+                "bdd_var:isaac_sorting"
+            ],
+            "has-behaviour-impl": "exec:pickplace-bhv-mockup"
+        }
+    ]
+}

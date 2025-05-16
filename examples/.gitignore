@@ -1,1 +1,4 @@
-generated/*
+generated/*.feature
+generated/*.json
+generated/*.ttl
+generated/*.xml

@@ -1,0 +1,73 @@
+{
+    "@context": [
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/bdd.json",
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/environment.json",
+        "https://secorolab.github.io/metamodels/acceptance-criteria/bdd/agent.json",
+        {
+            "lab_env_exec": "https://secorolab.github.io/models/execution/secorolab/",
+            "lab_env": "https://secorolab.github.io/models/environments/secorolab/",
+            "lab-sim": "https://secorolab.github.io/models/simulation/isaac/",
+            "isaac_agn": "https://secorolab.github.io/models/agents/isaac-sim/"
+        }
+    ],
+    "@graph":[
+        {
+            "@id": "lab_env_exec:kinova_config", "@type": "agn:ModelledAgent",
+            "of-agent": "isaac_agn:kinova", "has-agn-model": "lab-sim:isaac-franka",
+            "has-config": {
+                "position": [0.0, 0.0, 0.2], "attach_gripper": "true"
+            }
+        },
+        {
+            "@id": "lab_env_exec:panda_config", "@type": "agn:ModelledAgent",
+            "of-agent": "isaac_agn:panda", "has-agn-model": "lab-sim:isaac-franka",
+            "has-config": {
+                "position": [0.0, 0.0, 0.2], "attach_gripper": "true"
+            }
+        },
+        {
+            "@id": "lab_env_exec:ur10_config", "@type": "agn:ModelledAgent",
+            "of-agent": "isaac_agn:ur10", "has-agn-model": "lab-sim:isaac-ur10",
+            "has-config": {
+                "position": [0.0, 0.0, 0.2], "attach_gripper": "true"
+            }
+        },
+        {
+            "@id": "lab_env_exec:table_config", "@type": "env:ModelledObject",
+            "of-object": "lab_env:dining_table", "has-obj-model": "lab-sim:obj-thorlabs-table",
+            "has-config": { "scale": 0.5 }
+        },
+        {
+            "@id": "lab_env_exec:container_2_config", "@type": "env:ModelledObject",
+            "of-object": "lab_env:container_2", "has-obj-model": "lab-sim:obj-klt-bin",
+            "has-config": { "scale": 0.5 }
+        },
+        {
+            "@id": "lab_env_exec:container_1_config", "@type": "env:ModelledObject",
+            "of-object": "lab_env:container_1", "has-obj-model": "lab-sim:obj-klt-bin",
+            "has-config": { "scale": 0.5 }
+        },
+        {
+            "@id": "lab_env_exec:bottle_config", "@type": "env:ModelledObject",
+            "of-object": "lab_env:bottle", "has-obj-model": "lab-sim:obj-ycb-mustard-bottle",
+            "has-config": { "scale": 0.5, "color": [0, 0, 1] }
+        },
+        {
+            "@id": "lab_env_exec:ball_config", "@type": "env:ModelledObject",
+            "of-object": "lab_env:ball", "has-obj-model": "lab-sim:isaac-sphere",
+            "has-config": { "scale": 0.5, "color": [0, 0, 1] }
+        },
+        {
+            "@id": "lab_env_exec:box2_config", "@type": "env:ModelledObject",
+            "of-object": "lab_env:box2", "has-obj-model": "lab-sim:isaac-cuboid",
+            "has-config": { "scale": 0.0315, "color": [0, 0, 1] }
+        },
+        {
+            "@id": "lab_env_exec:box1_config", "@type": "env:ModelledObject",
+            "of-object": "lab_env:box1", "has-obj-model": "lab-sim:isaac-cuboid",
+            "has-config": {
+                "scale": [0.0315, 0.0315, 0.0315], "color": [0, 0, 1]
+            }
+        }
+    ]
+}

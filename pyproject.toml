@@ -21,6 +21,8 @@ classifiers = [
 dependencies = [
   'textx', 'textX-jinja', 'rdflib'
 ]
+[project.optional-dependencies]
+exec = [ "behave" ]
 
 [project.entry-points.textx_languages]
 robbdd = "robbdd.registration:bdd_lang"
@@ -33,6 +35,9 @@ robbdd_gherkin = "robbdd.registration:robbdd_gherkin_gen"
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+"examples/generated/environment.py" = ["F401"]
 
 [tool.black]
 line-length = 100
