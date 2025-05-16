@@ -145,10 +145,16 @@ bdd_lang = LanguageDesc(
 
 def graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs):
     g_format = kwargs.get("format", "json-ld")
+    ser_kwargs = {"format": g_format}
+    if g_format == "json-ld":
+        if "nocompact" in kwargs:
+            ser_kwargs["auto_compact"] = False
+        else:
+            ser_kwargs["auto_compact"] = True
 
     g = create_bdd_model_graph(model=model)
     try:
-        print(g.serialize(format=g_format))
+        print(g.serialize(**ser_kwargs))
     except PluginException as e:
         raise ValueError(
             f"serialization format '{g_format}' not supported by rdflib, try {list(__GRAPH_FORMAT_EXT.keys())}: {e.msg}"
@@ -160,6 +166,12 @@ def graph_gen(metamodel, model, output_path, overwrite, debug, **kwargs):
     assert (
         g_format in __GRAPH_FORMAT_EXT
     ), f"file extension not handled for graph format '{g_format}', try {list(__GRAPH_FORMAT_EXT.keys())}"
+    ser_kwargs = {"format": g_format}
+    if g_format == "json-ld":
+        if "nocompact" in kwargs:
+            ser_kwargs["auto_compact"] = False
+        else:
+            ser_kwargs["auto_compact"] = True
 
     filename = kwargs.get("filename", basename(model._tx_filename))
     if filename is None:
@@ -172,7 +184,7 @@ def graph_gen(metamodel, model, output_path, overwrite, debug, **kwargs):
 
     g = create_bdd_model_graph(model=model)
     with open(full_output_path, "w") as outfile:
-        outfile.write(g.serialize(format=g_format))
+        outfile.write(g.serialize(**ser_kwargs))
     print(f"... wrote {full_output_path}")
 
 

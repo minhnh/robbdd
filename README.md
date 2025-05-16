@@ -25,6 +25,8 @@ Two custom arguments are handled by the generators:
 - `format`: available for `console` & `graph` generators, for specifying the RDF graph
   serialization format. See `rdflib` documentation (linked above) to see which are available.
   Typical formats are `json-ld`, `ttl`, `xml`. Default format if non specified is `json-ld`.
+- `nocompact`: available for `console` & `graph` generators, when format is `json-ld`.
+  If specified, won't add `@context` with prefix-namespace mapping in the serialized JSON.
 - `filename`: available for `graph` & `gherkin` generators, for specifying the output file name.
   File extensions will be ignored. If not specified, the model file name will be used by default.
 
@@ -40,10 +42,16 @@ foo@bar:~$ textx generate examples/models/pickplace_quantifiers.bdd --target con
 
 The `graph` generator dump graph serialization to a file. Only `json-ld`, `ttl`, and `xml` formats
 are currently supported, which generate to `.json`, `.ttl`, and `.xml` file extensions,
-respectively. Example use:
+respectively. Example use for generating to the Turtle format:
 
 ```console
 foo@bar:~$ textx generate examples/models/pickplace_table.bdd --target graph -o examples/generated --format ttl --filename model_graph
+```
+
+Or generate JSON-LD without compacting IRIs, using model name as file name:
+
+```console
+foo@bar:~$ textx generate examples/models/pickplace_quantifiers.bdd --target graph --nocompact -o examples/generated
 ```
 
 ### Gherkin
