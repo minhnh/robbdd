@@ -80,11 +80,6 @@ WhenExpr:
 ;
 ThenExpr: 'Then' ':' then=Clause ;
 
-//WhenEventThenExpr:
-//    when_event=WhenEventCl
-//
-//;
-
 // Quantifiers over fluent logic expressions
 ForAllExpr:
 'for' 'all' '(' var=ScenarioVariable 'in' '<' in_set=[ScenarioSetVariable|FQN] '>' ')' '{'
