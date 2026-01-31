@@ -18,27 +18,27 @@ scene_models+=SceneModel
 ;
 
 ObjectSet:
-'obj' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+'obj' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
 objects+=Object[',']
 '}'
 ;
 WorkspaceSet:
-'ws' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+'ws' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
 workspaces+=Workspace[',']
 '}'
 ;
 AgentSet:
-'agn' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+'agn' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
 agents+=Agent[',']
 '}'
 ;
 
-Object: 'object' name=ID;
-Workspace: 'workspace' name=ID ;
-Agent: 'agent' name=ID ;
+Object: 'object' name=IRI_TRUNK;
+Workspace: 'workspace' name=IRI_TRUNK ;
+Agent: 'agent' name=IRI_TRUNK ;
 
 WorkspaceComposition:
-'comp' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID 'of' 'ws' '<' ws=[Workspace|FQN] '>' '{'
+'comp' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK 'of' 'ws' '<' ws=[Workspace|FQN] '>' '{'
 (
 'obj' '<' objects+=[Object|FQN] '>'
 |
@@ -50,7 +50,7 @@ WorkspaceComposition:
 ;
 
 SceneModel:
-'scene' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+'scene' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
 (
 'obj' 'set' '<' obj_sets+=[ObjectSet|FQN] '>'
 |
