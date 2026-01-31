@@ -1,4 +1,5 @@
-FQN: ID+['.'];
+FQN: IRI_TRUNK+['.'];
 Import: 'import' importURI=STRING;
 Comment: /\/\/.*$/;
-NamespaceDeclare: 'ns' name=ID '=' uri=STRING ;
+NamespaceDeclare: 'ns' name=IRI_TRUNK '=' uri=STRING ;
+IRI_TRUNK: /[^\d\W][\w-]*\b/;

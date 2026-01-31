@@ -1,61 +1,61 @@
 import "lab.scene"
 
-ns bdd_var='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/'
-ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
+ns bdd-var='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/pickplace-isaac/'
+ns bdd-tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
 
-Task (ns=bdd_tmpl) tsk_sorting
-Event (ns=bdd_tmpl) evt_scenario_start
-Event (ns=bdd_tmpl) evt_pick_start
-Event (ns=bdd_tmpl) evt_place_end
-Event (ns=bdd_tmpl) evt_scenario_end
+Task (ns=bdd-tmpl) task-sorting
+Event (ns=bdd-tmpl) evt_scenario_start
+Event (ns=bdd-tmpl) evt_pick_start
+Event (ns=bdd-tmpl) evt_place_end
+Event (ns=bdd-tmpl) evt_scenario_end
 
-const set (ns=bdd_var) sort_ws_set {
+const set (ns=bdd-var) sort_ws_set {
     <lab_workspaces.container_1_ws>, <lab_workspaces.container_2_ws>
 }
 
-Scenario Template (ns=bdd_tmpl) tmpl_sort {
-    task: <tsk_sorting>
+Scenario Template (ns=bdd-tmpl) tmpl-sorting {
+    task: <task-sorting>
 
-    set var target_objects
-    set var place_workspaces
+    set var target-objects
+    set var place-workspaces
     var robot
     var pick_ws
 
-    for all ( var x in <target_objects> ) {
+    for all ( var x in <target-objects> ) {
         Given:
         (
             holds(<x> is located at <pick_ws>, before <evt_pick_start>)
         )
         When:
-            Behaviour (ns=bdd_tmpl) pickplace: <robot> picks <x> and places at <place_workspaces>
+            Behaviour (ns=bdd-tmpl) pickplace: <robot> picks <x> and places at <place-workspaces>
         Then:
-            ( var y exists in <place_workspaces> ) such that {
+            ( var y exists in <place-workspaces> ) such that {
                 holds(<x> is located at <y>, after <evt_place_end>)
             }
     }
     Then:
-        holds(<target_objects> are sorted into <place_workspaces>, after <evt_place_end>)
+        holds(<target-objects> are sorted into <place-workspaces>, after <evt_place_end>)
 }
 
-User Story (ns=bdd_var) sim_sorting {
+User Story (ns=bdd-var) sim_sorting {
     As A "Function Developer"
     I Want "Pick and place behaviour"
     So That "I can transport objects"
 
     Scenarios:
         Scenario isaac_sorting {
-            template: <tmpl_sort>
+            template: <tmpl-sorting>
             scene: <sorting_scene>
 
             variation:
-                set var <tmpl_sort.target_objects>: select 3 combinations from <pickplace_objects>
-                var <tmpl_sort.pick_ws>: {
+                set var <tmpl-sorting.target-objects>: select 3 combinations from <pickplace_objects>
+                var <tmpl-sorting.pick_ws>: {
                     <lab_workspaces.table_ws>, <lab_workspaces.shelf_ws>
                 }
-                set var <tmpl_sort.place_workspaces>: {
+                set var <tmpl-sorting.place-workspaces>: {
                     { <lab_workspaces.container_1_ws>, <lab_workspaces.container_2_ws> },
                     { <lab_workspaces.container_2_ws>, <lab_workspaces.container_1_ws> }
                 }
-                var <tmpl_sort.robot>: agn set <isaac_agents>
+                var <tmpl-sorting.robot>: agn set <isaac_agents>
         }
 }

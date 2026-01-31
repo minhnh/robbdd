@@ -21,14 +21,14 @@ stories+=UserStory
 )+
 ;
 
-Behaviour: 'Behaviour' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
+Behaviour: 'Behaviour' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK ;
 
-Event: 'Event' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
+Event: 'Event' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK ;
 
-Task: 'Task' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID ;
+Task: 'Task' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK ;
 
 UserStory:
-'User' 'Story' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')'  name=ID '{'
+'User' 'Story' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')'  name=IRI_TRUNK '{'
 
 'As' 'A' role=STRING
 'I' 'Want' feature=STRING
@@ -40,7 +40,7 @@ UserStory:
 ;
 
 ScenarioTemplate:
-'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
     'task' ':' '<' task=[Task|FQN] '>'
 
     variables=VariableBase*
@@ -49,7 +49,7 @@ ScenarioTemplate:
 ;
 
 ScenarioVariant:
-'Scenario' name=ID '{'
+'Scenario' name=IRI_TRUNK '{'
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
     'scene' ':' '<' scene=[SceneModel|FQN] '>'
 
@@ -208,7 +208,7 @@ ValidCellValue: ValidVarValue | ConstSetLink | SetExpr ;
 // Sets
 SetBase: ExplicitSet | ObjectSet | WorkspaceSet | AgentSet | ScenarioSetVariable ;
 ExplicitSet :
-'const' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=ID '{'
+'const' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
     elems+=ValidVarValue[',']
 '}'
 ;
@@ -240,8 +240,8 @@ Permutation:
 
 // Variables
 VariableBase: ScenarioVariable | ScenarioSetVariable ;
-ScenarioSetVariable: 'set' 'var' name=ID ;
-ScenarioVariable: 'var' name=ID ;
+ScenarioSetVariable: 'set' 'var' name=IRI_TRUNK ;
+ScenarioVariable: 'var' name=IRI_TRUNK ;
 
 // Valid values for variables
 ValidVarValue:
