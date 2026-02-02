@@ -20,7 +20,6 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_CLAUSE,
     URI_BDD_PRED_HAS_SCENE,
     URI_BDD_PRED_HAS_VARIATION,
-    URI_BDD_PRED_HOLDS_AT,
     URI_BDD_PRED_IN_SET,
     URI_BDD_PRED_OF_SCENARIO,
     URI_BDD_PRED_OF_SCENE,
@@ -245,24 +244,23 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
     raise ValueError(f"unhandled predicate type: {pred_type_str}")
 
 
-def add_fc_time_constraint(graph: Graph, tc: TimeConstraint, clause_uri: URIRef):
-    graph.add(triple=(tc.uri, RDF.type, URI_TIME_TYPE_TC))
-    graph.add(triple=(clause_uri, URI_BDD_PRED_HOLDS_AT, tc.uri))
+def add_node_time_constraint(graph: Graph, tc: TimeConstraint, node_uri: URIRef):
+    graph.add(triple=(node_uri, RDF.type, URI_TIME_TYPE_TC))
 
     if isinstance(tc, BeforeEvent):
-        graph.add(triple=(tc.uri, RDF.type, URI_TIME_TYPE_BEFORE_EVT))
-        graph.add(triple=(tc.uri, URI_TIME_PRED_BEFORE_EVT, tc.event.uri))
+        graph.add(triple=(node_uri, RDF.type, URI_TIME_TYPE_BEFORE_EVT))
+        graph.add(triple=(node_uri, URI_TIME_PRED_BEFORE_EVT, tc.event.uri))
         return
 
     if isinstance(tc, AfterEvent):
-        graph.add(triple=(tc.uri, RDF.type, URI_TIME_TYPE_AFTER_EVT))
-        graph.add(triple=(tc.uri, URI_TIME_PRED_AFTER_EVT, tc.event.uri))
+        graph.add(triple=(node_uri, RDF.type, URI_TIME_TYPE_AFTER_EVT))
+        graph.add(triple=(node_uri, URI_TIME_PRED_AFTER_EVT, tc.event.uri))
         return
 
     if isinstance(tc, DuringEvent):
-        graph.add(triple=(tc.uri, RDF.type, URI_TIME_TYPE_DURING))
-        graph.add(triple=(tc.uri, URI_TIME_PRED_AFTER_EVT, tc.start_event.uri))
-        graph.add(triple=(tc.uri, URI_TIME_PRED_BEFORE_EVT, tc.end_event.uri))
+        graph.add(triple=(node_uri, RDF.type, URI_TIME_TYPE_DURING))
+        graph.add(triple=(node_uri, URI_TIME_PRED_AFTER_EVT, tc.start_event.uri))
+        graph.add(triple=(node_uri, URI_TIME_PRED_BEFORE_EVT, tc.end_event.uri))
         return
 
     raise ValueError(f"unhandled time constraint type: {type(tc)}")
@@ -281,7 +279,7 @@ def add_clause_expr(
         graph.add((fc_uri, URI_BDD_PRED_CLAUSE_OF, clause_of_uri))
 
         add_fc_predicate(graph=graph, clause=clause, clause_uri=fc_uri)
-        add_fc_time_constraint(graph=graph, tc=clause.tc, clause_uri=fc_uri)
+        add_node_time_constraint(graph=graph, tc=clause.tc, node_uri=fc_uri)
 
         clause_col.append(fc_uri)
 
