@@ -42,6 +42,7 @@ class Combination(IHasUUID, IHasNamespace):
     @property
     def namespace(self) -> Namespace:
         # expect grandparent to be a TaskVariation
+        assert self.parent is not None, f"Combination '{self.uri}' has None parent"
         assert isinstance(
             self.parent.parent, IHasNamespace
         ), f"grandparent of 'Combination' not instance of IHasNamespace: {self.parent.parent}"
@@ -67,6 +68,7 @@ class Permutation(IHasUUID, IHasNamespace):
     @property
     def namespace(self) -> Namespace:
         # expect grandparent to be a TaskVariation
+        assert self.parent is not None, f"Permutation '{self.uri}' has None parent"
         assert isinstance(
             self.parent.parent, IHasNamespace
         ), f"grandparent of 'Permutation' not instance of IHasNamespace: {self.parent.parent}"
@@ -113,8 +115,7 @@ class ScenarioSetVariable(VariableBase, SetBase):
         super().__init__(parent=parent, name=name)
 
 
-class TimeConstraint(IHasUUID, IHasNamespace):
-    _uri: Optional[URIRef]
+class TimeConstraint(IHasNamespace):
 
     def __init__(self, parent) -> None:
         super().__init__(parent=parent)
@@ -126,12 +127,6 @@ class TimeConstraint(IHasUUID, IHasNamespace):
             self.parent, IHasNamespace
         ), f"parent of 'TimeConstraint' not instance of IHasNamespace: {self.parent}"
         return self.parent.namespace
-
-    @property
-    def uri(self) -> URIRef:
-        if self._uri is None:
-            self._uri = self.namespace[f"tc-{self.__class__.__name__}-{self.uuid}"]
-        return self._uri
 
 
 class BeforeEvent(TimeConstraint):
@@ -241,12 +236,14 @@ class ExistsExpr(Clause):
 
 class WhenBehaviourClause(IHasUUID):
     behaviour: Behaviour
+    duration: DuringEvent
     parent: WhenExpr
     _uri: Optional[URIRef]
 
-    def __init__(self, parent, behaviour, param_bhv) -> None:
+    def __init__(self, parent, behaviour, duration, param_bhv) -> None:
         super().__init__(parent=parent)
         self.behaviour = behaviour
+        self.duration = duration
         self.param_bhv = param_bhv
         self._uri = None
 
@@ -355,6 +352,7 @@ class GivenWhenThenExpr(IHasNamespace):
 
 class ScenarioTemplate(IHasNamespaceDeclare):
     task: Task
+    duration: DuringEvent
     variables: list[VariableBase]
 
     def __init__(
@@ -363,11 +361,13 @@ class ScenarioTemplate(IHasNamespaceDeclare):
         ns,
         name,
         task,
+        duration,
         variables,
         gwt_expr,
     ):
         super().__init__(parent=parent, ns=ns, name=name)
         self.task = task
+        self.duration = duration
         self.variables = variables
         self.gwt_expr = gwt_expr
 

@@ -41,6 +41,8 @@ UserStory:
 
 ScenarioTemplate:
 'Scenario' 'Template' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
+    'duration' ':' duration=DuringEvent
+
     'task' ':' '<' task=[Task|FQN] '>'
 
     variables=VariableBase*
@@ -96,7 +98,10 @@ ExistsExpr:
 WhenEventClause: 'event' '<' event=[Event|FQN] '>' 'occurs';
 
 WhenBehaviourClause:
-behaviour=Behaviour ':' param_bhv=ParameterizedBehaviour
+behaviour=Behaviour '{'
+    'duration' ':' duration=DuringEvent
+    param_bhv=ParameterizedBehaviour
+'}'
 ;
 ParameterizedBehaviour: PickPlaceBehaviour | PickBehaviour | PlaceBehaviour ;
 PickBehaviour:
