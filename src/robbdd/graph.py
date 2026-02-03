@@ -319,6 +319,8 @@ def add_when_behaviour(graph: Graph, wbh_clause: WhenBehaviourClause, when_uri: 
     graph.add(triple=(wbh_clause.uri, URI_BHV_PRED_OF_BHV, wbh_clause.behaviour.uri))
     graph.add(triple=(wbh_clause.uri, URI_BDD_PRED_CLAUSE_OF, when_uri))
 
+    add_node_time_constraint(graph=graph, tc=wbh_clause.duration, node_uri=wbh_clause.uri)
+
     param_bhv_cls_str = wbh_clause.param_bhv.__class__.__name__
     if "PickPlaceBehaviour" in param_bhv_cls_str:
         graph.add(triple=(wbh_clause.behaviour.uri, RDF.type, URI_BHV_TYPE_PICK))
@@ -413,8 +415,10 @@ def add_gwt_expr(
 
 
 def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
-    graph.bind(prefix=tmpl.ns.name, namespace=tmpl.namespace)
+    graph.bind(prefix=tmpl.ns_prefix, namespace=tmpl.namespace)
     graph.add(triple=(tmpl.uri, RDF.type, URI_BDD_TYPE_SCENARIO_TMPL))
+
+    add_node_time_constraint(graph=graph, tc=tmpl.duration, node_uri=tmpl.uri)
 
     # scenario
     graph.add(triple=(tmpl.scenario_uri, RDF.type, URI_BDD_TYPE_SCENARIO))
@@ -726,7 +730,7 @@ def add_ws_comp(
 
 
 def add_scene_model(graph: Graph, scene: SceneModel, set_uris: set[URIRef]):
-    graph.bind(prefix=scene.ns.name, namespace=scene.namespace)
+    graph.bind(prefix=scene.ns_prefix, namespace=scene.namespace)
 
     graph.add(triple=(scene.scene_obj_uri, RDF.type, URI_BDD_TYPE_SCENE_OBJ))
     for obj_set in scene.obj_sets:
@@ -737,7 +741,7 @@ def add_scene_model(graph: Graph, scene: SceneModel, set_uris: set[URIRef]):
             set_elems=obj_set.objects,
             set_uris=set_uris,
         )
-        graph.bind(prefix=obj_set.ns.name, namespace=obj_set.namespace)
+        graph.bind(prefix=obj_set.ns_prefix, namespace=obj_set.namespace)
 
     graph.add(triple=(scene.scene_ws_uri, RDF.type, URI_BDD_TYPE_SCENE_WS))
     for ws_set in scene.ws_sets:
@@ -748,7 +752,7 @@ def add_scene_model(graph: Graph, scene: SceneModel, set_uris: set[URIRef]):
             set_elems=ws_set.workspaces,
             set_uris=set_uris,
         )
-        graph.bind(prefix=ws_set.ns.name, namespace=ws_set.namespace)
+        graph.bind(prefix=ws_set.ns_prefix, namespace=ws_set.namespace)
 
     graph.add(triple=(scene.scene_agn_uri, RDF.type, URI_BDD_TYPE_SCENE_AGN))
     for agn_set in scene.agn_sets:
@@ -759,7 +763,7 @@ def add_scene_model(graph: Graph, scene: SceneModel, set_uris: set[URIRef]):
             set_elems=agn_set.agents,
             set_uris=set_uris,
         )
-        graph.bind(prefix=agn_set.ns.name, namespace=agn_set.namespace)
+        graph.bind(prefix=agn_set.ns_prefix, namespace=agn_set.namespace)
 
     for ws_comp in scene.ws_comps:
         add_ws_comp(graph=graph, scene=scene, ws_comp=ws_comp, ws_comp_set=None)
@@ -814,7 +818,7 @@ def add_us_to_graph(
     scenes: set[URIRef],
     set_uris: set[URIRef],
 ):
-    graph.bind(us.ns.name, us.ns.uri, override=True)
+    graph.bind(us.ns_prefix, us.namespace, override=True)
     graph.add(triple=(us.uri, RDF.type, URI_BDD_TYPE_US))
     for scr_var in us.scenarios:
         add_scenario_variant(
@@ -828,13 +832,13 @@ def create_bdd_model_graph(model: Any) -> Graph:
     events = getattr(model, "events", None)
     assert events is not None and isinstance(events, list), "no list of events in model"
     for evt in events:
-        g.bind(prefix=evt.ns.name, namespace=evt.namespace)
+        g.bind(prefix=evt.ns_prefix, namespace=evt.namespace)
         g.add(triple=(evt.uri, RDF.type, NS_MM_TIME["Event"]))
 
     tasks = getattr(model, "tasks", None)
     assert tasks is not None and isinstance(tasks, list), "no list of tasks in model"
     for task in tasks:
-        g.bind(prefix=task.ns.name, namespace=task.namespace)
+        g.bind(prefix=task.ns_prefix, namespace=task.namespace)
         g.add(triple=(task.uri, RDF.type, URI_TASK_TYPE_TASK))
 
     stories = getattr(model, "stories", None)

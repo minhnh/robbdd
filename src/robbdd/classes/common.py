@@ -22,12 +22,14 @@ class IHasNamespace(IHasParent):
 
 class IHasNamespaceDeclare(IHasNamespace):
     uri: URIRef
+    ns_prefix: str
     _ns_obj: Namespace
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.ns = kwargs.get("ns", None)
         assert self.ns is not None
+        self.ns_prefix = self.ns.name
 
         self.name = kwargs.get("name", None)
         assert self.name is not None

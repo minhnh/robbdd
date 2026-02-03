@@ -4,6 +4,8 @@ ns bdd_var='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/
 ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
 
 Task (ns=bdd_tmpl) tsk_pickplace
+Event (ns=bdd_tmpl) evt_scr_start
+Event (ns=bdd_tmpl) evt_scr_end
 Event (ns=bdd_tmpl) evt_pick_start
 Event (ns=bdd_tmpl) evt_place_end
 
@@ -12,6 +14,7 @@ const set (ns=bdd_var) ws_set {
 }
 
 Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
+    duration: from <evt_scr_start> until <evt_scr_end>
     task: <tsk_pickplace>
 
     var target_object
@@ -22,7 +25,10 @@ Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
     Given:
         holds(<target_object> is located at <pick_ws>, before <evt_pick_start>)
     When:
-        Behaviour (ns=bdd_tmpl) pickplace: <robot> picks <target_object> and places at <place_ws>
+        Behaviour (ns=bdd_tmpl) pickplace {
+            duration: from <evt_pick_start> until <evt_place_end>
+            <robot> picks <target_object> and places at <place_ws>
+        }
     Then:
         holds(<target_object> is located at <place_ws>, after <evt_pick_start>)
 }
