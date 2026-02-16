@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any, Optional
-from bdd_dsl.models.combinatorics import (
+from bdd_dsl.models.variation import (
     URI_BDD_PRED_FROM,
     URI_BDD_PRED_LENGTH,
     URI_BDD_PRED_REP_ALLOWED,
