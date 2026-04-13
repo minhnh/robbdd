@@ -154,7 +154,7 @@ class DuringEvent(TimeConstraint):
         self.end_event = end_event
 
 
-class Clause(IHasUUID, IHasNamespace):
+class Clause(IHasNamespace):
     def __init__(self, parent) -> None:
         super().__init__(parent=parent)
 
@@ -213,7 +213,7 @@ class HoldsExpr(FluentLogicExpr):
         return self._uri
 
 
-class ExistsExpr(Clause):
+class ExistsExpr(Clause, IHasUUID):
     var: ScenarioVariable
     fl_expr: FluentLogicExpr
     _uri: Optional[URIRef]
