@@ -10,6 +10,7 @@ Event (ns=bdd_tmpl) evt_place_end
 Event (ns=bdd_tmpl) evt_scenario_end
 
 Scenario Template (ns=bdd_tmpl) tmpl_conveyor_sort {
+    duration: from <evt_scenario_start> until <evt_scenario_end>
     task: <tsk_pickplace>
 
     set var target_objects
@@ -19,23 +20,26 @@ Scenario Template (ns=bdd_tmpl) tmpl_conveyor_sort {
     var conveyor_speed
 
     Given:
-        holds(<conveyor> has config <conveyor_speed>, before <evt_scenario_start>)
+        fc-config: holds(<conveyor> has config <conveyor_speed>, before <evt_scenario_start>)
     for all ( var x in <target_objects> ) {
         Given:
         (
-            holds(<x> is located at <conveyor>, before <evt_pick_start>)
+            fc-located-before: holds(<x> is located at <conveyor>, before <evt_pick_start>)
             and
-            holds(<robot> can reach <x>, before <evt_pick_start>)
+            fc-reachable: holds(<robot> can reach <x>, before <evt_pick_start>)
         )
         When:
-            Behaviour (ns=bdd_tmpl) pickplace: <robot> picks <x> and places at <place_workspaces>
+            Behaviour (ns=bdd_tmpl) pickplace {
+                duration: from <evt_pick_start> until <evt_place_end>
+                <robot> picks <x> and places at <place_workspaces>
+            }
         Then:
             ( var y exists in <place_workspaces> ) such that {
-                holds(<x> is located at <y>, after <evt_place_end>)
+                fc-located-after: holds(<x> is located at <y>, after <evt_place_end>)
             }
     }
     Then:
-        holds(<target_objects> are sorted into <place_workspaces>, after <evt_place_end>)
+        fc-sorted: holds(<target_objects> are sorted into <place_workspaces>, after <evt_place_end>)
 }
 
 User Story (ns=bdd) us_pickplace_single_arm {
@@ -46,7 +50,7 @@ User Story (ns=bdd) us_pickplace_single_arm {
     Scenarios:
         Scenario simple_pick {
             template: <tmpl_conveyor_sort>
-            scene: <lab_scene>
+            scene: <sorting_scene>
 
             variation:
             | <tmpl_conveyor_sort.target_objects> |
@@ -55,8 +59,8 @@ User Story (ns=bdd) us_pickplace_single_arm {
               <tmpl_conveyor_sort.robot> |
               <tmpl_conveyor_sort.conveyor_speed> |
             |---|
-            | <lab_scene.box1> | <lab_scene.dining_table> | <lab_scene.shelf> | <lab_scene.freddy> | 0.9 |
-            | <lab_scene.ball> | <lab_scene.shelf> | <lab_scene.dining_table> | <lab_scene.lucy> | 1.0 |
-            | <lab_scene.bottle> | <lab_scene.dining_table> | <lab_scene.shelf> | <lab_scene.freddy> | 0.8 |
+            | <pickplace_objects.box1> | <lab_workspaces.table_ws> | <lab_workspaces.shelf_ws> | <isaac_agents.kinova> | 0.9 |
+            | <pickplace_objects.ball> | <lab_workspaces.shelf_ws> | <lab_workspaces.table_ws> | <isaac_agents.panda> | 1.0 |
+            | <pickplace_objects.bottle> | <lab_workspaces.table_ws> | <lab_workspaces.shelf_ws> | <isaac_agents.ur10> | 0.8 |
         }
 }

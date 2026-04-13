@@ -122,7 +122,7 @@ TextClause: text=STRING tc=TimeConstraint;
 // Fluent logic terms composing holds clauses with basic logic operators
 FluentLogicExpr: FluentAndExpr | FluentOrExpr | FluentNotExpr | HoldsExpr ;
 HoldsExpr:
-'holds' '(' predicate=FOLExpr ',' tc=TimeConstraint ')'
+name=IRI_TRUNK ':' 'holds' '(' predicate=FOLExpr ',' tc=TimeConstraint ')'
 ;
 FluentAndExpr:
 '('

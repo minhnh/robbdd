@@ -116,7 +116,6 @@ class ScenarioSetVariable(VariableBase, SetBase):
 
 
 class TimeConstraint(IHasNamespace):
-
     def __init__(self, parent) -> None:
         super().__init__(parent=parent)
         self._uri = None
@@ -200,8 +199,9 @@ class HoldsExpr(FluentLogicExpr):
     tc: TimeConstraint
     _uri: Optional[URIRef]
 
-    def __init__(self, parent, predicate, tc) -> None:
+    def __init__(self, parent, name, predicate, tc) -> None:
         super().__init__(parent=parent)
+        self.name = name
         self.predicate = predicate
         self.tc = tc
         self._uri = None
@@ -209,9 +209,7 @@ class HoldsExpr(FluentLogicExpr):
     @property
     def uri(self) -> URIRef:
         if self._uri is None:
-            self._uri = self.namespace[
-                f"fc-{self.predicate.__class__.__name__}-{self.tc.__class__.__name__}-{self.uuid}"
-            ]
+            self._uri = self.namespace[self.name]
         return self._uri
 
 
