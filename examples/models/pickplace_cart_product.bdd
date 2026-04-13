@@ -23,14 +23,14 @@ Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
     var place_ws
 
     Given:
-        holds(<target_object> is located at <pick_ws>, before <evt_pick_start>)
+        fc-located-before: holds(<target_object> is located at <pick_ws>, before <evt_pick_start>)
     When:
         Behaviour (ns=bdd_tmpl) pickplace {
             duration: from <evt_pick_start> until <evt_place_end>
             <robot> picks <target_object> and places at <place_ws>
         }
     Then:
-        holds(<target_object> is located at <place_ws>, after <evt_pick_start>)
+        fc-located-after: holds(<target_object> is located at <place_ws>, after <evt_pick_start>)
 }
 
 User Story (ns=bdd_var) sim_pickplace {
