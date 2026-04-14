@@ -841,12 +841,18 @@ def create_bdd_model_graph(model: Any) -> Graph:
         g.bind(prefix=task.ns_prefix, namespace=task.namespace)
         g.add(triple=(task.uri, RDF.type, URI_TASK_TYPE_TASK))
 
+    tmpl_uris = set()
+    templates = getattr(model, "templates", None)
+    if templates is not None:
+        for tmpl in templates:
+            tmpl_uris.add(tmpl.uri)
+            add_scenario_tmpl(graph=g, tmpl=tmpl)
+
     stories = getattr(model, "stories", None)
-    assert stories is not None and isinstance(stories, list), "no list of user stories in model"
-    templates = set()
     scenes = set()
     set_uris = set()
-    for us in stories:
-        add_us_to_graph(graph=g, us=us, templates=templates, scenes=scenes, set_uris=set_uris)
+    if stories is not None:
+        for us in stories:
+            add_us_to_graph(graph=g, us=us, templates=tmpl_uris, scenes=scenes, set_uris=set_uris)
 
     return g
