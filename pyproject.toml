@@ -30,6 +30,8 @@ robbdd-scene = "robbdd.registration:scene_lang"
 robbdd_console = "robbdd.registration:robbdd_console_gen"
 robbdd_graph = "robbdd.registration:robbdd_graph_gen"
 robbdd_gherkin = "robbdd.registration:robbdd_gherkin_gen"
+robbdd_scene_console = "robbdd.registration:robbdd_scene_console_gen"
+robbdd_scene_graph = "robbdd.registration:robbdd_scene_graph_gen"
 
 [tool.ruff]
 line-length = 100
