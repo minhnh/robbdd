@@ -6,7 +6,7 @@ from textx import metamodel_for_language
 
 from rdf_utils.resolver import install_resolver
 from bdd_dsl.models.user_story import UserStoryLoader
-from robbdd.graph import create_bdd_model_graph
+from robbdd.graph import create_bdd_model_graph, create_scene_model_graph
 
 
 ROOT_DIR = dirname(dirname(__file__))
@@ -19,6 +19,8 @@ class TestTextXLanguages(unittest.TestCase):
         scene_mm = metamodel_for_language("robbdd-scene")
         scene_model = scene_mm.model_from_file(join(MODELS_DIR, "lab.scene"))
         assert len(scene_model.scene_models) > 0
+        g = create_scene_model_graph(scene_model)
+        assert len(g) > 0
 
     def test_robbdd(self):
         """Test RobBDD language"""
