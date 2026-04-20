@@ -143,14 +143,24 @@ bdd_lang = LanguageDesc(
 )
 
 
-def bdd_graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs):
+def __parse_rdflib_serial_args(**kwargs):
     g_format = kwargs.get("format", "json-ld")
+    assert (
+        g_format in __GRAPH_FORMAT_EXT
+    ), f"file extension not handled for graph format '{g_format}', try {list(__GRAPH_FORMAT_EXT.keys())}"
+
     ser_kwargs = {"format": g_format}
     if g_format == "json-ld":
         if "nocompact" in kwargs:
             ser_kwargs["auto_compact"] = False
         else:
             ser_kwargs["auto_compact"] = True
+    return ser_kwargs
+
+
+def bdd_graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs):
+    ser_kwargs = __parse_rdflib_serial_args(**kwargs)
+    g_format = ser_kwargs["format"]
 
     g = create_bdd_model_graph(model=model)
     try:
@@ -162,16 +172,8 @@ def bdd_graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwa
 
 
 def bdd_graph_gen(metamodel, model, output_path, overwrite, debug, **kwargs):
-    g_format = kwargs.get("format", "json-ld")
-    assert (
-        g_format in __GRAPH_FORMAT_EXT
-    ), f"file extension not handled for graph format '{g_format}', try {list(__GRAPH_FORMAT_EXT.keys())}"
-    ser_kwargs = {"format": g_format}
-    if g_format == "json-ld":
-        if "nocompact" in kwargs:
-            ser_kwargs["auto_compact"] = False
-        else:
-            ser_kwargs["auto_compact"] = True
+    ser_kwargs = __parse_rdflib_serial_args(**kwargs)
+    g_format = ser_kwargs["format"]
 
     filename = kwargs.get("filename", basename(model._tx_filename))
     if filename is None:
@@ -213,13 +215,8 @@ def gherkin_gen(metamodel, model, output_path, overwrite, debug):
 
 
 def scene_graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs):
-    g_format = kwargs.get("format", "json-ld")
-    ser_kwargs = {"format": g_format}
-    if g_format == "json-ld":
-        if "nocompact" in kwargs:
-            ser_kwargs["auto_compact"] = False
-        else:
-            ser_kwargs["auto_compact"] = True
+    ser_kwargs = __parse_rdflib_serial_args(**kwargs)
+    g_format = ser_kwargs["format"]
 
     g = create_scene_model_graph(model=model)
     try:
@@ -231,16 +228,8 @@ def scene_graph_gen_console(metamodel, model, output_path, overwrite, debug, **k
 
 
 def scene_graph_gen(metamodel, model, output_path, overwrite, debug, **kwargs):
-    g_format = kwargs.get("format", "json-ld")
-    assert (
-        g_format in __GRAPH_FORMAT_EXT
-    ), f"file extension not handled for graph format '{g_format}', try {list(__GRAPH_FORMAT_EXT.keys())}"
-    ser_kwargs = {"format": g_format}
-    if g_format == "json-ld":
-        if "nocompact" in kwargs:
-            ser_kwargs["auto_compact"] = False
-        else:
-            ser_kwargs["auto_compact"] = True
+    ser_kwargs = __parse_rdflib_serial_args(**kwargs)
+    g_format = ser_kwargs["format"]
 
     filename = kwargs.get("filename", basename(model._tx_filename))
     if filename is None:
