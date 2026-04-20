@@ -53,7 +53,7 @@ from robbdd.classes.scene import (
     WorkspaceComposition,
     WorkspaceSet,
 )
-from robbdd.graph import create_bdd_model_graph
+from robbdd.graph import create_bdd_model_graph, create_scene_model_graph
 
 
 CWD = abspath(dirname(__file__))
@@ -143,14 +143,24 @@ bdd_lang = LanguageDesc(
 )
 
 
-def graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs):
+def __parse_rdflib_serial_args(**kwargs):
     g_format = kwargs.get("format", "json-ld")
+    assert (
+        g_format in __GRAPH_FORMAT_EXT
+    ), f"file extension not handled for graph format '{g_format}', try {list(__GRAPH_FORMAT_EXT.keys())}"
+
     ser_kwargs = {"format": g_format}
     if g_format == "json-ld":
         if "nocompact" in kwargs:
             ser_kwargs["auto_compact"] = False
         else:
             ser_kwargs["auto_compact"] = True
+    return ser_kwargs
+
+
+def bdd_graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs):
+    ser_kwargs = __parse_rdflib_serial_args(**kwargs)
+    g_format = ser_kwargs["format"]
 
     g = create_bdd_model_graph(model=model)
     try:
@@ -161,17 +171,9 @@ def graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs)
         )
 
 
-def graph_gen(metamodel, model, output_path, overwrite, debug, **kwargs):
-    g_format = kwargs.get("format", "json-ld")
-    assert (
-        g_format in __GRAPH_FORMAT_EXT
-    ), f"file extension not handled for graph format '{g_format}', try {list(__GRAPH_FORMAT_EXT.keys())}"
-    ser_kwargs = {"format": g_format}
-    if g_format == "json-ld":
-        if "nocompact" in kwargs:
-            ser_kwargs["auto_compact"] = False
-        else:
-            ser_kwargs["auto_compact"] = True
+def bdd_graph_gen(metamodel, model, output_path, overwrite, debug, **kwargs):
+    ser_kwargs = __parse_rdflib_serial_args(**kwargs)
+    g_format = ser_kwargs["format"]
 
     filename = kwargs.get("filename", basename(model._tx_filename))
     if filename is None:
@@ -212,21 +214,65 @@ def gherkin_gen(metamodel, model, output_path, overwrite, debug):
         print(f"... wrote {filepath}")
 
 
+def scene_graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs):
+    ser_kwargs = __parse_rdflib_serial_args(**kwargs)
+    g_format = ser_kwargs["format"]
+
+    g = create_scene_model_graph(model=model)
+    try:
+        print(g.serialize(**ser_kwargs))
+    except PluginException as e:
+        raise ValueError(
+            f"serialization format '{g_format}' not supported by rdflib, try {list(__GRAPH_FORMAT_EXT.keys())}: {e.msg}"
+        )
+
+
+def scene_graph_gen(metamodel, model, output_path, overwrite, debug, **kwargs):
+    ser_kwargs = __parse_rdflib_serial_args(**kwargs)
+    g_format = ser_kwargs["format"]
+
+    filename = kwargs.get("filename", basename(model._tx_filename))
+    if filename is None:
+        filename = "graph"
+    full_filename = f"{splitext(filename)[0]}.{__GRAPH_FORMAT_EXT[g_format]}"
+    full_output_path = join("" if output_path is None else output_path, full_filename)
+    if exists(full_output_path) and not overwrite:
+        print(f"not overwriting existing file '{full_output_path}'")
+        return
+
+    g = create_scene_model_graph(model=model)
+    with open(full_output_path, "w") as outfile:
+        outfile.write(g.serialize(**ser_kwargs))
+    print(f"... wrote {full_output_path}")
+
+
 robbdd_console_gen = GeneratorDesc(
     language="robbdd",
     target="console",
     description="Print a representation of RobBDD model graph to the console, default format is JSON-LD",
-    generator=graph_gen_console,
+    generator=bdd_graph_gen_console,
 )
 robbdd_graph_gen = GeneratorDesc(
     language="robbdd",
     target="graph",
     description="Generate a RDF serialization of the given RobBDD model graph, default format is JSON-LD",
-    generator=graph_gen,
+    generator=bdd_graph_gen,
 )
 robbdd_gherkin_gen = GeneratorDesc(
     language="robbdd",
     target="gherkin",
     description="Generate Gherkin feature files from RobBDD models",
     generator=gherkin_gen,
+)
+robbdd_scene_console_gen = GeneratorDesc(
+    language="robbdd-scene",
+    target="console",
+    description="Print a representation of RobBDD scene model graph to the console, default format is JSON-LD",
+    generator=scene_graph_gen_console,
+)
+robbdd_scene_graph_gen = GeneratorDesc(
+    language="robbdd-scene",
+    target="graph",
+    description="Generate a RDF serialization of the given RobBDD scene model graph, default format is JSON-LD",
+    generator=scene_graph_gen,
 )

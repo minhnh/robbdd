@@ -856,3 +856,15 @@ def create_bdd_model_graph(model: Any) -> Graph:
             add_us_to_graph(graph=g, us=us, templates=tmpl_uris, scenes=scenes, set_uris=set_uris)
 
     return g
+
+
+def create_scene_model_graph(model: Any) -> Graph:
+    g = Graph()
+    scene_models = getattr(model, "scene_models", None)
+    assert scene_models is not None and isinstance(
+        scene_models, list
+    ), "no 'scene_models' attr of type 'list' in model"
+    set_uris = set()
+    for scn in scene_models:
+        add_scene_model(graph=g, scene=scn, set_uris=set_uris)
+    return g
