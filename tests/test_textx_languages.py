@@ -29,6 +29,7 @@ class TestTextXLanguages(unittest.TestCase):
             "pickplace_table.bdd",
             "pickplace_cart_product.bdd",
             "pickplace_quantifiers.bdd",
+            "pickplace_table_custom.bdd",
         ]:
             bdd_model = bdd_mm.model_from_file(join(MODELS_DIR, model_name))
             assert len(bdd_model.templates) > 0

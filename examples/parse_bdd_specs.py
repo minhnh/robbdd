@@ -4,12 +4,13 @@ from sys import argv
 from os.path import abspath, dirname, join
 from urllib.request import HTTPError
 from rdf_utils.uri import URL_SECORO_M
+from rdflib import Literal, URIRef
 from textx import metamodel_for_language
 from rdf_utils.resolver import install_resolver
 from rdf_utils.naming import get_valid_filename
 from bdd_dsl.models.user_story import UserStoryLoader
 from bdd_dsl.utils.jinja import load_template_from_url, prepare_jinja2_template_data
-from robbdd.graph import create_bdd_model_graph
+from robbdd.graph import create_bdd_model_graph, get_var_value_node
 
 
 CWD = abspath(dirname(__file__))
@@ -56,12 +57,13 @@ def main():
             elif hasattr(var_set.val_set, "elems"):
                 elem_strings = []
                 for elem in var_set.val_set.elems:
-                    if elem.linked_val is not None:
-                        elem_strings.append(elem.linked_val.name)
-                    elif elem.literal_val is not None:
-                        elem_strings.append(elem.literal_val)
+                    node = get_var_value_node(var_val=elem)
+                    if isinstance(node, URIRef):
+                        elem_strings.append(node.n3())
+                    elif isinstance(node, Literal):
+                        elem_strings.append(str(node.toPython()))
                     else:
-                        raise ValueError(f"invalid element value: {elem}")
+                        raise ValueError(f"unhandled element type: {elem}")
                 print(
                     f"- of '{var_set.variable.name}':"
                     f" elems=({', '.join([x for x in elem_strings])})"

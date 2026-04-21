@@ -145,7 +145,11 @@ AfterEvent: 'after' '<' event=[Event|FQN] '>';
 DuringEvent: 'from' '<' start_event=[Event|FQN] '>' 'until' '<' end_event=[Event|FQN] '>';
 
 // First Order Logic terms
-FOLExpr: LocatedAtPred | IsHeldPred | DoesNotDropPred | DoesNotCollidePred | CanReachPred | HasConfigPred | IsSortedPred ;
+FOLExpr:
+    StrTmplPred | LocatedAtPred | IsHeldPred | DoesNotDropPred | DoesNotCollidePred | CanReachPred | HasConfigPred | IsSortedPred
+;
+ArgVarMap: arg_name=ID '=' '<' arg_var=[VariableBase|FQN] '>';
+StrTmplPred: 'pred' '(' tmpl_str=STRING ',' arg_maps+=ArgVarMap[','] ')' ;
 CanReachPred:
     '<' agent=[VariableBase|FQN] '>' 'can' 'reach' '<' object=[VariableBase|FQN] '>'
 ;
@@ -162,7 +166,7 @@ IsHeldPred:
     '<' object=[VariableBase|FQN] '>' 'is' 'held' 'by' '<' agent=[VariableBase|FQN] '>'
 ;
 HasConfigPred:
-    '<' subject=[VariableBase|FQN] '>' 'has' 'config' '<' config=[VariableBase|FQN] '>'
+    '<' cfg_target=[VariableBase|FQN] '>' 'has' 'config' cfg_name=ID '=' '<' cfg_var=[VariableBase|FQN] '>'
 ;
 IsSortedPred:
     '<' objects=[ScenarioSetVariable|FQN] '>' 'are' 'sorted' 'into' '<' workspaces=[ScenarioSetVariable|FQN] '>'
@@ -257,6 +261,8 @@ ValidVarValue:
 |
 '<' linked_val=[Agent|FQN] '>'
 |
-literal_val=STRING|NUMBER|FLOAT
+num_val=NUMBER
+|
+str_val=STRING
 )
 ;

@@ -14,6 +14,11 @@ from rdflib.collection import Collection
 from bdd_dsl.models.urirefs import (
     URI_AGN_PRED_HAS_AGN,
     URI_AGN_TYPE_AGN,
+    URI_BDD_PRED_ARG_NAMES,
+    URI_BDD_PRED_ARG_VARS,
+    URI_BDD_PRED_CFG_NAME,
+    URI_BDD_PRED_CFG_TARGET,
+    URI_BDD_PRED_CFG_VAR,
     URI_BDD_PRED_CLAUSE_OF,
     URI_BDD_PRED_ELEMS,
     URI_BDD_PRED_HAS_AC,
@@ -30,8 +35,10 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_REF_VAR,
     URI_BDD_PRED_REF_WS,
     URI_BDD_PRED_ROWS,
+    URI_BDD_PRED_TMPL_STR,
     URI_BDD_PRED_VAR_LIST,
     URI_BDD_TYPE_CART_PRODUCT,
+    URI_BDD_TYPE_CONFIG,
     URI_BDD_TYPE_CONST_SET,
     URI_BDD_TYPE_EXISTS,
     URI_BDD_TYPE_FLUENT_CLAUSE,
@@ -43,6 +50,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_WHEN,
     URI_BDD_PRED_THEN,
     URI_BDD_TYPE_GIVEN,
+    URI_BDD_TYPE_STR_TMPL,
     URI_BDD_TYPE_VARIABLE,
     URI_BDD_TYPE_SCENARIO_VARIANT,
     URI_BDD_TYPE_SCENE_AGN,
@@ -221,8 +229,53 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         return
 
     if "HasConfigPred" in pred_type_str:
-        # TODO(minhnh): handle predicate
-        graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["HasConfigPredicate"]))
+        graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_CONFIG))
+
+        cfg_name = getattr(clause.predicate, "cfg_name", None)
+        assert isinstance(
+            cfg_name, str
+        ), f"unexpected 'cfg_name' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {cfg_name}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_CFG_NAME, Literal(cfg_name)))
+
+        cfg_target = getattr(clause.predicate, "cfg_target", None)
+        assert isinstance(
+            cfg_target, VariableBase
+        ), f"unexpected 'cfg_target' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {cfg_target}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_CFG_TARGET, cfg_target.uri))
+
+        cfg_var = getattr(clause.predicate, "cfg_var", None)
+        assert isinstance(
+            cfg_var, VariableBase
+        ), f"unexpected 'cfg_var' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {cfg_var}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_CFG_VAR, cfg_var.uri))
+        return
+
+    if "StrTmplPred" in pred_type_str:
+        graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_STR_TMPL))
+
+        tmpl_str = getattr(clause.predicate, "tmpl_str", None)
+        assert isinstance(
+            tmpl_str, str
+        ), f"unexpected 'tmpl_str' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {tmpl_str}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_TMPL_STR, Literal(tmpl_str)))
+
+        arg_maps = getattr(clause.predicate, "arg_maps", None)
+        assert isinstance(
+            arg_maps, list
+        ), f"unexpected 'arg_maps' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {arg_maps}"
+
+        arg_names = []
+        arg_vars = []
+        for arg_m in arg_maps:
+            arg_names.append(arg_m.arg_name)
+            arg_vars.append(arg_m.arg_var.uri)
+        add_literal_list_pred(
+            graph=graph, subject_uri=clause_uri, pred_uri=URI_BDD_PRED_ARG_NAMES, values=arg_names
+        )
+        add_node_list_pred(
+            graph=graph, subject_uri=clause_uri, pred_uri=URI_BDD_PRED_ARG_VARS, nodes=arg_vars
+        )
+
         return
 
     if "IsSortedPred" in pred_type_str:
@@ -465,8 +518,11 @@ def get_var_value_node(var_val: Any) -> Node:
         assert var_val.linked_val.uri is not None
         return var_val.linked_val.uri
 
-    if hasattr(var_val, "literal_val") and var_val.literal_val is not None:
-        return Literal(var_val.literal_val)
+    if hasattr(var_val, "num_val") and var_val.num_val is not None:
+        return Literal(var_val.num_val)
+
+    if hasattr(var_val, "str_val") and var_val.str_val is not None:
+        return Literal(var_val.str_val)
 
     raise ValueError(f"ValidVarValue object has unhandled attributes: {var_val}")
 
