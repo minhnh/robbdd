@@ -14,6 +14,8 @@ from rdflib.collection import Collection
 from bdd_dsl.models.urirefs import (
     URI_AGN_PRED_HAS_AGN,
     URI_AGN_TYPE_AGN,
+    URI_BDD_PRED_ARG_NAMES,
+    URI_BDD_PRED_ARG_VARS,
     URI_BDD_PRED_CFG_NAME,
     URI_BDD_PRED_CFG_TARGET,
     URI_BDD_PRED_CFG_VAR,
@@ -33,6 +35,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_REF_VAR,
     URI_BDD_PRED_REF_WS,
     URI_BDD_PRED_ROWS,
+    URI_BDD_PRED_TMPL_STR,
     URI_BDD_PRED_VAR_LIST,
     URI_BDD_TYPE_CART_PRODUCT,
     URI_BDD_TYPE_CONFIG,
@@ -249,6 +252,30 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
 
     if "StrTmplPred" in pred_type_str:
         graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_STR_TMPL))
+
+        tmpl_str = getattr(clause.predicate, "tmpl_str", None)
+        assert isinstance(
+            tmpl_str, str
+        ), f"unexpected 'tmpl_str' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {tmpl_str}"
+        graph.add(triple=(clause_uri, URI_BDD_PRED_TMPL_STR, Literal(tmpl_str)))
+
+        arg_maps = getattr(clause.predicate, "arg_maps", None)
+        assert isinstance(
+            arg_maps, list
+        ), f"unexpected 'arg_maps' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {arg_maps}"
+
+        arg_names = []
+        arg_vars = []
+        for arg_m in arg_maps:
+            arg_names.append(arg_m.arg_name)
+            arg_vars.append(arg_m.arg_var.uri)
+        add_literal_list_pred(
+            graph=graph, subject_uri=clause_uri, pred_uri=URI_BDD_PRED_ARG_NAMES, values=arg_names
+        )
+        add_node_list_pred(
+            graph=graph, subject_uri=clause_uri, pred_uri=URI_BDD_PRED_ARG_VARS, nodes=arg_vars
+        )
+
         return
 
     if "IsSortedPred" in pred_type_str:
