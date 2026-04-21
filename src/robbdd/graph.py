@@ -270,8 +270,12 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         var_map = {}
         for arg_m in arg_maps:
             arg_names.append(arg_m.arg_name)
-            arg_vars.append(arg_m.arg_var.uri)
-            var_map[arg_m.arg_var.uri] = arg_m.arg_name
+            arg_var_uri = arg_m.arg_var.uri
+            arg_vars.append(arg_var_uri)
+            assert (
+                arg_var_uri not in var_map
+            ), f"clause '{clause_uri}': duplicate refs to '{arg_var_uri}'"
+            var_map[arg_var_uri] = arg_m.arg_name
 
         # Create string template obj to test valid argument mappings
         _ = VariableStrTemplate(tmpl_str=tmpl_str, var_map=var_map)
