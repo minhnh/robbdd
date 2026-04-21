@@ -89,6 +89,7 @@ from bdd_dsl.models.urirefs import (
     URI_TIME_TYPE_BEFORE_EVT,
     URI_TIME_TYPE_DURING,
 )
+from bdd_dsl.representation import VariableStrTemplate
 from robbdd.classes.bdd import (
     AfterEvent,
     BeforeEvent,
@@ -266,9 +267,14 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
 
         arg_names = []
         arg_vars = []
+        var_map = {}
         for arg_m in arg_maps:
             arg_names.append(arg_m.arg_name)
             arg_vars.append(arg_m.arg_var.uri)
+            var_map[arg_m.arg_var.uri] = arg_m.arg_name
+
+        # Create string template obj to test valid argument mappings
+        _ = VariableStrTemplate(tmpl_str=tmpl_str, var_map=var_map)
         add_literal_list_pred(
             graph=graph, subject_uri=clause_uri, pred_uri=URI_BDD_PRED_ARG_NAMES, values=arg_names
         )
