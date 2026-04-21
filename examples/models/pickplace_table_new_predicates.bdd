@@ -20,7 +20,7 @@ Scenario Template (ns=bdd_tmpl) tmpl_conveyor_sort {
     var conveyor_speed
 
     Given:
-        fc-config: holds(<conveyor> has config <conveyor_speed>, before <evt_scenario_start>)
+        fc-config: holds(<conveyor> has config speed=<conveyor_speed>, before <evt_scenario_start>)
     for all ( var x in <target_objects> ) {
         Given:
         (
