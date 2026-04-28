@@ -1,0 +1,56 @@
+from behave import given, then, when
+
+
+def _print_step_args(step_name, **kwargs):
+    if kwargs:
+        print(f"{step_name}: {kwargs}")
+        return
+    print(step_name)
+
+
+@given("a set of objects")
+def given_background_objects(context):
+    rows = [row["name"] for row in context.table] if context.table is not None else []
+    _print_step_args("given_background_objects", rows=rows)
+
+
+@given("a set of workspaces")
+def given_background_workspaces(context):
+    rows = [row["name"] for row in context.table] if context.table is not None else []
+    _print_step_args("given_background_workspaces", rows=rows)
+
+
+@given("a set of agents")
+def given_background_agents(context):
+    rows = [row["name"] for row in context.table] if context.table is not None else []
+    _print_step_args("given_background_agents", rows=rows)
+
+
+@given("the scene is set up")
+def given_background_scene(context):
+    _print_step_args("given_background_scene")
+
+
+{% set seen_annotations = namespace(values=[]) %}
+{% for scenario_variant in scenario_variants %}
+{% for clause in scenario_variant.fluent_clauses() %}
+{% set step = get_fluent_step_data(scenario_variant, clause) %}
+{% if (step.decorator, step.annotation) not in seen_annotations.values %}
+{% set _ = seen_annotations.values.append((step.decorator, step.annotation)) %}
+@{{ step.decorator }}({{ step.annotation_literal }})
+def {{ step.function_name }}(context{% for arg in step.args %}, {{ arg }}{% endfor %}):
+    _print_step_args({{ step.function_name|tojson }}{% for arg in step.args %}, {{ arg }}={{ arg }}{% endfor %})
+
+
+{% endif %}
+{% endfor %}
+{% set when_step = get_when_step_data(scenario_variant.when_bhv_model) %}
+{% if (when_step.decorator, when_step.annotation) not in seen_annotations.values %}
+{% set _ = seen_annotations.values.append((when_step.decorator, when_step.annotation)) %}
+@{{ when_step.decorator }}({{ when_step.annotation_literal }})
+def {{ when_step.function_name }}(context{% for arg in when_step.args %}, {{ arg }}{% endfor %}):
+    _print_step_args({{ when_step.function_name|tojson }}{% for arg in when_step.args %}, {{ arg }}={{ arg }}{% endfor %})
+
+
+{% endif %}
+{% endfor %}

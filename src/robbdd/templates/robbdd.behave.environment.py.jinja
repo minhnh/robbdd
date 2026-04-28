@@ -1,0 +1,13 @@
+from pathlib import Path
+
+from rdflib import Dataset
+
+from bdd_dsl.models.user_story import UserStoryLoader
+
+
+def before_all(context):
+    model_graph_path = Path(__file__).resolve().parent / {{ model_graph_filename|tojson }}
+    graph = Dataset()
+    graph.parse(model_graph_path, format="json-ld")
+    context.model_graph = graph
+    context.user_story_loader = UserStoryLoader(graph, shacl_check=False)
