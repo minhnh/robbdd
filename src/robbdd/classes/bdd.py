@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from __future__ import annotations
-from typing import Optional
+from typing import Any, Optional
 from rdflib import Namespace, URIRef
 from robbdd.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasParent, IHasUUID, SetBase
 from robbdd.classes.scene import SceneModel
@@ -130,17 +130,21 @@ class TimeConstraint(IHasNamespace):
 
 class BeforeEvent(TimeConstraint):
     event: Event
+    horizon: Optional[Any]
 
-    def __init__(self, parent, event) -> None:
+    def __init__(self, parent, horizon, event) -> None:
         super().__init__(parent=parent)
+        self.horizon = horizon
         self.event = event
 
 
 class AfterEvent(TimeConstraint):
     event: Event
+    horizon: Optional[Any]
 
-    def __init__(self, parent, event) -> None:
+    def __init__(self, parent, horizon, event) -> None:
         super().__init__(parent=parent)
+        self.horizon = horizon
         self.event = event
 
 
