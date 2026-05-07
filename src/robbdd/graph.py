@@ -82,6 +82,7 @@ from bdd_dsl.models.urirefs import (
     URI_ENV_TYPE_WS_WS,
     URI_TASK_PRED_OF_TASK,
     URI_TASK_TYPE_TASK,
+    URI_TIME_PRED_HRZN_SEC,
     URI_TIME_TYPE_TC,
     URI_TIME_PRED_AFTER_EVT,
     URI_TIME_PRED_BEFORE_EVT,
@@ -313,11 +314,15 @@ def add_node_time_constraint(graph: Graph, tc: TimeConstraint, node_uri: URIRef)
     if isinstance(tc, BeforeEvent):
         graph.add(triple=(node_uri, RDF.type, URI_TIME_TYPE_BEFORE_EVT))
         graph.add(triple=(node_uri, URI_TIME_PRED_BEFORE_EVT, tc.event.uri))
+        if tc.horizon is not None:
+            graph.add(triple=(node_uri, URI_TIME_PRED_HRZN_SEC, Literal(tc.horizon.val)))
         return
 
     if isinstance(tc, AfterEvent):
         graph.add(triple=(node_uri, RDF.type, URI_TIME_TYPE_AFTER_EVT))
         graph.add(triple=(node_uri, URI_TIME_PRED_AFTER_EVT, tc.event.uri))
+        if tc.horizon is not None:
+            graph.add(triple=(node_uri, URI_TIME_PRED_HRZN_SEC, Literal(tc.horizon.val)))
         return
 
     if isinstance(tc, DuringEvent):

@@ -21,9 +21,13 @@ Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
 
     Given:
         (
-        fc-located-before: holds(<target_object> is located at <pick_ws>, before <evt_pick_start>)
+        fc-located-before: holds(
+            <target_object> is located at <pick_ws>, 0.5 seconds before <evt_pick_start>
+        )
         and
-        fc-config-robot: holds(<robot> has config ee_speed = <ee-speed>, before <evt_pick_start>)
+        fc-config-robot: holds(
+            <robot> has config ee_speed = <ee-speed>, 0.5 seconds before <evt_pick_start>
+            )
         )
     When:
         Behaviour (ns=bdd_tmpl) pickplace {
@@ -32,11 +36,13 @@ Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
         }
     Then:
         (
-            fc-located-after: holds(<target_object> is located at <place_ws>, after <evt_pick_start>)
+            fc-located-after: holds(
+                <target_object> is located at <place_ws>, 0.5 seconds after <evt_pick_start>
+                )
             and
             fc-collide: holds(
                 pred(
-                    "\"{robot}\" does not collide with \"{pick_ws}\"", robot=<robot>, pick_ws=<pick_ws>
+                    '"{robot}" does not collide with "{pick_ws}"', robot=<robot>, pick_ws=<pick_ws>
                 ), from <evt_pick_start> until <evt_place_end>
             )
         )
