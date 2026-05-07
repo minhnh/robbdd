@@ -1,0 +1,5 @@
+import "pickplace_table_custom.bdd"
+
+provider for fluent <tmpl_pickplace.fc-located-before> {
+    trinary topic: "/obs_policy/located_at_pick_ws"
+}

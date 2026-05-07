@@ -2,6 +2,7 @@
 import unittest
 from os.path import dirname, join
 from urllib.error import HTTPError
+from rdflib import URIRef
 from textx import metamodel_for_language
 
 from rdf_utils.resolver import install_resolver
@@ -42,3 +43,13 @@ class TestTextXLanguages(unittest.TestCase):
                 _ = UserStoryLoader(g)
             except HTTPError as e:
                 raise RuntimeError(f"error loading models URL '{e.url}':\n{e.info()}\n{e}")
+
+    def test_robbdd_exec(self):
+        """Test RobBDD execution language"""
+        bddx_mm = metamodel_for_language("robbdd-exec")
+        bddx_model = bddx_mm.model_from_file(join(MODELS_DIR, "pickplace_table_custom.bddx"))
+
+        assert len(bddx_model.fluent_providers) > 0
+        for fl_prov in bddx_model.fluent_providers:
+            assert isinstance(fl_prov.fluent_ref.fluent.uri, URIRef)
+            assert isinstance(fl_prov.topic_name, str)
