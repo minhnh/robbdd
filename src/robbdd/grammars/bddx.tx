@@ -1,0 +1,18 @@
+import base
+import bdd
+
+Model:
+imports*=Import
+
+(
+fluent_providers+=FluentProvider
+)*
+;
+
+FluentProvider: TrinaryTopicProvider;
+
+TrinaryTopicProvider:
+'provider' 'for' 'fluent' fluent_ref=HoldsExprRef '{'
+  'trinary' 'topic' ':' topic_name=STRING
+'}'
+;

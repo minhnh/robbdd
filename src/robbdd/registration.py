@@ -2,7 +2,14 @@ import sys
 from os.path import abspath, basename, dirname, exists, join, splitext
 from urllib.error import HTTPError
 from rdflib.plugin import PluginException
-from textx import LanguageDesc, GeneratorDesc, metamodel_from_file
+from textx import (
+    LanguageDesc,
+    GeneratorDesc,
+    get_children_of_type,
+    get_model,
+    metamodel_from_file,
+    textx_isinstance,
+)
 import textx.scoping.providers as scoping_providers
 from rdf_utils.naming import get_valid_filename
 from rdf_utils.resolver import install_resolver
@@ -58,6 +65,38 @@ from robbdd.graph import create_bdd_model_graph, create_scene_model_graph
 
 CWD = abspath(dirname(__file__))
 __GRAPH_FORMAT_EXT = {"json-ld": "json", "ttl": "ttl", "xml": "xml"}
+
+
+def _iter_fluent_refs(root_model):
+    for template in get_children_of_type("ScenarioTemplate", root_model):
+        template_name = getattr(template, "name", None)
+        if not template_name:
+            continue
+
+        for fluent in get_children_of_type("HoldsExpr", template):
+            fluent_name = getattr(fluent, "name", None)
+            if fluent_name:
+                yield f"{template_name}.{fluent_name}", fluent
+
+
+class HoldsExprRefScopeProvider:
+    def __init__(self):
+        self._import_loader = scoping_providers.FQNImportURI()
+
+    def __call__(self, obj, attr, obj_ref):
+        model = get_model(obj)
+        self._import_loader.load_models(model)
+
+        candidate_models = [model]
+        if hasattr(model, "_tx_model_repository"):
+            candidate_models.extend(model._tx_model_repository.local_models)
+
+        for candidate_model in candidate_models:
+            for fqn, fluent in _iter_fluent_refs(candidate_model):
+                if fqn == obj_ref.obj_name and textx_isinstance(fluent, obj_ref.cls):
+                    return fluent
+
+        return None
 
 
 def scene_metamodel():
@@ -129,6 +168,17 @@ def bdd_metamodel():
     return mm_bdd
 
 
+def bddx_metamodel():
+    mm_bddx = metamodel_from_file(join(CWD, "grammars", "bddx.tx"))
+    mm_bddx.register_scope_providers(
+        {
+            "*.*": scoping_providers.FQNImportURI(),
+            "HoldsExprRef.fluent": HoldsExprRefScopeProvider(),
+        }
+    )
+    return mm_bddx
+
+
 scene_lang = LanguageDesc(
     "robbdd-scene",
     pattern="*.scene",
@@ -140,6 +190,12 @@ bdd_lang = LanguageDesc(
     pattern="*.bdd",
     description="Behaviour-Driven Development language",
     metamodel=bdd_metamodel,
+)
+bddx_lang = LanguageDesc(
+    "robbdd-exec",
+    pattern="*.bddx",
+    description="DSL for describing BDD execution",
+    metamodel=bddx_metamodel,
 )
 
 

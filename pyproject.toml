@@ -24,14 +24,15 @@ dependencies = [
 
 [project.entry-points.textx_languages]
 robbdd = "robbdd.registration:bdd_lang"
+robbdd-exec = "robbdd.registration:bddx_lang"
 robbdd-scene = "robbdd.registration:scene_lang"
 
 [project.entry-points.textx_generators]
-robbdd_console = "robbdd.registration:robbdd_console_gen"
-robbdd_graph = "robbdd.registration:robbdd_graph_gen"
-robbdd_gherkin = "robbdd.registration:robbdd_gherkin_gen"
-robbdd_scene_console = "robbdd.registration:robbdd_scene_console_gen"
-robbdd_scene_graph = "robbdd.registration:robbdd_scene_graph_gen"
+robbdd-console = "robbdd.registration:robbdd_console_gen"
+robbdd-graph = "robbdd.registration:robbdd_graph_gen"
+robbdd-gherkin = "robbdd.registration:robbdd_gherkin_gen"
+robbdd-scene-console = "robbdd.registration:robbdd_scene_console_gen"
+robbdd-scene-graph = "robbdd.registration:robbdd_scene_graph_gen"
 
 [tool.ruff]
 line-length = 100
