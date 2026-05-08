@@ -35,17 +35,9 @@ Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
             <robot> picks <target_object> and places at <place_ws>
         }
     Then:
-        (
-            fc-located-after: holds(
-                <target_object> is located at <place_ws>, 0.5 seconds after <evt_pick_start>
-                )
-            and
-            fc-collide: holds(
-                pred(
-                    '"{robot}" does not collide with "{pick_ws}"', robot=<robot>, pick_ws=<pick_ws>
-                ), from <evt_pick_start> until <evt_place_end>
+        fc-located-after: holds(
+            <target_object> is located at <place_ws>, 0.5 seconds after <evt_pick_start>
             )
-        )
 }
 
 User Story (ns=bdd_var) sim_pickplace {
@@ -57,6 +49,13 @@ User Story (ns=bdd_var) sim_pickplace {
         Scenario pickplace_table {
             template: <tmpl_pickplace>
             scene: <pickplace_scene>
+
+            Then:
+                fc-collide: holds(
+                    pred(
+                        '"{robot}" does not collide with "{pick_ws}"', robot=<tmpl_pickplace.robot>, pick_ws=<tmpl_pickplace.pick_ws>
+                    ), from <evt_pick_start> until <evt_place_end>
+                )
 
             variation:
             | <tmpl_pickplace.target_object> | <tmpl_pickplace.pick_ws> | <tmpl_pickplace.place_ws> | <tmpl_pickplace.robot> | <tmpl_pickplace.ee-speed> |

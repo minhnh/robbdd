@@ -3,3 +3,9 @@ import "pickplace_table_custom.bdd"
 provider for fluent <tmpl_pickplace.fc-located-before> {
     trinary topic: "/obs_policy/located_at_pick_ws"
 }
+provider for fluent <tmpl_pickplace.fc-located-before> {
+    trinary topic: "/obs_policy/located_at_place_ws"
+}
+provider for fluent <pickplace_table.fc-collide> {
+    trinary topic: "/obs_policy/collision"
+}
