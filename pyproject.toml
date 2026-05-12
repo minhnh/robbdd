@@ -31,6 +31,8 @@ robbdd-scene = "robbdd.registration:scene_lang"
 robbdd-console = "robbdd.registration:robbdd_console_gen"
 robbdd-graph = "robbdd.registration:robbdd_graph_gen"
 robbdd-gherkin = "robbdd.registration:robbdd_gherkin_gen"
+robbdd-exec-console = "robbdd.registration:robbdd_exec_console_gen"
+robbdd-exec-graph = "robbdd.registration:robbdd_exec_graph_gen"
 robbdd-scene-console = "robbdd.registration:robbdd_scene_console_gen"
 robbdd-scene-graph = "robbdd.registration:robbdd_scene_graph_gen"
 

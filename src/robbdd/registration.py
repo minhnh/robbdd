@@ -7,6 +7,8 @@ from robbdd.langs import scene_metamodel, bdd_metamodel, bddx_metamodel
 from robbdd.gens import (
     bdd_graph_gen_console,
     bdd_graph_gen,
+    bddx_graph_gen,
+    bddx_graph_gen_console,
     gherkin_gen,
     scene_graph_gen_console,
     scene_graph_gen,
@@ -43,6 +45,18 @@ robbdd_graph_gen = GeneratorDesc(
     target="graph",
     description="Generate a RDF serialization of the given RobBDD model graph, default format is JSON-LD",
     generator=bdd_graph_gen,
+)
+robbdd_exec_console_gen = GeneratorDesc(
+    language="robbdd-exec",
+    target="console",
+    description="Print a representation of RobBDD execution model graph to the console, default format is JSON-LD",
+    generator=bddx_graph_gen_console,
+)
+robbdd_exec_graph_gen = GeneratorDesc(
+    language="robbdd-exec",
+    target="graph",
+    description="Generate a RDF serialization of the given RobBDD execution model graph, default format is JSON-LD",
+    generator=bddx_graph_gen,
 )
 robbdd_gherkin_gen = GeneratorDesc(
     language="robbdd",

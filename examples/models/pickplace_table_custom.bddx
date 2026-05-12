@@ -1,11 +1,21 @@
 import "pickplace_table_custom.bdd"
 
-provider for fluent <tmpl_pickplace.fc-located-before> {
-    trinary topic: "/obs_policy/located_at_pick_ws"
-}
-provider for fluent <tmpl_pickplace.fc-located-before> {
-    trinary topic: "/obs_policy/located_at_place_ws"
-}
-provider for fluent <pickplace_table.fc-collide> {
-    trinary topic: "/obs_policy/collision"
+ns bdd_exec='https://secorolab.github.io/models/acceptance-criteria/bdd/executions/pickplace-ros/'
+
+Scenario Exec (ns=bdd_exec) pickplace-mockup-ros {
+    variants { <sim_pickplace.pickplace_table> }
+
+    bhv impl {
+        bhv action: "/bdd/mockup_bhv_server"
+    }
+
+    fluent impl for <tmpl_pickplace.fc-located-before> {
+        trinary topic: "/obs_policy/located_at_pick_ws"
+    }
+    fluent impl for <tmpl_pickplace.fc-located-before> {
+        trinary topic: "/obs_policy/located_at_place_ws"
+    }
+    fluent impl for <pickplace_table.fc-collide> {
+        trinary topic: "/obs_policy/collision"
+    }
 }

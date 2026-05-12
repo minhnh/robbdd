@@ -8,7 +8,7 @@ from rdf_utils.naming import get_valid_filename
 from rdf_utils.resolver import install_resolver
 from bdd_dsl.models.user_story import UserStoryLoader
 from bdd_dsl.utils.jinja import load_template_from_file, prepare_jinja2_template_data
-from robbdd.graph import create_bdd_model_graph, create_scene_model_graph
+from robbdd.graph import create_bdd_model_graph, create_bddx_model_graph, create_scene_model_graph
 
 
 __CWD = abspath(dirname(__file__))
@@ -69,6 +69,38 @@ def bdd_graph_gen(metamodel, model, output_path, overwrite, debug, **kwargs):
         return
 
     g = create_bdd_model_graph(model=model)
+    with open(full_output_path, "w") as outfile:
+        outfile.write(g.serialize(**ser_kwargs))
+    print(f"... wrote {full_output_path}")
+
+
+def bddx_graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs):
+    ser_kwargs = __parse_rdflib_serial_args(**kwargs)
+    g_format = ser_kwargs["format"]
+
+    g = create_bddx_model_graph(model=model)
+    try:
+        print(g.serialize(**ser_kwargs))
+    except PluginException as e:
+        raise ValueError(
+            f"serialization format '{g_format}' not supported by rdflib, try {list(__GRAPH_FORMAT_EXT.keys())}: {e.msg}"
+        )
+
+
+def bddx_graph_gen(metamodel, model, output_path, overwrite, debug, **kwargs):
+    ser_kwargs = __parse_rdflib_serial_args(**kwargs)
+    full_output_path = __get_rdf_full_output_path(
+        model=model,
+        output_path=output_path,
+        g_format=ser_kwargs["format"],
+        model_type="bddx",
+        **kwargs,
+    )
+    if exists(full_output_path) and not overwrite:
+        print(f"not overwriting existing file '{full_output_path}'")
+        return
+
+    g = create_bddx_model_graph(model=model)
     with open(full_output_path, "w") as outfile:
         outfile.write(g.serialize(**ser_kwargs))
     print(f"... wrote {full_output_path}")
