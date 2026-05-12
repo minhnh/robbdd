@@ -30,6 +30,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_OF_SCENE,
     URI_BDD_PRED_OF_SETS,
     URI_BDD_PRED_OF_TMPL,
+    URI_BDD_PRED_OF_VARIANT,
     URI_BDD_PRED_REF_AGN,
     URI_BDD_PRED_REF_OBJ,
     URI_BDD_PRED_REF_VAR,
@@ -50,6 +51,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_WHEN,
     URI_BDD_PRED_THEN,
     URI_BDD_TYPE_GIVEN,
+    URI_BDD_TYPE_SCENARIO_EXEC,
     URI_BDD_TYPE_STR_TMPL,
     URI_BDD_TYPE_VARIABLE,
     URI_BDD_TYPE_SCENARIO_VARIANT,
@@ -114,6 +116,7 @@ from robbdd.classes.bdd import (
     VariableBase,
     WhenBehaviourClause,
 )
+from robbdd.classes.bddx import ScenarioExecution
 from robbdd.classes.common import SetBase
 from robbdd.classes.scene import (
     Agent,
@@ -898,8 +901,10 @@ def add_us_to_graph(
         graph.add((us.uri, URI_BDD_PRED_HAS_AC, scr_var.uri))
 
 
-def create_bdd_model_graph(model: Any) -> Graph:
-    g = Graph()
+def create_bdd_model_graph(model: Any, g: Optional[Graph] = None) -> Graph:
+    if g is None:
+        g = Graph()
+
     events = getattr(model, "events", None)
     assert events is not None and isinstance(events, list), "no list of events in model"
     for evt in events:
@@ -929,8 +934,26 @@ def create_bdd_model_graph(model: Any) -> Graph:
     return g
 
 
-def create_scene_model_graph(model: Any) -> Graph:
-    g = Graph()
+def add_scr_exec_to_graph(graph: Graph, scr_exec: ScenarioExecution):
+    graph.add(triple=(scr_exec.uri, RDF.type, URI_BDD_TYPE_SCENARIO_EXEC))
+    for scr_var in scr_exec.variants:
+        graph.add(triple=(scr_exec.uri, URI_BDD_PRED_OF_VARIANT, scr_var.uri))
+
+
+def create_bddx_model_graph(model: Any, g: Optional[Graph] = None) -> Graph:
+    if g is None:
+        g = Graph()
+
+    for scr_exec in model.scenario_execs:
+        add_scr_exec_to_graph(graph=g, scr_exec=scr_exec)
+
+    return g
+
+
+def create_scene_model_graph(model: Any, g: Optional[Graph] = None) -> Graph:
+    if g is None:
+        g = Graph()
+
     scene_models = getattr(model, "scene_models", None)
     assert scene_models is not None and isinstance(
         scene_models, list

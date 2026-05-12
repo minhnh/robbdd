@@ -18,11 +18,8 @@ GENERATED_DIR = join(CWD, "generated")
 
 
 def main():
-    bddx_mm = metamodel_for_language("robbdd-exec")
-    model = bddx_mm.model_from_file(argv[1])
-    for fl_prvd in model.fluent_providers:
-        print(fl_prvd.topic_name)
-    return
+    bdd_mm = metamodel_for_language("robbdd")
+    model = bdd_mm.model_from_file(argv[1])
     g = create_bdd_model_graph(model=model)
     install_resolver()
 

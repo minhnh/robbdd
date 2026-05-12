@@ -2,6 +2,7 @@
 from os.path import abspath, dirname, join
 from textx import get_children_of_type, get_model, metamodel_from_file, textx_isinstance
 import textx.scoping.providers as scoping_providers
+from robbdd.classes.bddx import ScenarioExecution
 from robbdd.classes.common import SetBase
 from robbdd.classes.scene import (
     Agent,
@@ -164,7 +165,7 @@ def bdd_metamodel():
 
 
 def bddx_metamodel():
-    mm_bddx = metamodel_from_file(join(__CWD, "grammars", "bddx.tx"))
+    mm_bddx = metamodel_from_file(join(__CWD, "grammars", "bddx.tx"), classes=[ScenarioExecution])
     mm_bddx.register_scope_providers(
         {
             "*.*": scoping_providers.FQNImportURI(),

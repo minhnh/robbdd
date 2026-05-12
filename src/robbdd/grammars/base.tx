@@ -3,3 +3,4 @@ Import: 'import' importURI=STRING;
 Comment: /\/\/.*$/;
 NamespaceDeclare: 'ns' name=IRI_TRUNK '=' uri=STRING ;
 IRI_TRUNK: /[^\d\W][\w-]*\b/;
+PyModuleAttr: 'py' '{' 'module' ':' modules=ID+['.'] ',' 'attr' ':' attr_name=ID '}';

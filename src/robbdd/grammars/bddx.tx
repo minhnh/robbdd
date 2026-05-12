@@ -4,15 +4,33 @@ import bdd
 Model:
 imports*=Import
 
-(
-fluent_providers+=FluentProvider
-)*
+namespaces=NamespaceDeclare*
+
+scenario_execs+=ScenarioExecution
 ;
 
-FluentProvider: TrinaryTopicProvider;
-
-TrinaryTopicProvider:
-'provider' 'for' 'fluent' fluent_ref=HoldsExprRef '{'
-  'trinary' 'topic' ':' topic_name=STRING
+ScenarioExecution:
+'Scenario' 'Exec' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
+  'variants' '{' ('<' variants=[ScenarioVariant|FQN] '>')+[','] '}'
+  bhv_impl=BehaviourImplementation
+  fluent_impls*=FluentImplementation
 '}'
 ;
+
+BehaviourImplementation:
+'bhv' 'impl' '{'
+  bhv_spec=BhvImplSpec
+'}'
+;
+BhvImplSpec: RosBhvAction | PyModuleAttr ;
+
+FluentImplementation:
+'fluent' 'impl' 'for' fluent_ref=HoldsExprRef '{'
+  fl_spec=FluentImplSpec
+'}'
+;
+
+FluentImplSpec: RosTrinaryTopic ;
+
+RosBhvAction: 'bhv' 'action' ':' action_name=STRING ;
+RosTrinaryTopic: 'trinary' 'topic' ':' topic_name=STRING ;
