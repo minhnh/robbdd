@@ -8,7 +8,9 @@ from rdf_utils.naming import get_valid_filename
 from rdf_utils.resolver import install_resolver
 from bdd_dsl.models.user_story import UserStoryLoader
 from bdd_dsl.utils.jinja import load_template_from_file, prepare_jinja2_template_data
-from robbdd.graph import create_bdd_model_graph, create_bddx_model_graph, create_scene_model_graph
+from robbdd.rdf.scene import create_scene_model_graph
+from robbdd.rdf.bdd import create_bdd_model_graph
+from robbdd.rdf.bddx import create_bddx_model_graph
 
 
 __CWD = abspath(dirname(__file__))
