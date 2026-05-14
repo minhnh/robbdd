@@ -7,6 +7,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_ELEMS,
     URI_BDD_PRED_GIVEN,
     URI_BDD_PRED_HAS_AC,
+    URI_BDD_PRED_HAS_CLAUSE,
     URI_BDD_PRED_HAS_SCENE,
     URI_BDD_PRED_HAS_VARIATION,
     URI_BDD_PRED_OF_SCENARIO,
@@ -57,7 +58,7 @@ from robbdd.classes.bdd import (
 )
 from robbdd.classes.common import SetBase
 from robbdd.classes.scene import AgentSet, ObjectSet, SceneModel, WorkspaceSet
-from robbdd.rdf.clauses import add_gwt_expr, add_node_time_constraint
+from robbdd.rdf.clauses import add_clause_expr, add_gwt_expr, add_node_time_constraint
 from robbdd.rdf.common import add_node_list_pred
 from robbdd.rdf.scene import add_scene_model, add_scene_set
 
@@ -237,6 +238,7 @@ def add_task_variation(
                 var_list_col
             ), f"number of row values ({len(r_col)}) != number of variables ({len(var_list_col)})"
             rows_col.append(r_first)
+
     elif isinstance(variation, CartesianProductVariation):
         graph.add(triple=(variation.uri, RDF.type, URI_BDD_TYPE_CART_PRODUCT))
         sets_col = add_node_list_pred(
@@ -331,6 +333,25 @@ def add_scenario_variant(
     if variant.template.uri not in templates:
         add_scenario_tmpl(graph=graph, tmpl=variant.template)
         templates.add(variant.template.uri)
+
+    # add extra clauses:
+    clause_col = add_node_list_pred(
+        graph=graph, subject_uri=variant.uri, pred_uri=URI_BDD_PRED_HAS_CLAUSE, nodes=[]
+    )
+    if variant.given_expr is not None:
+        add_clause_expr(
+            graph=graph,
+            clause=variant.given_expr.given,
+            clause_of_uri=variant.template.given_uri,
+            clause_col=clause_col,
+        )
+    if variant.then_expr is not None:
+        add_clause_expr(
+            graph=graph,
+            clause=variant.then_expr.then,
+            clause_of_uri=variant.template.then_uri,
+            clause_col=clause_col,
+        )
 
     graph.add(triple=(variant.uri, URI_BDD_PRED_OF_TMPL, variant.template.uri))
 
