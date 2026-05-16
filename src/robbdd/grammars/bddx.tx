@@ -6,26 +6,35 @@ imports*=Import
 
 namespaces=NamespaceDeclare*
 
+(
+bhv_impls+=BehaviourImplementation
+|
+fluent_impls+=FluentImplementation
+)*
+
 scenario_execs+=ScenarioExecution
 ;
 
 ScenarioExecution:
 'Scenario' 'Exec' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
-  'variants' '{' ('<' variants=[ScenarioVariant|FQN] '>')+[','] '}'
-  bhv_impl=BehaviourImplementation
-  fluent_impls*=FluentImplementation
+  'variant' ':' '<' variant=[ScenarioVariant|FQN] '>'
+  'bhv' ':' '<' bhv_impl=[BehaviourImplementation|FQN] '>'
+  'fluents' ':' '{'
+    ('<' fluent_impls=[FluentImplementation|FQN] '>')+[',']
+  '}'
 '}'
 ;
 
 BehaviourImplementation:
-'bhv' 'impl' '{'
+'bhv' 'impl' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
   bhv_spec=BhvImplSpec
 '}'
 ;
 BhvImplSpec: RosBhvAction | PyModuleAttr ;
 
 FluentImplementation:
-'fluent' 'impl' 'for' fluent_ref=HoldsExprRef '{'
+'fluent' 'impl' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK
+  'for' fluent_ref=HoldsExprRef '{'
   fl_spec=FluentImplSpec
 '}'
 ;

@@ -50,6 +50,7 @@ from robbdd.classes.bdd import (
     Permutation,
     ScenarioSetVariable,
     ScenarioTemplate,
+    ScenarioVariable,
     ScenarioVariant,
     TableVariation,
     TaskVariation,
@@ -212,13 +213,30 @@ def add_task_variation(
         for r in variation.rows:
             r_first = BNode()
             r_col = Collection(graph=graph, uri=r_first, seq=[])
-            for v in r.values:
+            assert len(r.values) == len(
+                variation.header.variables
+            ), f"number of row values ({len(r_col)}) != number of variables ({len(var_list_col)})"
+            for i, v in enumerate(r.values):
+                var = variation.header.variables[i]
                 if "ValidVarValue" in v.__class__.__name__:
-                    r_col.append(get_var_value_node(var_val=v))
+                    var_value = get_var_value_node(var_val=v)
+                    if isinstance(var, ScenarioSetVariable):
+                        raise ValueError(
+                            f"ScenarioSetVariable '{var.name}' assigned a non-set value: {var_value}"
+                        )
+                    if hasattr(v, "linked_val") and isinstance(v.linked_val, SetBase):
+                        raise ValueError(
+                            f"ScenarioVariable '{var.name}' assigned a set: {var_value}"
+                        )
+                    r_col.append(var_value)
                 elif "ConstSetLink" in v.__class__.__name__:
                     assert hasattr(
                         v, "linked_set"
                     ), f"ConstSetLink obj has no 'linked_set' attr: '{v}'"
+                    if isinstance(var, ScenarioVariable):
+                        raise ValueError(
+                            f"ScenarioVariable '{var.name}' assigned a set value: {v.linked_set}"
+                        )
                     r_col.append(
                         add_const_set(
                             graph=graph,
@@ -228,15 +246,14 @@ def add_task_variation(
                         )
                     )
                 elif "SetExpr" in v.__class__.__name__:
+                    if isinstance(var, ScenarioVariable):
+                        raise ValueError(f"ScenarioVariable '{var.name}' assigned a set value")
                     r_col.append(get_set_expr_set(graph=graph, set_expr=v))
                 else:
                     raise ValueError(
                         f"unhandled value type '{v.__class__.__name__}' in table variation for '{variation.uri}'"
                     )
 
-            assert len(r_col) == len(
-                var_list_col
-            ), f"number of row values ({len(r_col)}) != number of variables ({len(var_list_col)})"
             rows_col.append(r_first)
 
     elif isinstance(variation, CartesianProductVariation):
