@@ -57,3 +57,15 @@ class IHasUUID(IHasParent):
 class SetBase(IHasParent):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
+
+
+class PyModuleAttr(object):
+    modules: list[str]
+    attr_name: str
+    module_name: str
+
+    def __init__(self, parent, modules, attr_name) -> None:
+        self.parent = parent
+        self.modules = modules
+        self.attr_name = attr_name
+        self.module_name = ".".join(self.modules)

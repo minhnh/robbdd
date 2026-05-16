@@ -2,8 +2,12 @@
 from os.path import abspath, dirname, join
 from textx import get_children_of_type, get_model, metamodel_from_file, textx_isinstance
 import textx.scoping.providers as scoping_providers
-from robbdd.classes.bddx import ScenarioExecution
-from robbdd.classes.common import SetBase
+from robbdd.classes.bddx import (
+    BehaviourImplementation,
+    FluentImplementation,
+    ScenarioExecution,
+)
+from robbdd.classes.common import PyModuleAttr, SetBase
 from robbdd.classes.scene import (
     Agent,
     AgentSet,
@@ -59,7 +63,7 @@ def iter_fluent_refs(root_model):
         if not template_name:
             continue
 
-        for fluent in get_children_of_type(HoldsExpr, template):
+        for fluent in template.gwt_expr.get_hold_exprs():
             fluent_name = getattr(fluent, "name", None)
             if fluent_name:
                 yield f"{template_name}.{fluent_name}", fluent
@@ -69,7 +73,8 @@ def iter_fluent_refs(root_model):
         if not variant_name:
             continue
 
-        for fluent in get_children_of_type(HoldsExpr, variant):
+        assert isinstance(variant, ScenarioVariant)
+        for fluent in variant.get_hold_exprs():
             fluent_name = getattr(fluent, "name", None)
             if fluent_name:
                 yield f"{variant_name}.{fluent_name}", fluent
@@ -107,6 +112,7 @@ def scene_metamodel():
             AgentSet,
             WorkspaceComposition,
             SceneModel,
+            PyModuleAttr,
         ],
     )
     mm_scene.register_scope_providers(
@@ -165,7 +171,10 @@ def bdd_metamodel():
 
 
 def bddx_metamodel():
-    mm_bddx = metamodel_from_file(join(__CWD, "grammars", "bddx.tx"), classes=[ScenarioExecution])
+    mm_bddx = metamodel_from_file(
+        join(__CWD, "grammars", "bddx.tx"),
+        classes=[ScenarioExecution, BehaviourImplementation, FluentImplementation],
+    )
     mm_bddx.register_scope_providers(
         {
             "*.*": scoping_providers.FQNImportURI(),

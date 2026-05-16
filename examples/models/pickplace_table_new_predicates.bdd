@@ -9,6 +9,10 @@ Event (ns=bdd_tmpl) evt_pick_start
 Event (ns=bdd_tmpl) evt_place_end
 Event (ns=bdd_tmpl) evt_scenario_end
 
+const set (ns=bdd) sort_ws_set {
+    <lab_workspaces.container_1_ws>, <lab_workspaces.container_2_ws>
+}
+
 Scenario Template (ns=bdd_tmpl) tmpl_conveyor_sort {
     duration: from <evt_scenario_start> until <evt_scenario_end>
     task: <tsk_pickplace>
@@ -26,7 +30,10 @@ Scenario Template (ns=bdd_tmpl) tmpl_conveyor_sort {
         (
             fc-located-before: holds(<x> is located at <conveyor>, before <evt_pick_start>)
             and
-            fc-reachable: holds(<robot> can reach <x>, before <evt_pick_start>)
+            fc-reachable: holds(
+                pred('"{robot}" can reach "{x}"', robot=<robot>, x=<x>),
+                before <evt_pick_start>
+            )
         )
         When:
             Behaviour (ns=bdd_tmpl) pickplace {
@@ -59,8 +66,8 @@ User Story (ns=bdd) us_pickplace_single_arm {
               <tmpl_conveyor_sort.robot> |
               <tmpl_conveyor_sort.conveyor_speed> |
             |---|
-            | <pickplace_objects.box1> | <lab_workspaces.table_ws> | <lab_workspaces.shelf_ws> | <isaac_agents.kinova> | 0.9 |
-            | <pickplace_objects.ball> | <lab_workspaces.shelf_ws> | <lab_workspaces.table_ws> | <isaac_agents.panda> | 1.0 |
-            | <pickplace_objects.bottle> | <lab_workspaces.table_ws> | <lab_workspaces.shelf_ws> | <isaac_agents.ur10> | 0.8 |
+            | obj set <pickplace_objects> | <lab_workspaces.table_ws> | { <lab_workspaces.table_ws> } | <isaac_agents.kinova> | 0.9 |
+            | obj set <pickplace_objects> | <lab_workspaces.table_ws> | set <sort_ws_set> | <isaac_agents.panda> | 1.0 |
+            | obj set <pickplace_objects> | <lab_workspaces.table_ws> | set <sort_ws_set> | <isaac_agents.ur10> | 0.8 |
         }
 }

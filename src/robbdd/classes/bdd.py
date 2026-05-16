@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from __future__ import annotations
-from typing import Any, Optional
+from abc import ABC, abstractmethod
+from typing import Any, Generator, Optional
 from rdflib import Namespace, URIRef
 from robbdd.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasParent, IHasUUID, SetBase
 from robbdd.classes.scene import SceneModel
@@ -175,30 +176,6 @@ class FluentLogicExpr(Clause):
         super().__init__(parent=parent)
 
 
-class FluentAndExpr(FluentLogicExpr):
-    expressions: list[FluentLogicExpr]
-
-    def __init__(self, parent, expressions) -> None:
-        super().__init__(parent=parent)
-        self.expressions = expressions
-
-
-class FluentOrExpr(FluentLogicExpr):
-    expressions: list[FluentLogicExpr]
-
-    def __init__(self, parent, expressions) -> None:
-        super().__init__(parent=parent)
-        self.expressions = expressions
-
-
-class FluentNotExpr(FluentLogicExpr):
-    expr: FluentLogicExpr
-
-    def __init__(self, parent, expr) -> None:
-        super().__init__(parent=parent)
-        self.expr = expr
-
-
 class HoldsExpr(FluentLogicExpr):
     tc: TimeConstraint
     _uri: Optional[URIRef]
@@ -217,7 +194,56 @@ class HoldsExpr(FluentLogicExpr):
         return self._uri
 
 
-class ExistsExpr(Clause, IHasUUID):
+class IHasHoldsExpr(ABC):
+    @abstractmethod
+    def get_hold_exprs(self) -> Generator[HoldsExpr, None, None]: ...
+
+
+class FluentAndExpr(FluentLogicExpr, IHasHoldsExpr):
+    expressions: list[FluentLogicExpr]
+
+    def __init__(self, parent, expressions) -> None:
+        super().__init__(parent=parent)
+        self.expressions = expressions
+
+    def get_hold_exprs(self) -> Generator[HoldsExpr, None, None]:
+        for exp in self.expressions:
+            if isinstance(exp, HoldsExpr):
+                yield exp
+            elif isinstance(exp, IHasHoldsExpr):
+                yield from exp.get_hold_exprs()
+
+
+class FluentOrExpr(FluentLogicExpr, IHasHoldsExpr):
+    expressions: list[FluentLogicExpr]
+
+    def __init__(self, parent, expressions) -> None:
+        super().__init__(parent=parent)
+        self.expressions = expressions
+
+    def get_hold_exprs(self) -> Generator[HoldsExpr, None, None]:
+        for exp in self.expressions:
+            if isinstance(exp, HoldsExpr):
+                yield exp
+            elif isinstance(exp, IHasHoldsExpr):
+                yield from exp.get_hold_exprs()
+
+
+class FluentNotExpr(FluentLogicExpr, IHasHoldsExpr):
+    expr: FluentLogicExpr
+
+    def __init__(self, parent, expr) -> None:
+        super().__init__(parent=parent)
+        self.expr = expr
+
+    def get_hold_exprs(self) -> Generator[HoldsExpr, None, None]:
+        if isinstance(self.expr, HoldsExpr):
+            yield self.expr
+        elif isinstance(self.expr, IHasHoldsExpr):
+            yield from self.expr.get_hold_exprs()
+
+
+class ExistsExpr(Clause, IHasUUID, IHasHoldsExpr):
     var: ScenarioVariable
     fl_expr: FluentLogicExpr
     _uri: Optional[URIRef]
@@ -234,6 +260,12 @@ class ExistsExpr(Clause, IHasUUID):
         if self._uri is None:
             self._uri = self.namespace[f"exists-{self.uuid}"]
         return self._uri
+
+    def get_hold_exprs(self) -> Generator[HoldsExpr, None, None]:
+        if isinstance(self.fl_expr, HoldsExpr):
+            yield self.fl_expr
+        elif isinstance(self.fl_expr, IHasHoldsExpr):
+            yield from self.fl_expr.get_hold_exprs()
 
 
 class WhenBehaviourClause(IHasUUID):
@@ -287,7 +319,7 @@ class ForAllExpr(IHasNamespace, IHasUUID):
         return self._uri
 
 
-class GivenExpr(IHasNamespace):
+class GivenExpr(IHasNamespace, IHasHoldsExpr):
     given: Clause
 
     def __init__(self, parent, given) -> None:
@@ -300,6 +332,12 @@ class GivenExpr(IHasNamespace):
             self.parent, IHasNamespace
         ), f"parent of GivenExpr not instance of IHasNamespace: {self.parent}"
         return self.parent.namespace
+
+    def get_hold_exprs(self) -> Generator[HoldsExpr, None, None]:
+        if isinstance(self.given, HoldsExpr):
+            yield self.given
+        elif isinstance(self.given, IHasHoldsExpr):
+            yield from self.given.get_hold_exprs()
 
 
 class WhenExpr(IHasNamespace):
@@ -318,7 +356,7 @@ class WhenExpr(IHasNamespace):
         return self.parent.namespace
 
 
-class ThenExpr(IHasNamespace):
+class ThenExpr(IHasNamespace, IHasHoldsExpr):
     then: Clause
 
     def __init__(self, parent, then) -> None:
@@ -332,10 +370,18 @@ class ThenExpr(IHasNamespace):
         ), f"parent of ThenExpr not instance of IHasNamespace: {self.parent}"
         return self.parent.namespace
 
+    def get_hold_exprs(self) -> Generator[HoldsExpr, None, None]:
+        if isinstance(self.then, HoldsExpr):
+            yield self.then
+        elif isinstance(self.then, IHasHoldsExpr):
+            yield from self.then.get_hold_exprs()
 
-class GivenWhenThenExpr(IHasNamespace):
-    forall_expr: ForAllExpr
-    given_expr: GivenExpr
+
+class GivenWhenThenExpr(IHasNamespace, IHasHoldsExpr):
+    given_expr: Optional[GivenExpr]
+    when_expr: Optional[WhenExpr]
+    forall_expr: Optional[ForAllExpr]
+    then_expr: Optional[ThenExpr]
 
     def __init__(self, parent, given_expr, when_expr, forall_expr, then_expr) -> None:
         super().__init__(parent=parent)
@@ -351,11 +397,20 @@ class GivenWhenThenExpr(IHasNamespace):
         ), f"parent of GivenWhenThenExpr not instance of IHasNamespace: {self.parent}"
         return self.parent.namespace
 
+    def get_hold_exprs(self) -> Generator[HoldsExpr, None, None]:
+        if self.given_expr is not None:
+            yield from self.given_expr.get_hold_exprs()
+        if self.forall_expr is not None:
+            yield from self.forall_expr.gwt_expr.get_hold_exprs()
+        if self.then_expr is not None:
+            yield from self.then_expr.get_hold_exprs()
+
 
 class ScenarioTemplate(IHasNamespaceDeclare):
     task: Task
     duration: DuringEvent
     variables: list[VariableBase]
+    gwt_expr: GivenWhenThenExpr
 
     def __init__(
         self,
@@ -429,8 +484,8 @@ class ScenarioVariant(IHasNamespace):
     parent: UserStory
     template: ScenarioTemplate
     scene: SceneModel
-    given_expr: GivenExpr
-    then_expr: ThenExpr
+    given_expr: Optional[GivenExpr]
+    then_expr: Optional[ThenExpr]
     variation: TaskVariation
     _uri: Optional[URIRef]
 
@@ -456,6 +511,12 @@ class ScenarioVariant(IHasNamespace):
         if self._uri is None:
             self._uri = self.namespace[self.name]
         return self._uri
+
+    def get_hold_exprs(self) -> Generator[HoldsExpr, None, None]:
+        if self.given_expr is not None:
+            yield from self.given_expr.get_hold_exprs()
+        if self.then_expr is not None:
+            yield from self.then_expr.get_hold_exprs()
 
 
 class UserStory(IHasNamespaceDeclare):

@@ -10,8 +10,7 @@ from robbdd.classes.bddx import ScenarioExecution
 
 def add_scr_exec_to_graph(graph: Graph, scr_exec: ScenarioExecution):
     graph.add(triple=(scr_exec.uri, RDF.type, URI_BDD_TYPE_SCENARIO_EXEC))
-    for scr_var in scr_exec.variants:
-        graph.add(triple=(scr_exec.uri, URI_BDD_PRED_OF_VARIANT, scr_var.uri))
+    graph.add(triple=(scr_exec.uri, URI_BDD_PRED_OF_VARIANT, scr_exec.variant.uri))
 
 
 def create_bddx_model_graph(model: Any, g: Optional[Graph] = None) -> Graph:
