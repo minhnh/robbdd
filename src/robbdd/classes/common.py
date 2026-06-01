@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
+from typing import Any
 from uuid import UUID, uuid4
 from rdflib import Namespace, URIRef
 
@@ -41,6 +42,9 @@ class IHasNamespaceDeclare(IHasNamespace):
     def namespace(self) -> Namespace:
         return self._ns_obj
 
+    def __str__(self) -> str:
+        return f"<({self.__class__.__name__}) {self.ns_prefix}:{self.name}>"
+
 
 class IHasUUID(IHasParent):
     uuid: UUID
@@ -59,13 +63,14 @@ class SetBase(IHasParent):
         super().__init__(**kwargs)
 
 
-class PyModuleAttr(object):
-    modules: list[str]
-    attr_name: str
-    module_name: str
-
-    def __init__(self, parent, modules, attr_name) -> None:
-        self.parent = parent
-        self.modules = modules
-        self.attr_name = attr_name
-        self.module_name = ".".join(self.modules)
+def parse_py_module_attr(model: Any) -> tuple[str, str]:
+    modules = getattr(model, "modules", None)
+    if not isinstance(modules, list):
+        raise ValueError(
+            f"PyModuleAttr {model} doesn't have 'modules' field of list type: {modules}"
+        )
+    module_name = ".".join(modules)
+    attr_name = getattr(model, "attr_name", None)
+    if attr_name is None:
+        raise ValueError(f"PyModuleAttr {model} doesn't have valid 'attr_name' field")
+    return module_name, attr_name

@@ -10,7 +10,7 @@ from rdf_utils.resolver import install_resolver
 from rdf_utils.naming import get_valid_filename
 from bdd_dsl.models.user_story import UserStoryLoader
 from bdd_dsl.utils.jinja import load_template_from_url, prepare_jinja2_template_data
-from robbdd.graph import create_bdd_model_graph, get_var_value_node
+from robbdd.rdf.bdd import create_bdd_model_graph, get_var_value_node
 
 
 CWD = abspath(dirname(__file__))
@@ -20,6 +20,7 @@ GENERATED_DIR = join(CWD, "generated")
 def main():
     bdd_mm = metamodel_for_language("robbdd")
     model = bdd_mm.model_from_file(argv[1])
+
     g = create_bdd_model_graph(model=model)
     install_resolver()
 
@@ -44,6 +45,10 @@ def main():
             print(f"... wrote {filepath}")
 
     scenario_variant = model.stories[0].scenarios[0]
+    for hold_expr in scenario_variant.template.gwt_expr.get_holds_exprs():
+        print(hold_expr.uri)
+    for hold_expr in scenario_variant.get_holds_exprs():
+        print(hold_expr.uri)
     print(
         f"found variant '{scenario_variant.name}' of template '{scenario_variant.template.name}', variations:"
     )
