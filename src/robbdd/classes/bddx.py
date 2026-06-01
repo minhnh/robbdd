@@ -12,14 +12,14 @@ class BehaviourImplementation(IHasNamespaceDeclare):
         self.bhv_spec = bhv_spec
 
 
-class FluentImplementation(IHasNamespaceDeclare):
+class ObservationPolicy(IHasNamespaceDeclare):
     fluent_ref: Any
-    fl_spec: Any
+    obs_spec: Any
     fluent: HoldsExpr
 
-    def __init__(self, parent, ns, name, fluent_ref, fl_spec) -> None:
+    def __init__(self, parent, ns, name, fluent_ref, obs_spec) -> None:
         super().__init__(parent=parent, ns=ns, name=name)
-        self.fl_spec = fl_spec
+        self.obs_spec = obs_spec
         self.fluent_ref = fluent_ref
         self.fluent = fluent_ref.fluent
 
@@ -27,10 +27,10 @@ class FluentImplementation(IHasNamespaceDeclare):
 class ScenarioExecution(IHasNamespaceDeclare):
     variant: ScenarioVariant
     bhv_impl: BehaviourImplementation
-    fluent_impls: list[FluentImplementation]
+    obs_policies: list[ObservationPolicy]
 
-    def __init__(self, parent, ns, name, variant, bhv_impl, fluent_impls) -> None:
+    def __init__(self, parent, ns, name, variant, bhv_impl, obs_policies) -> None:
         super().__init__(parent=parent, ns=ns, name=name)
         self.variant = variant
         self.bhv_impl = bhv_impl
-        self.fluent_impls = fluent_impls
+        self.obs_policies = obs_policies

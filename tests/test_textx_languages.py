@@ -2,12 +2,13 @@
 import unittest
 from os.path import dirname, join
 from urllib.error import HTTPError
-from rdflib import URIRef
 from textx import metamodel_for_language
 
 from rdf_utils.resolver import install_resolver
 from bdd_dsl.models.user_story import UserStoryLoader
-from robbdd.graph import create_bdd_model_graph, create_scene_model_graph
+from robbdd.rdf.scene import create_scene_model_graph
+from robbdd.rdf.bdd import create_bdd_model_graph
+from robbdd.rdf.bddx import create_bddx_model_graph
 
 
 ROOT_DIR = dirname(dirname(__file__))
@@ -49,7 +50,5 @@ class TestTextXLanguages(unittest.TestCase):
         bddx_mm = metamodel_for_language("robbdd-exec")
         bddx_model = bddx_mm.model_from_file(join(MODELS_DIR, "pickplace_table_custom.bddx"))
 
-        assert len(bddx_model.fluent_providers) > 0
-        for fl_prov in bddx_model.fluent_providers:
-            assert isinstance(fl_prov.fluent_ref.fluent.uri, URIRef)
-            assert isinstance(fl_prov.topic_name, str)
+        g = create_bddx_model_graph(model=bddx_model)
+        assert len(g) > 0

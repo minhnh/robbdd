@@ -9,7 +9,7 @@ namespaces=NamespaceDeclare*
 (
 bhv_impls+=BehaviourImplementation
 |
-fluent_impls+=FluentImplementation
+obs_policies+=ObservationPolicy
 )*
 
 scenario_execs+=ScenarioExecution
@@ -19,8 +19,8 @@ ScenarioExecution:
 'Scenario' 'Exec' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
   'variant' ':' '<' variant=[ScenarioVariant|FQN] '>'
   'bhv' ':' '<' bhv_impl=[BehaviourImplementation|FQN] '>'
-  'fluents' ':' '{'
-    ('<' fluent_impls=[FluentImplementation|FQN] '>')+[',']
+  'policies' ':' '{'
+    ('<' obs_policies=[ObservationPolicy|FQN] '>')+[',']
   '}'
 '}'
 ;
@@ -32,14 +32,14 @@ BehaviourImplementation:
 ;
 BhvImplSpec: RosBhvAction | PyModuleAttr ;
 
-FluentImplementation:
-'fluent' 'impl' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK
+ObservationPolicy:
+'obs' 'policy' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK
   'for' fluent_ref=HoldsExprRef '{'
-  fl_spec=FluentImplSpec
+  obs_spec=ObservationSpec
 '}'
 ;
 
-FluentImplSpec: RosTrinaryTopic ;
+ObservationSpec: RosTrinaryTopic ;
 
 RosBhvAction: 'bhv' 'action' ':' action_name=STRING ;
 RosTrinaryTopic: 'trinary' 'topic' ':' topic_name=STRING ;
