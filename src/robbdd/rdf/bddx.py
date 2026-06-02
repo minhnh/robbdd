@@ -35,13 +35,16 @@ def add_bhv_impl_to_graph(graph: Graph, bhv_impl: BehaviourImplementation) -> No
             triple=(bhv_impl.uri, URI_ROS_PRED_TYPE_NAME, Literal("bdd_ros2_interfaces/Behaviour"))
         )
         graph.add(triple=(bhv_impl.uri, URI_ROS_PRED_CHNL_NAME, Literal(action_name)))
-    elif "PyModuleAttr" in bhv_spec_type:
+        return
+
+    if "PyModuleAttr" in bhv_spec_type:
         module_name, attr_name = parse_py_module_attr(bhv_impl.bhv_spec)
         graph.add(triple=(bhv_impl.uri, RDF.type, URI_PY_TYPE_MODULE_ATTR))
         graph.add(triple=(bhv_impl.uri, URI_PY_PRED_MODULE_NAME, Literal(module_name)))
         graph.add(triple=(bhv_impl.uri, URI_PY_PRED_ATTR_NAME, Literal(attr_name)))
-    else:
-        raise ValueError(f"unhandled BhvImplSpec type: {bhv_impl.bhv_spec.__class__}")
+        return
+
+    raise ValueError(f"unhandled ObservationSpec type: {bhv_impl.bhv_spec.__class__}")
 
 
 def add_obs_pol_to_graph(graph: Graph, obs_pol: ObservationPolicy) -> None:
@@ -66,7 +69,7 @@ def add_scr_exec_to_graph(graph: Graph, scr_exec: ScenarioExecution) -> None:
     graph.add(triple=(scr_exec.uri, RDF.type, URI_BDD_TYPE_SCENARIO_EXEC))
     graph.add(triple=(scr_exec.uri, URI_BDD_PRED_OF_VARIANT, scr_exec.variant.uri))
 
-    # behaviour implementaiton
+    # behaviour implementation
     graph.add(triple=(scr_exec.uri, URI_BDD_PRED_HAS_BHV_IMPL, scr_exec.bhv_impl.uri))
     graph.add(
         triple=(

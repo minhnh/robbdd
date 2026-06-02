@@ -12,7 +12,7 @@ description = """
 A TextX Language for working with Behaviour-Driven Development (BDD) meta-model.
 """
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Development Status :: 2 - Pre-Alpha",
