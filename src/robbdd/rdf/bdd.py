@@ -213,9 +213,12 @@ def add_task_variation(
         for r in variation.rows:
             r_first = BNode()
             r_col = Collection(graph=graph, uri=r_first, seq=[])
-            assert len(r.values) == len(
-                variation.header.variables
-            ), f"number of row values ({len(r_col)}) != number of variables ({len(var_list_col)})"
+            num_row_val = len(r.values)
+            num_var = len(variation.header.variables)
+            if num_row_val != num_var:
+                raise ValueError(
+                    f"number of row values ({num_row_val}) != number of variables ({num_var})"
+                )
             for i, v in enumerate(r.values):
                 var = variation.header.variables[i]
                 if "ValidVarValue" in v.__class__.__name__:
@@ -333,7 +336,7 @@ def add_task_variation(
                 )
     else:
         raise ValueError(
-            f"TaskVariaiton type not handled for variant '{variation.parent.uri}': {type(variation)}"
+            f"TaskVariation type not handled for variant '{variation.parent.uri}': {type(variation)}"
         )
 
 

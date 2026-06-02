@@ -372,8 +372,7 @@ def add_gwt_expr(
             then_uri=then_uri,
         )
     elif gwt_expr.when_expr is not None:
-        for when_evt in gwt_expr.when_expr.when_events:
-            print(when_evt)
+        # TODO(minhnh): handle gwt_expr.when_expr.when_events
         bhv_uri = add_when_behaviour(
             graph=graph, wbh_clause=gwt_expr.when_expr.when_bhv, when_uri=when_uri
         )
