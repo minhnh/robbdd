@@ -4,13 +4,13 @@ ns bdd_var='https://secorolab.github.io/models/acceptance-criteria/bdd/variants/
 ns bdd_tmpl='https://secorolab.github.io/models/acceptance-criteria/bdd/templates/'
 
 Task (ns=bdd_tmpl) tsk_pickplace
-Event (ns=bdd_tmpl) evt_scr_start
-Event (ns=bdd_tmpl) evt_scr_end
-Event (ns=bdd_tmpl) evt_pick_start
-Event (ns=bdd_tmpl) evt_place_end
+Event (ns=bdd_tmpl) evt-scr-start
+Event (ns=bdd_tmpl) evt-scr-end
+Event (ns=bdd_tmpl) evt-pick-start
+Event (ns=bdd_tmpl) evt-place-end
 
 Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
-    duration: from <evt_scr_start> until <evt_scr_end>
+    duration: from <evt-scr-start> until <evt-scr-end>
     task: <tsk_pickplace>
 
     var target_object
@@ -22,21 +22,21 @@ Scenario Template (ns=bdd_tmpl) tmpl_pickplace {
     Given:
         (
         fc-located-before: holds(
-            <target_object> is located at <pick_ws>, 0.5 seconds before <evt_pick_start>
+            <target_object> is located at <pick_ws>, 0.5 seconds before <evt-pick-start>
         )
         and
         fc-config-robot: holds(
-            <robot> has config ee_speed = <ee-speed>, 0.5 seconds before <evt_pick_start>
+            <robot> has config ee_speed = <ee-speed>, 0.5 seconds before <evt-pick-start>
             )
         )
     When:
         Behaviour (ns=bdd_tmpl) pickplace {
-            duration: from <evt_pick_start> until <evt_place_end>
+            duration: from <evt-pick-start> until <evt-place-end>
             <robot> picks <target_object> and places at <place_ws>
         }
     Then:
         fc-located-after: holds(
-            <target_object> is located at <place_ws>, 0.5 seconds after <evt_pick_start>
+            <target_object> is located at <place_ws>, 0.5 seconds after <evt-place-end>
             )
 }
 
@@ -54,7 +54,7 @@ User Story (ns=bdd_var) sim_pickplace {
                 fc-collide: holds(
                     pred(
                         '"{robot}" does not collide with "{pick_ws}"', robot=<tmpl_pickplace.robot>, pick_ws=<tmpl_pickplace.pick_ws>
-                    ), from <evt_pick_start> until <evt_place_end>
+                    ), from <evt-pick-start> until <evt-place-end>
                 )
 
             variation:
