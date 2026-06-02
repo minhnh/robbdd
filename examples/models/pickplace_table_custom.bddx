@@ -36,12 +36,3 @@ Scenario Exec (ns=bdd_exec) pickplace-mockup-ros {
         <fcx-collision-topic>
     }
 }
-Scenario Exec (ns=bdd_exec) pickplace-mockup-py {
-    variant: <sim_pickplace.pickplace_table>
-    bhv: <mockup-pp-class>
-    policies: {
-        <fcx-located-before-topic>,
-        <fcx-located-after-topic>,
-        <fcx-collision-topic>
-    }
-}
