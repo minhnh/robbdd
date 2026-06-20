@@ -61,8 +61,9 @@ def main():
 
             elif hasattr(var_set.val_set, "elems"):
                 elem_strings = []
+                set_uris = set()
                 for elem in var_set.val_set.elems:
-                    node = get_var_value_node(var_val=elem)
+                    node = get_var_value_node(graph=g, var_val=elem, set_uris=set_uris)
                     if isinstance(node, URIRef):
                         elem_strings.append(node.n3())
                     elif isinstance(node, Literal):

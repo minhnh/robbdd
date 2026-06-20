@@ -69,7 +69,12 @@ class Agent(IHasNamespace):
         return self._uri
 
 
-class ObjectSet(SetBase, IHasNamespaceDeclare):
+class SceneSet(SetBase, IHasNamespaceDeclare):
+    def __init__(self, parent, ns, name) -> None:
+        super().__init__(parent=parent, ns=ns, name=name)
+
+
+class ObjectSet(SceneSet):
     objects: list[Object]
 
     def __init__(self, parent, ns, name, objects) -> None:
@@ -77,7 +82,7 @@ class ObjectSet(SetBase, IHasNamespaceDeclare):
         self.objects = objects
 
 
-class WorkspaceSet(SetBase, IHasNamespaceDeclare):
+class WorkspaceSet(SceneSet):
     workspaces: list[Workspace]
 
     def __init__(self, parent, ns, name, workspaces) -> None:
@@ -85,7 +90,7 @@ class WorkspaceSet(SetBase, IHasNamespaceDeclare):
         self.workspaces = workspaces
 
 
-class AgentSet(SetBase, IHasNamespaceDeclare):
+class AgentSet(SceneSet):
     agents: list[Agent]
 
     def __init__(self, parent, ns, name, agents) -> None:
