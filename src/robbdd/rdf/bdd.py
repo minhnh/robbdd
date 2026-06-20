@@ -384,21 +384,24 @@ def add_scenario_variant(
     graph.add(triple=(variant.uri, URI_BDD_PRED_OF_TMPL, variant.template.uri))
 
     # scene
+    scn_has_obj, scn_has_ws, scn_has_agn = False, False, False
     if variant.scene.uri not in scenes:
-        add_scene_model(graph=graph, scene=variant.scene, set_uris=set_uris)
+        scn_has_obj, scn_has_ws, scn_has_agn = add_scene_model(
+            graph=graph, scene=variant.scene, set_uris=set_uris
+        )
         scenes.add(variant.scene.uri)
 
-    if len(variant.scene.obj_sets) > 0:
+    if scn_has_obj:
         graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_obj_uri))
         graph.add(
             triple=(variant.scene.scene_obj_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
         )
-    if len(variant.scene.ws_sets) > 0 or len(variant.scene.ws_comps) > 0:
+    if scn_has_ws:
         graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_ws_uri))
         graph.add(
             triple=(variant.scene.scene_ws_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
         )
-    if len(variant.scene.agn_sets) > 0:
+    if scn_has_agn:
         graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_agn_uri))
         graph.add(
             triple=(variant.scene.scene_agn_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
