@@ -58,7 +58,7 @@ from robbdd.classes.bdd import (
     VariableBase,
 )
 from robbdd.classes.common import SetBase
-from robbdd.classes.scene import AgentSet, ObjectSet, SceneModel, WorkspaceSet
+from robbdd.classes.scene import AgentSet, ObjectSet, SceneModel, SceneSet, WorkspaceSet
 from robbdd.rdf.clauses import add_clause_expr, add_gwt_expr, add_node_time_constraint
 from robbdd.rdf.common import add_node_list_pred
 from robbdd.rdf.scene import add_scene_model, add_scene_set
@@ -107,11 +107,18 @@ def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
     graph.add(triple=(tmpl.scenario_uri, URI_BHV_PRED_OF_BHV, bhv_uri))
 
 
-def get_var_value_node(var_val: Any) -> Node:
+def get_var_value_node(graph: Graph, var_val: Any, set_uris: set[URIRef]) -> Node:
     if hasattr(var_val, "linked_val") and var_val.linked_val is not None:
         assert hasattr(
             var_val.linked_val, "uri"
         ), f"Linked value has no URI attr: {var_val.linked_val}"
+
+        # Add scene sets, in case they're not included explicitly by ScenarioVariant
+        if hasattr(var_val.linked_val, "parent") and isinstance(
+            var_val.linked_val.parent, SceneSet
+        ):
+            add_scene_set(graph=graph, scene_set=var_val.linked_val.parent, set_uris=set_uris)
+
         assert var_val.linked_val.uri is not None
         return var_val.linked_val.uri
 
@@ -135,21 +142,21 @@ def add_explicit_set(graph: Graph, const_set: ExplicitSet, set_uris: set[URIRef]
             triple=(
                 const_set.uri,
                 URI_BDD_PRED_ELEMS,
-                get_var_value_node(var_val=v),
+                get_var_value_node(graph=graph, var_val=v, set_uris=set_uris),
             )
         )
     set_uris.add(const_set.uri)
     return const_set.uri
 
 
-def get_set_expr_set(graph: Graph, set_expr: Any) -> IdentifiedNode:
+def get_set_expr_set(graph: Graph, set_expr: Any, set_uris: set[URIRef]) -> IdentifiedNode:
     assert (
         hasattr(set_expr, "elems") and set_expr.elems is not None
     ), f"SetExpr object has invalid 'elems' attr: {set_expr}"
     col_first = BNode()
     col = Collection(graph=graph, uri=col_first, seq=[])
     for elem in set_expr.elems:
-        col.append(get_var_value_node(var_val=elem))
+        col.append(get_var_value_node(graph=graph, var_val=elem, set_uris=set_uris))
     return col_first
 
 
@@ -162,30 +169,27 @@ def add_const_set(
     if isinstance(set_obj, ObjectSet):
         add_scene_set(
             graph=graph,
-            scn_comp_uri=scene_model.scene_obj_uri,
-            scn_set_uri=set_obj.uri,
-            set_elems=set_obj.objects,
+            scene_set=set_obj,
             set_uris=set_uris,
+            scn_comp_uri=scene_model.scene_obj_uri,
         )
         return set_obj.uri
 
     if isinstance(set_obj, WorkspaceSet):
         add_scene_set(
             graph=graph,
-            scn_comp_uri=scene_model.scene_ws_uri,
-            scn_set_uri=set_obj.uri,
-            set_elems=set_obj.workspaces,
+            scene_set=set_obj,
             set_uris=set_uris,
+            scn_comp_uri=scene_model.scene_ws_uri,
         )
         return set_obj.uri
 
     if isinstance(set_obj, AgentSet):
         add_scene_set(
             graph=graph,
-            scn_comp_uri=scene_model.scene_agn_uri,
-            scn_set_uri=set_obj.uri,
-            set_elems=set_obj.agents,
+            scene_set=set_obj,
             set_uris=set_uris,
+            scn_comp_uri=scene_model.scene_agn_uri,
         )
         return set_obj.uri
 
@@ -222,7 +226,7 @@ def add_task_variation(
             for i, v in enumerate(r.values):
                 var = variation.header.variables[i]
                 if "ValidVarValue" in v.__class__.__name__:
-                    var_value = get_var_value_node(var_val=v)
+                    var_value = get_var_value_node(graph=graph, var_val=v, set_uris=set_uris)
                     if isinstance(var, ScenarioSetVariable):
                         raise ValueError(
                             f"ScenarioSetVariable '{var.name}' assigned a non-set value: {var_value}"
@@ -251,7 +255,7 @@ def add_task_variation(
                 elif "SetExpr" in v.__class__.__name__:
                     if isinstance(var, ScenarioVariable):
                         raise ValueError(f"ScenarioVariable '{var.name}' assigned a set value")
-                    r_col.append(get_set_expr_set(graph=graph, set_expr=v))
+                    r_col.append(get_set_expr_set(graph=graph, set_expr=v, set_uris=set_uris))
                 else:
                     raise ValueError(
                         f"unhandled value type '{v.__class__.__name__}' in table variation for '{variation.uri}'"
@@ -268,13 +272,17 @@ def add_task_variation(
             var_list_col.append(v_set.variable.uri)
             if hasattr(v_set.val_set, "elems"):
                 # explicit set
-                sets_col.append(get_set_expr_set(graph=graph, set_expr=v_set.val_set))
+                sets_col.append(
+                    get_set_expr_set(graph=graph, set_expr=v_set.val_set, set_uris=set_uris)
+                )
             elif hasattr(v_set.val_set, "sets"):
                 # set of sets
                 set_of_sets_first = BNode()
                 set_of_sets_col = Collection(graph=graph, uri=set_of_sets_first, seq=[])
                 for set_expr in v_set.val_set.sets:
-                    set_of_sets_col.append(get_set_expr_set(graph=graph, set_expr=set_expr))
+                    set_of_sets_col.append(
+                        get_set_expr_set(graph=graph, set_expr=set_expr, set_uris=set_uris)
+                    )
                 sets_col.append(set_of_sets_first)
 
             elif hasattr(v_set.val_set, "linked_set"):
@@ -380,19 +388,21 @@ def add_scenario_variant(
         add_scene_model(graph=graph, scene=variant.scene, set_uris=set_uris)
         scenes.add(variant.scene.uri)
 
-    graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_obj_uri))
-    graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_ws_uri))
-    graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_agn_uri))
-
-    graph.add(
-        triple=(variant.scene.scene_obj_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
-    )
-    graph.add(
-        triple=(variant.scene.scene_ws_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
-    )
-    graph.add(
-        triple=(variant.scene.scene_agn_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
-    )
+    if len(variant.scene.obj_sets) > 0:
+        graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_obj_uri))
+        graph.add(
+            triple=(variant.scene.scene_obj_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
+        )
+    if len(variant.scene.ws_sets) > 0 or len(variant.scene.ws_comps) > 0:
+        graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_ws_uri))
+        graph.add(
+            triple=(variant.scene.scene_ws_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
+        )
+    if len(variant.scene.agn_sets) > 0:
+        graph.add(triple=(variant.uri, URI_BDD_PRED_HAS_SCENE, variant.scene.scene_agn_uri))
+        graph.add(
+            triple=(variant.scene.scene_agn_uri, URI_BDD_PRED_OF_SCENE, variant.template.scene_uri)
+        )
 
     # variation
     add_task_variation(

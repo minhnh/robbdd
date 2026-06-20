@@ -40,10 +40,8 @@ scene (ns=scene_lab) pickplace_scene {
     obj set <pickplace_objects>
     ws comp <comp_table_pickplace>
     ws comp <comp_shelf_pickplace>
-    agn set <isaac_agents>
 }
 scene (ns=scene_lab) sorting_scene {
     obj set <pickplace_objects>
     ws comp <comp_table_sort>
-    agn set <isaac_agents>
 }
