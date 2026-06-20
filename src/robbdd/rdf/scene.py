@@ -98,15 +98,11 @@ def add_ws_comp(
         add_ws_comp(graph=graph, scene=scene, ws_comp=child_comp, ws_comp_set=ws_comp_set)
 
 
-def add_scene_model(graph: Graph, scene: SceneModel, set_uris: set[URIRef]):
+def add_scene_model(
+    graph: Graph, scene: SceneModel, set_uris: set[URIRef]
+) -> tuple[bool, bool, bool]:
+    """Add elements of a scene model to the graph and returns whether the scene has objects, workspaces, and/or agents"""
     graph.bind(prefix=scene.ns_prefix, namespace=scene.namespace)
-
-    if len(scene.obj_sets) > 0:
-        graph.add(triple=(scene.scene_obj_uri, RDF.type, URI_BDD_TYPE_SCENE_OBJ))
-    if len(scene.ws_sets) > 0 or len(scene.ws_comps) > 0:
-        graph.add(triple=(scene.scene_ws_uri, RDF.type, URI_BDD_TYPE_SCENE_WS))
-    if len(scene.agn_sets) > 0:
-        graph.add(triple=(scene.scene_agn_uri, RDF.type, URI_BDD_TYPE_SCENE_AGN))
 
     for obj_set in scene.obj_sets:
         add_scene_set(
@@ -134,6 +130,23 @@ def add_scene_model(graph: Graph, scene: SceneModel, set_uris: set[URIRef]):
 
     for ws_comp in scene.ws_comps:
         add_ws_comp(graph=graph, scene=scene, ws_comp=ws_comp, ws_comp_set=None)
+
+    scene_has_obj = (
+        graph.value(subject=scene.scene_obj_uri, predicate=URI_ENV_PRED_HAS_OBJ) is not None
+    )
+    scene_has_ws = (
+        graph.value(subject=scene.scene_ws_uri, predicate=URI_ENV_PRED_HAS_WS) is not None
+    )
+    scene_has_agn = (
+        graph.value(subject=scene.scene_agn_uri, predicate=URI_AGN_PRED_HAS_AGN) is not None
+    )
+    if scene_has_obj:
+        graph.add(triple=(scene.scene_obj_uri, RDF.type, URI_BDD_TYPE_SCENE_OBJ))
+    if scene_has_ws:
+        graph.add(triple=(scene.scene_ws_uri, RDF.type, URI_BDD_TYPE_SCENE_WS))
+    if scene_has_agn > 0:
+        graph.add(triple=(scene.scene_agn_uri, RDF.type, URI_BDD_TYPE_SCENE_AGN))
+    return scene_has_obj, scene_has_ws, scene_has_agn
 
 
 def create_scene_model_graph(model: Any, g: Optional[Graph] = None) -> Graph:
