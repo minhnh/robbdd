@@ -61,7 +61,7 @@ from robbdd.classes.common import SetBase
 from robbdd.classes.scene import AgentSet, ObjectSet, SceneModel, SceneSet, WorkspaceSet
 from robbdd.rdf.clauses import add_clause_expr, add_gwt_expr, add_node_time_constraint
 from robbdd.rdf.common import add_node_list_pred
-from robbdd.rdf.scene import add_scene_model, add_scene_set
+from robbdd.rdf.scene import add_agn_set, add_obj_set, add_scene_model, add_scene_set, add_ws_set
 
 
 def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
@@ -167,27 +167,27 @@ def add_const_set(
         return add_explicit_set(graph=graph, const_set=set_obj, set_uris=set_uris)
 
     if isinstance(set_obj, ObjectSet):
-        add_scene_set(
+        add_obj_set(
             graph=graph,
-            scene_set=set_obj,
+            obj_set=set_obj,
             set_uris=set_uris,
             scn_comp_uri=scene_model.scene_obj_uri,
         )
         return set_obj.uri
 
     if isinstance(set_obj, WorkspaceSet):
-        add_scene_set(
+        add_ws_set(
             graph=graph,
-            scene_set=set_obj,
+            ws_set=set_obj,
             set_uris=set_uris,
             scn_comp_uri=scene_model.scene_ws_uri,
         )
         return set_obj.uri
 
     if isinstance(set_obj, AgentSet):
-        add_scene_set(
+        add_agn_set(
             graph=graph,
-            scene_set=set_obj,
+            agn_set=set_obj,
             set_uris=set_uris,
             scn_comp_uri=scene_model.scene_agn_uri,
         )

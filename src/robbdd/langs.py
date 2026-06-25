@@ -13,6 +13,7 @@ from robbdd.classes.scene import (
     AgentSet,
     Object,
     ObjectSet,
+    ElementModel,
     SceneModel,
     Workspace,
     WorkspaceComposition,
@@ -104,6 +105,7 @@ def scene_metamodel():
     mm_scene = metamodel_from_file(
         join(__CWD, "grammars", "scene.tx"),
         classes=[
+            ElementModel,
             Object,
             Workspace,
             Agent,

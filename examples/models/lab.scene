@@ -11,7 +11,10 @@ obj set (ns=lab_env) pickplace_objects {
 obj set (ns=lab_env) ws_objects {
     object container_1,
     object container_2,
-    object dining_table,
+    object dining_table {
+        model mjc-table { sys path = '~/.cache/mj_kdl_wrapper/assets/table.xml' },
+        model mjc-ros { ros pkg = "test_pkg", path = "assets/table.xml" }
+    },
     object shelf
 }
 ws set (ns=lab_env) lab_workspaces {
@@ -21,9 +24,24 @@ ws set (ns=lab_env) lab_workspaces {
     workspace shelf_ws
 }
 agn set (ns=isaac_agn) isaac_agents {
-    agent panda,
-    agent ur10,
-    agent kinova
+    agent panda {
+        model panda-mjc {
+            sys path = '~/.cache/mj_kdl_wrapper/menagerie/franka_emika_panda/mjx_panda.xml'
+        }
+    },
+    agent ur10 {
+        model ur10-mjc {
+            sys path = '~/.cache/mj_kdl_wrapper/menagerie/universal_robots_ur10e/ur10e.xml'
+        }
+    },
+    agent kinova {
+        model kinova-mjc {
+            sys path = '~/.cache/mj_kdl_wrapper/menagerie/kinova_gen3/gen3.xml'
+        },
+        model robotiq-mjc {
+            sys path = '~/.cache/mj_kdl_wrapper/assets/robotiq_2f85/2f85.xml'
+        }
+    }
 }
 
 comp (ns=lab_env) comp_container1 of ws <lab_workspaces.container_1_ws> { obj <ws_objects.container_1> }
