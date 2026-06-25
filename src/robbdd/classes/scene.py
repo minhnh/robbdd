@@ -1,17 +1,45 @@
 # SPDX-License-Identifier: MPL-2.0
 from __future__ import annotations
-from typing import Optional
+from typing import Any, Optional
 from rdflib import URIRef, Namespace
 from robbdd.classes.common import IHasNamespace, IHasNamespaceDeclare, SetBase
 
 
-class Object(IHasNamespace):
+class ElementModel(IHasNamespace):
+    model_spec: Any
     _uri: Optional[URIRef]
 
-    def __init__(self, parent, name) -> None:
+    def __init__(self, parent, name, model_spec) -> None:
         super().__init__(parent=parent)
         self.name = name
+        self.model_spec = model_spec
         self._uri = None
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, IHasNamespace
+        ), f"parent of ElementModel not an 'IHasNamespace': {self.parent}"
+        return self.parent.namespace
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            self._uri = self.namespace[self.name]
+        return self._uri
+
+
+class Object(IHasNamespace):
+    models: Optional[list[ElementModel]]
+    _uri: Optional[URIRef]
+    _modelled_uri: Optional[URIRef]
+
+    def __init__(self, parent, name, models) -> None:
+        super().__init__(parent=parent)
+        self.name = name
+        self.models = models
+        self._uri = None
+        self._modelled_uri = None
 
     @property
     def namespace(self) -> Namespace:
@@ -25,6 +53,12 @@ class Object(IHasNamespace):
         if self._uri is None:
             self._uri = self.namespace[self.name]
         return self._uri
+
+    @property
+    def modelled_uri(self) -> URIRef:
+        if self._modelled_uri is None:
+            self._modelled_uri = self.namespace[f"modelled-{self.name}"]
+        return self._modelled_uri
 
 
 class Workspace(IHasNamespace):
@@ -50,12 +84,16 @@ class Workspace(IHasNamespace):
 
 
 class Agent(IHasNamespace):
+    models: Optional[list[ElementModel]]
     _uri: Optional[URIRef]
+    _modelled_uri: Optional[URIRef]
 
-    def __init__(self, parent, name) -> None:
+    def __init__(self, parent, name, models) -> None:
         super().__init__(parent=parent)
         self.name = name
+        self.models = models
         self._uri = None
+        self._modelled_uri = None
 
     @property
     def namespace(self) -> Namespace:
@@ -67,6 +105,12 @@ class Agent(IHasNamespace):
         if self._uri is None:
             self._uri = self.namespace[self.name]
         return self._uri
+
+    @property
+    def modelled_uri(self) -> URIRef:
+        if self._modelled_uri is None:
+            self._modelled_uri = self.namespace[f"modelled-{self.name}"]
+        return self._modelled_uri
 
 
 class SceneSet(SetBase, IHasNamespaceDeclare):

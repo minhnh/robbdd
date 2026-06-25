@@ -1,11 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any, Optional
 from rdflib import Graph, RDF, Literal
-from rdf_utils.models.python import (
-    URI_PY_TYPE_MODULE_ATTR,
-    URI_PY_PRED_MODULE_NAME,
-    URI_PY_PRED_ATTR_NAME,
-)
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_BHV_IMPL,
     URI_BDD_PRED_OF_CLAUSE,
@@ -21,7 +16,7 @@ from bdd_dsl.models.urirefs import (
     URI_ROS_TYPE_TOPIC,
 )
 from robbdd.classes.bddx import BehaviourImplementation, ObservationPolicy, ScenarioExecution
-from robbdd.classes.common import parse_py_module_attr
+from robbdd.rdf.common import add_py_module_attr
 
 
 def add_bhv_impl_to_graph(graph: Graph, bhv_impl: BehaviourImplementation) -> None:
@@ -38,10 +33,7 @@ def add_bhv_impl_to_graph(graph: Graph, bhv_impl: BehaviourImplementation) -> No
         return
 
     if "PyModuleAttr" in bhv_spec_type:
-        module_name, attr_name = parse_py_module_attr(bhv_impl.bhv_spec)
-        graph.add(triple=(bhv_impl.uri, RDF.type, URI_PY_TYPE_MODULE_ATTR))
-        graph.add(triple=(bhv_impl.uri, URI_PY_PRED_MODULE_NAME, Literal(module_name)))
-        graph.add(triple=(bhv_impl.uri, URI_PY_PRED_ATTR_NAME, Literal(attr_name)))
+        add_py_module_attr(graph=graph, node_uri=bhv_impl.uri, py_model=bhv_impl.bhv_spec)
         return
 
     raise ValueError(f"unhandled ObservationSpec type: {bhv_impl.bhv_spec.__class__}")

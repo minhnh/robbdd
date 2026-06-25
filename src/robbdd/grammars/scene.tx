@@ -33,9 +33,22 @@ agents+=Agent[',']
 '}'
 ;
 
-Object: 'object' name=IRI_TRUNK;
+Object: 'object' name=IRI_TRUNK
+('{' models+=ElementModel[','] '}')?
+;
 Workspace: 'workspace' name=IRI_TRUNK ;
-Agent: 'agent' name=IRI_TRUNK ;
+Agent: 'agent' name=IRI_TRUNK
+('{' models+=ElementModel[','] '}')?
+;
+
+ElementModel:
+'model' name=IRI_TRUNK '{'
+    model_spec=ModelSpecification
+'}'
+;
+ModelSpecification: SystemPath | RosPath | PyModuleAttr ;
+SystemPath: 'sys' 'path' '=' path=STRING ;
+RosPath: 'ros' 'pkg' '=' pkg=STRING ',' 'path' '=' path=STRING ;
 
 WorkspaceComposition:
 'comp' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK 'of' 'ws' '<' ws=[Workspace|FQN] '>' '{'
