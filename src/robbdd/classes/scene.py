@@ -7,11 +7,13 @@ from robbdd.classes.common import IHasNamespace, IHasNamespaceDeclare, SetBase
 
 class ElementModel(IHasNamespace):
     model_spec: Any
+    model_kind: Optional[str]
     _uri: Optional[URIRef]
 
-    def __init__(self, parent, name, model_spec) -> None:
+    def __init__(self, parent, name, model_kind, model_spec) -> None:
         super().__init__(parent=parent)
         self.name = name
+        self.model_kind = model_kind
         self.model_spec = model_spec
         self._uri = None
 
@@ -30,16 +32,12 @@ class ElementModel(IHasNamespace):
 
 
 class Object(IHasNamespace):
-    models: Optional[list[ElementModel]]
     _uri: Optional[URIRef]
-    _modelled_uri: Optional[URIRef]
 
-    def __init__(self, parent, name, models) -> None:
+    def __init__(self, parent, name) -> None:
         super().__init__(parent=parent)
         self.name = name
-        self.models = models
         self._uri = None
-        self._modelled_uri = None
 
     @property
     def namespace(self) -> Namespace:
@@ -53,12 +51,6 @@ class Object(IHasNamespace):
         if self._uri is None:
             self._uri = self.namespace[self.name]
         return self._uri
-
-    @property
-    def modelled_uri(self) -> URIRef:
-        if self._modelled_uri is None:
-            self._modelled_uri = self.namespace[f"modelled-{self.name}"]
-        return self._modelled_uri
 
 
 class Workspace(IHasNamespace):
@@ -84,16 +76,12 @@ class Workspace(IHasNamespace):
 
 
 class Agent(IHasNamespace):
-    models: Optional[list[ElementModel]]
     _uri: Optional[URIRef]
-    _modelled_uri: Optional[URIRef]
 
-    def __init__(self, parent, name, models) -> None:
+    def __init__(self, parent, name) -> None:
         super().__init__(parent=parent)
         self.name = name
-        self.models = models
         self._uri = None
-        self._modelled_uri = None
 
     @property
     def namespace(self) -> Namespace:
@@ -105,12 +93,6 @@ class Agent(IHasNamespace):
         if self._uri is None:
             self._uri = self.namespace[self.name]
         return self._uri
-
-    @property
-    def modelled_uri(self) -> URIRef:
-        if self._modelled_uri is None:
-            self._modelled_uri = self.namespace[f"modelled-{self.name}"]
-        return self._modelled_uri
 
 
 class SceneSet(SetBase, IHasNamespaceDeclare):
@@ -174,3 +156,67 @@ class SceneModel(IHasNamespaceDeclare):
         self.scene_obj_uri = self.namespace[f"{self.name}-scene-has-obj"]
         self.scene_ws_uri = self.namespace[f"{self.name}-scene-has-ws"]
         self.scene_agn_uri = self.namespace[f"{self.name}-scene-has-agn"]
+
+
+class ModelledObject(IHasNamespace):
+    obj: Object
+    models: list[ElementModel]
+    _modelled_uri: Optional[URIRef]
+
+    def __init__(self, parent, obj, models) -> None:
+        super().__init__(parent=parent)
+        self.obj = obj
+        self.models = models
+        self._modelled_uri = None
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, ModelledScene
+        ), f"parent of modelled obj not a 'ModelledScene': {self.parent}"
+        return self.parent.namespace
+
+    @property
+    def modelled_uri(self) -> URIRef:
+        if self._modelled_uri is None:
+            real_name = self.parent.name
+            self._modelled_uri = self.namespace[f"modelled-obj-{real_name}-{self.obj.name}"]
+        return self._modelled_uri
+
+
+class ModelledAgent(IHasNamespace):
+    agn: Agent
+    models: list[ElementModel]
+    _modelled_uri: Optional[URIRef]
+
+    def __init__(self, parent, agn, models) -> None:
+        super().__init__(parent=parent)
+        self.agn = agn
+        self.models = models
+        self._modelled_uri = None
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, ModelledScene
+        ), f"parent of modelled agn not a 'ModelledScene': {self.parent}"
+        return self.parent.namespace
+
+    @property
+    def modelled_uri(self) -> URIRef:
+        if self._modelled_uri is None:
+            real_name = self.parent.name
+            self._modelled_uri = self.namespace[f"modelled-agn-{real_name}-{self.agn.name}"]
+        return self._modelled_uri
+
+
+class ModelledScene(IHasNamespaceDeclare):
+    scene: SceneModel
+    modelled_objs: list[ModelledObject]
+    modelled_agns: list[ModelledAgent]
+
+    def __init__(self, parent, ns, name, scene, modelled_objs, modelled_agns) -> None:
+        super().__init__(parent=parent, ns=ns, name=name)
+        self.scene = scene
+        self.modelled_objs = modelled_objs
+        self.modelled_agns = modelled_agns

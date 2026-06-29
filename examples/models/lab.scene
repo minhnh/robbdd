@@ -1,6 +1,7 @@
 ns lab_env='https://secorolab.github.io/models/environments/secorolab/'
 ns isaac_agn='https://secorolab.github.io/models/agents/isaac-sim/'
 ns scene_lab='https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/secorolab/'
+ns scene_lab_mjc='https://secorolab.github.io/models/acceptance-criteria/bdd/scenes/secorolab-mjc/'
 
 obj set (ns=lab_env) pickplace_objects {
     object box1,
@@ -11,10 +12,7 @@ obj set (ns=lab_env) pickplace_objects {
 obj set (ns=lab_env) ws_objects {
     object container_1,
     object container_2,
-    object dining_table {
-        model mjc-table { sys path = '~/.cache/mj_kdl_wrapper/assets/table.xml' },
-        model mjc-ros { ros pkg = "test_pkg", path = "assets/table.xml" }
-    },
+    object dining_table,
     object shelf
 }
 ws set (ns=lab_env) lab_workspaces {
@@ -24,24 +22,9 @@ ws set (ns=lab_env) lab_workspaces {
     workspace shelf_ws
 }
 agn set (ns=isaac_agn) isaac_agents {
-    agent panda {
-        model panda-mjc {
-            sys path = '~/.cache/mj_kdl_wrapper/menagerie/franka_emika_panda/mjx_panda.xml'
-        }
-    },
-    agent ur10 {
-        model ur10-mjc {
-            sys path = '~/.cache/mj_kdl_wrapper/menagerie/universal_robots_ur10e/ur10e.xml'
-        }
-    },
-    agent kinova {
-        model kinova-mjc {
-            sys path = '~/.cache/mj_kdl_wrapper/menagerie/kinova_gen3/gen3.xml'
-        },
-        model robotiq-mjc {
-            sys path = '~/.cache/mj_kdl_wrapper/assets/robotiq_2f85/2f85.xml'
-        }
-    }
+    agent panda,
+    agent ur10,
+    agent kinova
 }
 
 comp (ns=lab_env) comp_container1 of ws <lab_workspaces.container_1_ws> { obj <ws_objects.container_1> }
@@ -62,4 +45,34 @@ scene (ns=scene_lab) pickplace_scene {
 scene (ns=scene_lab) sorting_scene {
     obj set <pickplace_objects>
     ws comp <comp_table_sort>
+}
+
+modelled scene (ns=scene_lab_mjc) pickplace_scene_mjc {
+    scene: <pickplace_scene>
+
+    obj <ws_objects.dining_table> {
+        model mjc-table as mjcf { sys path = '~/.cache/mj_kdl_wrapper/assets/table.xml' }
+        model mjc-ros as mjcf { ros pkg = "test_pkg", path = "assets/table.xml" }
+    }
+
+    agn <isaac_agents.panda> {
+        model panda-mjc as mjcf {
+            sys path = '~/.cache/mj_kdl_wrapper/menagerie/franka_emika_panda/mjx_panda.xml'
+        }
+    }
+
+    agn <isaac_agents.ur10> {
+        model ur10-mjc as mjcf {
+            sys path = '~/.cache/mj_kdl_wrapper/menagerie/universal_robots_ur10e/ur10e.xml'
+        }
+    }
+
+    agn <isaac_agents.kinova> {
+        model kinova-mjc as mjcf {
+            sys path = '~/.cache/mj_kdl_wrapper/menagerie/kinova_gen3/gen3.xml'
+        }
+        model robotiq-mjc as mjcf {
+            sys path = '~/.cache/mj_kdl_wrapper/assets/robotiq_2f85/2f85.xml'
+        }
+    }
 }

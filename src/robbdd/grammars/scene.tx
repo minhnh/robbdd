@@ -10,11 +10,13 @@ obj_sets+=ObjectSet
 ws_sets+=WorkspaceSet
 |
 agn_sets+=AgentSet
-)*
-
-ws_comps*=WorkspaceComposition
-
+|
+ws_comps+=WorkspaceComposition
+|
 scene_models+=SceneModel
+|
+modelled_scenes+=ModelledScene
+)*
 ;
 
 ObjectSet:
@@ -33,19 +35,16 @@ agents+=Agent[',']
 '}'
 ;
 
-Object: 'object' name=IRI_TRUNK
-('{' models+=ElementModel[','] '}')?
-;
+Object: 'object' name=IRI_TRUNK ;
 Workspace: 'workspace' name=IRI_TRUNK ;
-Agent: 'agent' name=IRI_TRUNK
-('{' models+=ElementModel[','] '}')?
-;
+Agent: 'agent' name=IRI_TRUNK ;
 
 ElementModel:
-'model' name=IRI_TRUNK '{'
+'model' name=IRI_TRUNK ('as' model_kind=ModelKind)? '{'
     model_spec=ModelSpecification
 '}'
 ;
+ModelKind: 'urdf' | 'mjcf' | 'usd' ;
 ModelSpecification: SystemPath | RosPath | PyModuleAttr ;
 SystemPath: 'sys' 'path' '=' path=STRING ;
 RosPath: 'ros' 'pkg' '=' pkg=STRING ',' 'path' '=' path=STRING ;
@@ -73,5 +72,28 @@ SceneModel:
 |
 'agn' 'set' '<' agn_sets+=[AgentSet|FQN] '>'
 )*
+'}'
+;
+
+ModelledObject:
+'obj' '<' obj=[Object|FQN] '>' '{'
+    models+=ElementModel+
+'}'
+;
+
+ModelledAgent:
+'agn' '<' agn=[Agent|FQN] '>' '{'
+    models+=ElementModel+
+'}'
+;
+
+ModelledScene:
+'modelled' 'scene' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
+    'scene' ':' '<' scene=[SceneModel|FQN] '>'
+    (
+    modelled_objs+=ModelledObject
+    |
+    modelled_agns+=ModelledAgent
+    )*
 '}'
 ;

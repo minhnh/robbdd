@@ -11,6 +11,9 @@ from robbdd.classes.common import SetBase
 from robbdd.classes.scene import (
     Agent,
     AgentSet,
+    ModelledAgent,
+    ModelledObject,
+    ModelledScene,
     Object,
     ObjectSet,
     ElementModel,
@@ -114,6 +117,9 @@ def scene_metamodel():
             AgentSet,
             WorkspaceComposition,
             SceneModel,
+            ModelledObject,
+            ModelledAgent,
+            ModelledScene,
         ],
     )
     mm_scene.register_scope_providers(

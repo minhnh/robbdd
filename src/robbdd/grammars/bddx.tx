@@ -1,5 +1,6 @@
 import base
 import bdd
+import scene
 
 Model:
 imports*=Import
@@ -18,6 +19,7 @@ scenario_execs+=ScenarioExecution
 ScenarioExecution:
 'Scenario' 'Exec' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
   'variant' ':' '<' variant=[ScenarioVariant|FQN] '>'
+  'scene' 'model' ':' '<' modelled_scene=[ModelledScene|FQN] '>'
   'bhv' ':' '<' bhv_impl=[BehaviourImplementation|FQN] '>'
   'policies' ':' '{'
     ('<' obs_policies=[ObservationPolicy|FQN] '>')+[',']
