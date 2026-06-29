@@ -2,6 +2,7 @@
 from typing import Any
 from robbdd.classes.bdd import HoldsExpr, ScenarioVariant
 from robbdd.classes.common import IHasNamespaceDeclare
+from robbdd.classes.scene import ModelledScene
 
 
 class BehaviourImplementation(IHasNamespaceDeclare):
@@ -26,11 +27,13 @@ class ObservationPolicy(IHasNamespaceDeclare):
 
 class ScenarioExecution(IHasNamespaceDeclare):
     variant: ScenarioVariant
+    modelled_scene: ModelledScene
     bhv_impl: BehaviourImplementation
     obs_policies: list[ObservationPolicy]
 
-    def __init__(self, parent, ns, name, variant, bhv_impl, obs_policies) -> None:
+    def __init__(self, parent, ns, name, variant, modelled_scene, bhv_impl, obs_policies) -> None:
         super().__init__(parent=parent, ns=ns, name=name)
         self.variant = variant
+        self.modelled_scene = modelled_scene
         self.bhv_impl = bhv_impl
         self.obs_policies = obs_policies

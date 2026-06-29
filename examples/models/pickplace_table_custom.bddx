@@ -1,4 +1,5 @@
 import "pickplace_table_custom.bdd"
+import "lab.scene"
 
 ns bdd_exec='https://secorolab.github.io/models/acceptance-criteria/bdd/executions/'
 ns bdd_exec_ros='https://secorolab.github.io/models/acceptance-criteria/bdd/executions/ros/'
@@ -29,6 +30,7 @@ obs policy (ns=bdd_exec_ros) fcx-collision-topic
 
 Scenario Exec (ns=bdd_exec) pickplace-mockup-ros {
     variant: <sim_pickplace.pickplace_table>
+    scene model: <pickplace_scene_mjc>
     bhv: <mockup-pp-server>
     policies: {
         <fcx-located-before-topic>,
