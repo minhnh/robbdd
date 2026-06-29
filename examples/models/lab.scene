@@ -88,3 +88,15 @@ modelled scene (ns=scene_lab_mjc) pickplace_scene_mjc {
         }
     }
 }
+
+modelled scene (ns=scene_lab_mjc) setting_scene_mjc {
+    scene: <setting_scene>
+
+    obj set <balls> {
+        model ball-mjc as mjcf { sys path = '~/.cache/mj_kdl_wrapper/assets/ball.xml' }
+    }
+
+    obj set <cubes> {
+        model cube-mjc as mjcf { sys path = '~/.cache/mj_kdl_wrapper/assets/cube.xml' }
+    }
+}

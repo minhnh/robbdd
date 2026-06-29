@@ -5,7 +5,12 @@ from urllib.error import HTTPError
 from rdflib import RDF
 from textx import metamodel_for_language
 
-from bdd_dsl.models.urirefs import URI_BDD_PRED_OF_SCENE, URI_ENV_TYPE_OBJ
+from bdd_dsl.models.urirefs import (
+    URI_BDD_PRED_OF_SCENE,
+    URI_ENV_PRED_HAS_OBJ_MODEL,
+    URI_ENV_TYPE_MOD_OBJ,
+    URI_ENV_TYPE_OBJ,
+)
 from rdf_utils.resolver import install_resolver
 from bdd_dsl.models.user_story import UserStoryLoader
 from robbdd.rdf.scene import (
@@ -56,6 +61,30 @@ class TestTextXLanguages(unittest.TestCase):
         model_node = modelled_agn.models[0].uri
         assert (model_node, RDF.type, URI_MJCF_MUJOCO) in g
         assert (model_node, RDF.type, URI_XML_DOCUMENT) in g
+
+        setting_modelled_scene = next(
+            s for s in scene_model.modelled_scenes if s.name == "setting_scene_mjc"
+        )
+        ball0_modelled_uri = setting_modelled_scene.namespace[
+            f"modelled-obj-{setting_modelled_scene.name}-ball0"
+        ]
+        ball1_modelled_uri = setting_modelled_scene.namespace[
+            f"modelled-obj-{setting_modelled_scene.name}-ball1"
+        ]
+        ball_model_uri = setting_modelled_scene.namespace["ball-mjc"]
+        cube0_modelled_uri = setting_modelled_scene.namespace[
+            f"modelled-obj-{setting_modelled_scene.name}-cube0"
+        ]
+        cube_model_uri = setting_modelled_scene.namespace["cube-mjc"]
+        assert (setting_modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, ball0_modelled_uri) in g
+        assert (setting_modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, ball1_modelled_uri) in g
+        assert (setting_modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, cube0_modelled_uri) in g
+        assert (ball0_modelled_uri, RDF.type, URI_ENV_TYPE_MOD_OBJ) in g
+        assert (ball0_modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, ball_model_uri) in g
+        assert (ball1_modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, ball_model_uri) in g
+        assert (cube0_modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, cube_model_uri) in g
+        assert (ball_model_uri, RDF.type, URI_MJCF_MUJOCO) in g
+        assert (cube_model_uri, RDF.type, URI_MJCF_MUJOCO) in g
 
     def test_robbdd(self):
         """Test RobBDD language"""
