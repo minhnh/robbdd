@@ -37,7 +37,9 @@ from robbdd.classes.scene import (
     AgentSet,
     ElementModel,
     ModelledAgent,
+    ModelledAgentSet,
     ModelledObject,
+    ModelledObjectSet,
     ModelledScene,
     Object,
     ObjectSet,
@@ -113,26 +115,93 @@ def add_agn(graph: Graph, agn: Agent) -> None:
     graph.add(triple=(agn.uri, RDF.type, URI_AGN_TYPE_AGN))
 
 
+def _ensure_unique_scene_models(
+    elem_model: ElementModel, modelled_scene: ModelledScene, seen_model_uris: set[URIRef]
+):
+    if elem_model.uri in seen_model_uris:
+        raise ValueError(
+            f"Duplicate model URI '{elem_model.uri}' in modelled scene '{modelled_scene.uri}'. "
+            "Use unique model names within a modelled scene."
+        )
+    seen_model_uris.add(elem_model.uri)
+
+
 def add_modelled_obj(
-    graph: Graph, modelled_scene: ModelledScene, obj_model: ModelledObject
+    graph: Graph,
+    modelled_scene: ModelledScene,
+    obj_model: ModelledObject,
+    seen_model_uris: set[URIRef],
 ) -> None:
     graph.add(triple=(obj_model.modelled_uri, RDF.type, URI_ENV_TYPE_MOD_OBJ))
     graph.add(triple=(obj_model.modelled_uri, URI_ENV_PRED_OF_OBJ, obj_model.obj.uri))
     graph.add(triple=(modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, obj_model.modelled_uri))
     for model in obj_model.models:
+        _ensure_unique_scene_models(
+            elem_model=model, modelled_scene=modelled_scene, seen_model_uris=seen_model_uris
+        )
         graph.add(triple=(obj_model.modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, model.uri))
         graph.add(triple=(model.uri, RDF.type, URI_ENV_TYPE_OBJ_MODEL))
         add_model_spec(graph=graph, elem_model=model)
 
 
-def add_modelled_agn(graph: Graph, modelled_scene: ModelledScene, agn_model: ModelledAgent) -> None:
+def add_modelled_agn(
+    graph: Graph,
+    modelled_scene: ModelledScene,
+    agn_model: ModelledAgent,
+    seen_model_uris: set[URIRef],
+) -> None:
     graph.add(triple=(agn_model.modelled_uri, RDF.type, URI_AGN_TYPE_MOD_AGN))
     graph.add(triple=(agn_model.modelled_uri, URI_AGN_PRED_OF_AGN, agn_model.agn.uri))
     graph.add(triple=(modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_AGN, agn_model.modelled_uri))
     for model in agn_model.models:
+        _ensure_unique_scene_models(
+            elem_model=model, modelled_scene=modelled_scene, seen_model_uris=seen_model_uris
+        )
         graph.add(triple=(agn_model.modelled_uri, URI_AGN_PRED_HAS_AGN_MODEL, model.uri))
         graph.add(triple=(model.uri, RDF.type, URI_AGN_TYPE_AGN_MODEL))
         add_model_spec(graph=graph, elem_model=model)
+
+
+def add_modelled_obj_set(
+    graph: Graph,
+    modelled_scene: ModelledScene,
+    obj_model_set: ModelledObjectSet,
+    seen_model_uris: set[URIRef],
+) -> None:
+    for model in obj_model_set.models:
+        _ensure_unique_scene_models(
+            elem_model=model, modelled_scene=modelled_scene, seen_model_uris=seen_model_uris
+        )
+        graph.add(triple=(model.uri, RDF.type, URI_ENV_TYPE_OBJ_MODEL))
+        add_model_spec(graph=graph, elem_model=model)
+
+        for index, obj in enumerate(obj_model_set.obj_set.objects):
+            modelled_uri = obj_model_set.modelled_uri(index=index)
+            graph.add(triple=(modelled_uri, RDF.type, URI_ENV_TYPE_MOD_OBJ))
+            graph.add(triple=(modelled_uri, URI_ENV_PRED_OF_OBJ, obj.uri))
+            graph.add(triple=(modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, modelled_uri))
+            graph.add(triple=(modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, model.uri))
+
+
+def add_modelled_agn_set(
+    graph: Graph,
+    modelled_scene: ModelledScene,
+    agn_model_set: ModelledAgentSet,
+    seen_model_uris: set[URIRef],
+) -> None:
+    for model in agn_model_set.models:
+        _ensure_unique_scene_models(
+            elem_model=model, modelled_scene=modelled_scene, seen_model_uris=seen_model_uris
+        )
+        graph.add(triple=(model.uri, RDF.type, URI_AGN_TYPE_AGN_MODEL))
+        add_model_spec(graph=graph, elem_model=model)
+
+        for index, agn in enumerate(agn_model_set.agn_set.agents):
+            modelled_uri = agn_model_set.modelled_uri(index=index)
+            graph.add(triple=(modelled_uri, RDF.type, URI_AGN_TYPE_MOD_AGN))
+            graph.add(triple=(modelled_uri, URI_AGN_PRED_OF_AGN, agn.uri))
+            graph.add(triple=(modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_AGN, modelled_uri))
+            graph.add(triple=(modelled_uri, URI_AGN_PRED_HAS_AGN_MODEL, model.uri))
 
 
 def _add_scene_set_common(graph: Graph, scene_set: SceneSet, set_uris: set[URIRef]) -> bool:
@@ -304,11 +373,39 @@ def add_modelled_scene(graph: Graph, modelled_scene: ModelledScene) -> None:
     graph.add(triple=(modelled_scene.uri, RDF.type, URI_EXEC_TYPE_SCENE_REAL))
     graph.add(triple=(modelled_scene.uri, URI_BDD_PRED_OF_SCENE, modelled_scene.scene.uri))
 
+    seen_model_uris = set()
+
     for obj_model in modelled_scene.modelled_objs:
-        add_modelled_obj(graph=graph, modelled_scene=modelled_scene, obj_model=obj_model)
+        add_modelled_obj(
+            graph=graph,
+            modelled_scene=modelled_scene,
+            obj_model=obj_model,
+            seen_model_uris=seen_model_uris,
+        )
+
+    for obj_model_set in modelled_scene.modelled_obj_sets:
+        add_modelled_obj_set(
+            graph=graph,
+            modelled_scene=modelled_scene,
+            obj_model_set=obj_model_set,
+            seen_model_uris=seen_model_uris,
+        )
 
     for agn_model in modelled_scene.modelled_agns:
-        add_modelled_agn(graph=graph, modelled_scene=modelled_scene, agn_model=agn_model)
+        add_modelled_agn(
+            graph=graph,
+            modelled_scene=modelled_scene,
+            agn_model=agn_model,
+            seen_model_uris=seen_model_uris,
+        )
+
+    for agn_model_set in modelled_scene.modelled_agn_sets:
+        add_modelled_agn_set(
+            graph=graph,
+            modelled_scene=modelled_scene,
+            agn_model_set=agn_model_set,
+            seen_model_uris=seen_model_uris,
+        )
 
 
 def create_scene_model_graph(model: Any, g: Optional[Graph] = None) -> Graph:

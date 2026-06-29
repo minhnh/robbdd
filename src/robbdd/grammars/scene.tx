@@ -100,8 +100,20 @@ ModelledObject:
 '}'
 ;
 
+ModelledObjectSet:
+'obj' 'set' '<' obj_set=[SimilarObjectSet|FQN] '>' '{'
+    models+=ElementModel+
+'}'
+;
+
 ModelledAgent:
 'agn' '<' agn=[Agent|FQN] '>' '{'
+    models+=ElementModel+
+'}'
+;
+
+ModelledAgentSet:
+'agn' 'set' '<' agn_set=[SimilarAgentSet|FQN] '>' '{'
     models+=ElementModel+
 '}'
 ;
@@ -112,7 +124,11 @@ ModelledScene:
     (
     modelled_objs+=ModelledObject
     |
+    modelled_obj_sets+=ModelledObjectSet
+    |
     modelled_agns+=ModelledAgent
+    |
+    modelled_agn_sets+=ModelledAgentSet
     )*
 '}'
 ;

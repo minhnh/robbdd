@@ -214,6 +214,31 @@ class ModelledObject(IHasNamespace):
         return self._modelled_uri
 
 
+class ModelledObjectSet(IHasNamespace):
+    obj_set: SimilarObjectSet
+    models: list[ElementModel]
+
+    def __init__(self, parent, obj_set, models) -> None:
+        super().__init__(parent=parent)
+        self.obj_set = obj_set
+        self.models = models
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, ModelledScene
+        ), f"parent of modelled obj set not a 'ModelledScene': {self.parent}"
+        return self.parent.namespace
+
+    def modelled_uri(self, index: int) -> URIRef:
+        obj = self.obj_set.objects[index]
+        assert isinstance(
+            self.parent, ModelledScene
+        ), f"parent of modelled obj set not a 'ModelledScene': {self.parent}"
+        real_name = self.parent.name
+        return self.namespace[f"modelled-obj-{real_name}-{obj.name}"]
+
+
 class ModelledAgent(IHasNamespace):
     agn: Agent
     models: list[ElementModel]
@@ -240,13 +265,52 @@ class ModelledAgent(IHasNamespace):
         return self._modelled_uri
 
 
+class ModelledAgentSet(IHasNamespace):
+    agn_set: SimilarAgentSet
+    models: list[ElementModel]
+
+    def __init__(self, parent, agn_set, models) -> None:
+        super().__init__(parent=parent)
+        self.agn_set = agn_set
+        self.models = models
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, ModelledScene
+        ), f"parent of modelled agn set not a 'ModelledScene': {self.parent}"
+        return self.parent.namespace
+
+    def modelled_uri(self, index: int) -> URIRef:
+        agn = self.agn_set.agents[index]
+        assert isinstance(
+            self.parent, ModelledScene
+        ), f"parent of modelled agn set not a 'ModelledScene': {self.parent}"
+        real_name = self.parent.name
+        return self.namespace[f"modelled-agn-{real_name}-{agn.name}"]
+
+
 class ModelledScene(IHasNamespaceDeclare):
     scene: SceneModel
     modelled_objs: list[ModelledObject]
+    modelled_obj_sets: list[ModelledObjectSet]
     modelled_agns: list[ModelledAgent]
+    modelled_agn_sets: list[ModelledAgentSet]
 
-    def __init__(self, parent, ns, name, scene, modelled_objs, modelled_agns) -> None:
+    def __init__(
+        self,
+        parent,
+        ns,
+        name,
+        scene,
+        modelled_objs,
+        modelled_obj_sets,
+        modelled_agns,
+        modelled_agn_sets,
+    ) -> None:
         super().__init__(parent=parent, ns=ns, name=name)
         self.scene = scene
         self.modelled_objs = modelled_objs
+        self.modelled_obj_sets = modelled_obj_sets
         self.modelled_agns = modelled_agns
+        self.modelled_agn_sets = modelled_agn_sets
