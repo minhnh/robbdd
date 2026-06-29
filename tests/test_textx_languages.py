@@ -5,6 +5,7 @@ from urllib.error import HTTPError
 from rdflib import RDF
 from textx import metamodel_for_language
 
+from bdd_dsl.models.urirefs import URI_BDD_PRED_OF_SCENE, URI_ENV_TYPE_OBJ
 from rdf_utils.resolver import install_resolver
 from bdd_dsl.models.user_story import UserStoryLoader
 from robbdd.rdf.scene import (
@@ -17,7 +18,6 @@ from robbdd.rdf.scene import (
 )
 from robbdd.rdf.bdd import create_bdd_model_graph
 from robbdd.rdf.bddx import create_bddx_model_graph
-from bdd_dsl.models.urirefs import URI_BDD_PRED_OF_SCENE
 
 
 ROOT_DIR = dirname(dirname(__file__))
@@ -31,8 +31,15 @@ class TestTextXLanguages(unittest.TestCase):
         scene_model = scene_mm.model_from_file(join(MODELS_DIR, "lab.scene"))
         assert len(scene_model.scene_models) > 0
         assert len(scene_model.modelled_scenes) > 0
+        assert len(scene_model.sim_obj_sets) > 0
+        balls = next(s for s in scene_model.sim_obj_sets if s.name == "balls")
+        cubes = next(s for s in scene_model.sim_obj_sets if s.name == "cubes")
+        assert [obj.name for obj in balls.objects] == ["ball0", "ball1", "ball2"]
+        assert [obj.name for obj in cubes.objects] == ["cube0", "cube1"]
         g = create_scene_model_graph(scene_model)
         assert len(g) > 0
+        assert (balls.objects[0].uri, RDF.type, URI_ENV_TYPE_OBJ) in g
+        assert (cubes.objects[1].uri, RDF.type, URI_ENV_TYPE_OBJ) in g
         modelled_scene = scene_model.modelled_scenes[0]
         assert (modelled_scene.uri, RDF.type, URI_EXEC_TYPE_SCENE_REAL) in g
         assert (

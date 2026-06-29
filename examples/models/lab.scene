@@ -9,6 +9,14 @@ obj set (ns=lab_env) pickplace_objects {
     object ball,
     object bottle
 }
+similar obj set (ns=lab_env) balls {
+    base name: ball
+    count: 3
+}
+similar obj set (ns=lab_env) cubes {
+    base name: cube
+    count: 2
+}
 obj set (ns=lab_env) ws_objects {
     object container_1,
     object container_2,
@@ -45,6 +53,10 @@ scene (ns=scene_lab) pickplace_scene {
 scene (ns=scene_lab) sorting_scene {
     obj set <pickplace_objects>
     ws comp <comp_table_sort>
+}
+scene (ns=scene_lab) setting_scene {
+    obj set <balls>
+    obj set <cubes>
 }
 
 modelled scene (ns=scene_lab_mjc) pickplace_scene_mjc {

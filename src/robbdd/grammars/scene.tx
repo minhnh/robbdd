@@ -7,9 +7,13 @@ namespaces=NamespaceDeclare*
 (
 obj_sets+=ObjectSet
 |
+sim_obj_sets+=SimilarObjectSet
+|
 ws_sets+=WorkspaceSet
 |
 agn_sets+=AgentSet
+|
+sim_agn_sets+=SimilarAgentSet
 |
 ws_comps+=WorkspaceComposition
 |
@@ -24,6 +28,12 @@ ObjectSet:
 objects+=Object[',']
 '}'
 ;
+SimilarObjectSet:
+'similar' 'obj' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
+    'base' 'name' ':' base_name=IRI_TRUNK
+    'count' ':' count=INT
+'}'
+;
 WorkspaceSet:
 'ws' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
 workspaces+=Workspace[',']
@@ -34,10 +44,19 @@ AgentSet:
 agents+=Agent[',']
 '}'
 ;
+SimilarAgentSet:
+'similar' 'agn' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
+    'base' 'name' ':' base_name=IRI_TRUNK
+    'count' ':' count=INT
+'}'
+;
 
 Object: 'object' name=IRI_TRUNK ;
 Workspace: 'workspace' name=IRI_TRUNK ;
 Agent: 'agent' name=IRI_TRUNK ;
+
+ObjectSetBase: ObjectSet | SimilarObjectSet ;
+AgentSetBase: AgentSet | SimilarAgentSet ;
 
 ElementModel:
 'model' name=IRI_TRUNK ('as' model_kind=ModelKind)? '{'
@@ -64,13 +83,13 @@ WorkspaceComposition:
 SceneModel:
 'scene' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
 (
-'obj' 'set' '<' obj_sets+=[ObjectSet|FQN] '>'
+'obj' 'set' '<' obj_sets+=[ObjectSetBase|FQN] '>'
 |
 'ws' 'set' '<' ws_sets+=[WorkspaceSet|FQN] '>'
 |
 'ws' 'comp' '<' ws_comps+=[WorkspaceComposition|FQN] '>'
 |
-'agn' 'set' '<' agn_sets+=[AgentSet|FQN] '>'
+'agn' 'set' '<' agn_sets+=[AgentSetBase|FQN] '>'
 )*
 '}'
 ;

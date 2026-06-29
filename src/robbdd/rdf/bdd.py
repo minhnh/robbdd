@@ -58,7 +58,15 @@ from robbdd.classes.bdd import (
     VariableBase,
 )
 from robbdd.classes.common import SetBase
-from robbdd.classes.scene import AgentSet, ObjectSet, SceneModel, SceneSet, WorkspaceSet
+from robbdd.classes.scene import (
+    AgentSet,
+    ObjectSet,
+    SceneModel,
+    SceneSet,
+    SimilarAgentSet,
+    SimilarObjectSet,
+    WorkspaceSet,
+)
 from robbdd.rdf.clauses import add_clause_expr, add_gwt_expr, add_node_time_constraint
 from robbdd.rdf.common import add_node_list_pred
 from robbdd.rdf.scene import add_agn_set, add_obj_set, add_scene_model, add_scene_set, add_ws_set
@@ -166,7 +174,7 @@ def add_const_set(
     if isinstance(set_obj, ExplicitSet):
         return add_explicit_set(graph=graph, const_set=set_obj, set_uris=set_uris)
 
-    if isinstance(set_obj, ObjectSet):
+    if isinstance(set_obj, (ObjectSet, SimilarObjectSet)):
         add_obj_set(
             graph=graph,
             obj_set=set_obj,
@@ -184,7 +192,7 @@ def add_const_set(
         )
         return set_obj.uri
 
-    if isinstance(set_obj, AgentSet):
+    if isinstance(set_obj, (AgentSet, SimilarAgentSet)):
         add_agn_set(
             graph=graph,
             agn_set=set_obj,

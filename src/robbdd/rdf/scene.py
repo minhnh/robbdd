@@ -43,6 +43,8 @@ from robbdd.classes.scene import (
     ObjectSet,
     SceneModel,
     SceneSet,
+    SimilarAgentSet,
+    SimilarObjectSet,
     WorkspaceComposition,
     WorkspaceSet,
 )
@@ -146,7 +148,10 @@ def _add_scene_set_common(graph: Graph, scene_set: SceneSet, set_uris: set[URIRe
 
 
 def add_obj_set(
-    graph: Graph, obj_set: ObjectSet, set_uris: set[URIRef], scn_comp_uri: Optional[URIRef] = None
+    graph: Graph,
+    obj_set: ObjectSet | SimilarObjectSet,
+    set_uris: set[URIRef],
+    scn_comp_uri: Optional[URIRef] = None,
 ) -> None:
     if not _add_scene_set_common(graph=graph, scene_set=obj_set, set_uris=set_uris):
         return
@@ -172,7 +177,10 @@ def add_ws_set(
 
 
 def add_agn_set(
-    graph: Graph, agn_set: AgentSet, set_uris: set[URIRef], scn_comp_uri: Optional[URIRef] = None
+    graph: Graph,
+    agn_set: AgentSet | SimilarAgentSet,
+    set_uris: set[URIRef],
+    scn_comp_uri: Optional[URIRef] = None,
 ) -> None:
     if not _add_scene_set_common(graph=graph, scene_set=agn_set, set_uris=set_uris):
         return
@@ -187,11 +195,11 @@ def add_agn_set(
 def add_scene_set(
     graph: Graph, scene_set: SceneSet, set_uris: set[URIRef], scn_comp_uri: Optional[URIRef] = None
 ):
-    if isinstance(scene_set, ObjectSet):
+    if isinstance(scene_set, (ObjectSet, SimilarObjectSet)):
         add_obj_set(graph=graph, obj_set=scene_set, set_uris=set_uris, scn_comp_uri=scn_comp_uri)
     elif isinstance(scene_set, WorkspaceSet):
         add_ws_set(graph=graph, ws_set=scene_set, set_uris=set_uris, scn_comp_uri=scn_comp_uri)
-    elif isinstance(scene_set, AgentSet):
+    elif isinstance(scene_set, (AgentSet, SimilarAgentSet)):
         add_agn_set(graph=graph, agn_set=scene_set, set_uris=set_uris, scn_comp_uri=scn_comp_uri)
     else:
         raise ValueError(f"Unhandled SceneSet type: {type(scene_set)}")

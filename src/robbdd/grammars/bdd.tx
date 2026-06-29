@@ -219,7 +219,15 @@ ValueRow:
 ValidCellValue: ValidVarValue | ConstSetLink | SetExpr ;
 
 // Sets
-SetBase: ExplicitSet | ObjectSet | WorkspaceSet | AgentSet | ScenarioSetVariable ;
+SetBase:
+    ExplicitSet
+  | ObjectSet
+  | SimilarObjectSet
+  | WorkspaceSet
+  | AgentSet
+  | SimilarAgentSet
+  | ScenarioSetVariable
+;
 ExplicitSet :
 'const' 'set' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
     elems+=ValidVarValue[',']
@@ -231,9 +239,13 @@ ConstSetLink:
 |
 'obj' 'set' '<' linked_set=[ObjectSet|FQN] '>'
 |
+'obj' 'set' '<' linked_set=[SimilarObjectSet|FQN] '>'
+|
 'ws' 'set' '<' linked_set=[WorkspaceSet|FQN] '>'
 |
 'agn' 'set' '<' linked_set=[AgentSet|FQN] '>'
+|
+'agn' 'set' '<' linked_set=[SimilarAgentSet|FQN] '>'
 )
 ;
 SetExpr: '{' elems+=ValidVarValue[','] '}' ;

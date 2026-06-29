@@ -44,7 +44,7 @@ User Story (ns=bdd_var) sim_pickplace {
             scene: <pickplace_scene>
 
             variation:
-                var <tmpl_pickplace.target_object>: obj set <pickplace_objects>
+                var <tmpl_pickplace.target_object>: obj set <balls>
                 var <tmpl_pickplace.pick_ws>: set <ws_set>
                 var <tmpl_pickplace.place_ws>: set <ws_set>
                 var <tmpl_pickplace.robot>: {
