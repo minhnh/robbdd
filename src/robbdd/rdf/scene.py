@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any, Optional
 from rdflib import RDF, Graph, Literal, URIRef, Namespace
+from rdf_utils.namespace import NS_MM_AGN
 from bdd_dsl.models.namespace import NS_MM_EXEC, NS_MM_ROS
 from bdd_dsl.models.urirefs import (
     URI_AGN_PRED_HAS_AGN,
@@ -36,11 +37,14 @@ from robbdd.classes.scene import (
     Agent,
     AgentSet,
     ElementModel,
+    GeometrySpec,
     ModelledAgent,
     ModelledAgentSet,
     ModelledObject,
     ModelledObjectSet,
-    ModelledScene,
+    SceneInstance,
+    EulerOrientationSpec,
+    Frame,
     Object,
     ObjectSet,
     SceneModel,
@@ -51,11 +55,46 @@ from robbdd.classes.scene import (
     WorkspaceSet,
 )
 from robbdd.rdf.common import add_py_module_attr
+from rdf_utils.namespace import NS_MM_GEOM, NS_MM_GEOM_COORD, NS_MM_GEOM_REL, NS_MM_QUDT
+from rdf_utils.models.geometry import (
+    URI_GEOM_PRED_ALPHA,
+    URI_GEOM_PRED_AXES_SEQ,
+    URI_GEOM_PRED_BETA,
+    URI_GEOM_PRED_GAMMA,
+    URI_GEOM_PRED_OF,
+    URI_GEOM_PRED_OF_POSE,
+    URI_GEOM_PRED_ORIGIN,
+    URI_GEOM_PRED_SEEN_BY,
+    URI_GEOM_PRED_WRT,
+    URI_GEOM_PRED_X,
+    URI_GEOM_PRED_Y,
+    URI_GEOM_PRED_Z,
+    URI_GEOM_TYPE_ANGLES_ABG,
+    URI_GEOM_TYPE_EULER_ANGLES,
+    URI_GEOM_TYPE_EXTRINSIC,
+    URI_GEOM_TYPE_FRAME,
+    URI_GEOM_TYPE_INTRINSIC,
+    URI_GEOM_TYPE_POINT,
+    URI_GEOM_TYPE_POSE,
+    URI_GEOM_TYPE_POSE_COORD,
+    URI_GEOM_TYPE_POSE_REF,
+    URI_GEOM_TYPE_VECTOR_XYZ,
+    URI_QUDT_TYPE_DEG,
+    URI_QUDT_TYPE_RAD,
+)
 
 
-URI_EXEC_TYPE_SCENE_REAL = NS_MM_EXEC["SceneRealization"]
+URI_EXEC_TYPE_SCENE_INST = NS_MM_EXEC["SceneInstance"]
 URI_EXEC_PRED_HAS_MODELLED_OBJ = NS_MM_EXEC["has-modelled-object"]
 URI_EXEC_PRED_HAS_MODELLED_AGN = NS_MM_EXEC["has-modelled-agent"]
+URI_EXEC_PRED_HAS_FIXED_ATTACHMENT = NS_MM_EXEC["has-fixed-attachment"]
+URI_GEOM_TYPE_SIMPLICIAL_COMPLEX = NS_MM_GEOM["SimplicialComplex"]
+URI_GEOM_TYPE_GEOMETRY_MODEL = NS_MM_GEOM["GeometryModel"]
+URI_GEOM_PRED_HAS_FRAME = NS_MM_GEOM["has-frame"]
+URI_AGN_TYPE_ATTACHMENT_MODEL = NS_MM_AGN["AttachmentModel"]
+NS_MM_KC = Namespace("https://comp-rob2b.github.io/metamodels/kinematic-chain/structural-entities#")
+URI_KC_TYPE_KINEMATIC_CHAIN = NS_MM_KC["KinematicChain"]
+URI_QUDT_PRED_UNIT = NS_MM_QUDT["unit"]
 
 NS_XML = Namespace("https://www.w3.org/TR/2006/REC-xml11-20060816#")
 NS_URDF = Namespace("https://wiki.ros.org/urdf/XML/")
@@ -73,6 +112,94 @@ def _bind_model_kind_namespaces(graph: Graph) -> None:
     graph.bind(prefix="urdf", namespace=NS_URDF)
     graph.bind(prefix="mjcf", namespace=NS_MJCF)
     graph.bind(prefix="usd", namespace=NS_USD)
+    graph.bind(prefix="geom", namespace=NS_MM_GEOM)
+    graph.bind(prefix="geom-rel", namespace=NS_MM_GEOM_REL)
+    graph.bind(prefix="geom-coord", namespace=NS_MM_GEOM_COORD)
+    graph.bind(prefix="kc", namespace=NS_MM_KC)
+
+
+def _add_frame(graph: Graph, frame: Frame) -> None:
+    graph.add(triple=(frame.uri, RDF.type, URI_GEOM_TYPE_FRAME))
+    graph.add(triple=(frame.uri, RDF.type, URI_GEOM_TYPE_SIMPLICIAL_COMPLEX))
+    graph.add(triple=(frame.origin_uri, RDF.type, URI_GEOM_TYPE_POINT))
+    graph.add(triple=(frame.uri, URI_GEOM_PRED_ORIGIN, frame.origin_uri))
+
+
+def _add_geometry_model(
+    graph: Graph,
+    geom_spec: GeometrySpec,
+    node_id: Optional[URIRef] = None,
+    scene_geom: Optional[GeometrySpec] = None,
+) -> None:
+    if node_id is None:
+        node_id = geom_spec.uri
+
+    graph.add(triple=(node_id, RDF.type, URI_GEOM_TYPE_GEOMETRY_MODEL))
+
+    for frame in [geom_spec.root, *geom_spec.frames]:
+        _add_frame(graph=graph, frame=frame)
+        graph.add(triple=(node_id, URI_GEOM_PRED_HAS_FRAME, frame.uri))
+
+    _add_geom_spec_pose(graph=graph, geom_spec=geom_spec, scene_geom=scene_geom)
+
+
+def _add_geom_spec_pose(
+    graph: Graph, geom_spec: GeometrySpec, scene_geom: Optional[GeometrySpec]
+) -> None:
+    if geom_spec.pose is None:
+        return
+
+    pose = geom_spec.pose
+    if geom_spec.pose.wrt is not None:
+        wrt_frame = geom_spec.pose.wrt
+    elif scene_geom is not None:
+        wrt_frame = scene_geom.root
+    else:
+        raise ValueError(
+            f"No reference frame specified and no default global pose for GeometrySpec {geom_spec.uri}"
+        )
+
+    if geom_spec.root.uri == wrt_frame.uri:
+        raise ValueError(
+            f"GeometrySpec {geom_spec.uri}: reference pose URI is the same with target pose: {wrt_frame.uri}"
+        )
+
+    pose_uri = geom_spec.pose_uri(wrt=wrt_frame)
+    graph.add(triple=(pose_uri, RDF.type, URI_GEOM_TYPE_POSE))
+    graph.add(triple=(pose_uri, URI_GEOM_PRED_OF, geom_spec.root.uri))
+    graph.add(triple=(pose_uri, URI_GEOM_PRED_WRT, wrt_frame.uri))
+
+    # Coordinate
+    coord_uri = geom_spec.pose_coord_uri(wrt=wrt_frame)
+    graph.add(triple=(coord_uri, RDF.type, URI_GEOM_TYPE_POSE_REF))
+    graph.add(triple=(coord_uri, URI_GEOM_PRED_OF_POSE, pose_uri))
+    graph.add(triple=(coord_uri, RDF.type, URI_GEOM_TYPE_POSE_COORD))
+    graph.add(triple=(coord_uri, URI_GEOM_PRED_SEEN_BY, wrt_frame.uri))
+    # Position Coords
+    graph.add(triple=(coord_uri, RDF.type, URI_GEOM_TYPE_VECTOR_XYZ))
+    graph.add(triple=(coord_uri, URI_GEOM_PRED_X, Literal(pose.x)))
+    graph.add(triple=(coord_uri, URI_GEOM_PRED_Y, Literal(pose.y)))
+    graph.add(triple=(coord_uri, URI_GEOM_PRED_Z, Literal(pose.z)))
+
+    if isinstance(pose.orientation, EulerOrientationSpec):
+        graph.add(triple=(coord_uri, RDF.type, URI_GEOM_TYPE_EULER_ANGLES))
+
+        graph.add(triple=(coord_uri, URI_GEOM_PRED_AXES_SEQ, Literal(pose.orientation.axes)))
+
+        in_ex_type = (
+            URI_GEOM_TYPE_EXTRINSIC if pose.orientation.extrinsic else URI_GEOM_TYPE_INTRINSIC
+        )
+        graph.add(triple=(coord_uri, RDF.type, in_ex_type))
+
+        graph.add(triple=(coord_uri, RDF.type, URI_GEOM_TYPE_ANGLES_ABG))
+        graph.add(triple=(coord_uri, URI_GEOM_PRED_ALPHA, Literal(pose.orientation.alpha)))
+        graph.add(triple=(coord_uri, URI_GEOM_PRED_BETA, Literal(pose.orientation.beta)))
+        graph.add(triple=(coord_uri, URI_GEOM_PRED_GAMMA, Literal(pose.orientation.gamma)))
+
+        unit_uri = URI_QUDT_TYPE_DEG if pose.orientation.unit == "deg" else URI_QUDT_TYPE_RAD
+        graph.add(triple=(coord_uri, URI_QUDT_PRED_UNIT, unit_uri))
+    else:
+        raise ValueError(f"Unssuppored orientation: {pose.orientation}")
 
 
 def add_model_spec(graph: Graph, elem_model: ElementModel) -> None:
@@ -116,28 +243,35 @@ def add_agn(graph: Graph, agn: Agent) -> None:
 
 
 def _ensure_unique_scene_models(
-    elem_model: ElementModel, modelled_scene: ModelledScene, seen_model_uris: set[URIRef]
+    elem_model: ElementModel, scene_inst: SceneInstance, seen_model_uris: set[URIRef]
 ):
     if elem_model.uri in seen_model_uris:
         raise ValueError(
-            f"Duplicate model URI '{elem_model.uri}' in modelled scene '{modelled_scene.uri}'. "
-            "Use unique model names within a modelled scene."
+            f"Duplicate model URI '{elem_model.uri}' in scene instance '{scene_inst.uri}'. "
+            "Use unique model names within a scene instance."
         )
     seen_model_uris.add(elem_model.uri)
 
 
 def add_modelled_obj(
     graph: Graph,
-    modelled_scene: ModelledScene,
+    scene_inst: SceneInstance,
     obj_model: ModelledObject,
     seen_model_uris: set[URIRef],
 ) -> None:
     graph.add(triple=(obj_model.modelled_uri, RDF.type, URI_ENV_TYPE_MOD_OBJ))
     graph.add(triple=(obj_model.modelled_uri, URI_ENV_PRED_OF_OBJ, obj_model.obj.uri))
-    graph.add(triple=(modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, obj_model.modelled_uri))
+    graph.add(triple=(scene_inst.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, obj_model.modelled_uri))
+    obj_geom = obj_model.geometry
+    if obj_geom is not None:
+        graph.add(triple=(obj_model.modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, obj_geom.uri))
+        _add_geometry_model(
+            graph=graph, node_id=obj_geom.uri, geom_spec=obj_geom, scene_geom=scene_inst.geometry
+        )
+
     for model in obj_model.models:
         _ensure_unique_scene_models(
-            elem_model=model, modelled_scene=modelled_scene, seen_model_uris=seen_model_uris
+            elem_model=model, scene_inst=scene_inst, seen_model_uris=seen_model_uris
         )
         graph.add(triple=(obj_model.modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, model.uri))
         graph.add(triple=(model.uri, RDF.type, URI_ENV_TYPE_OBJ_MODEL))
@@ -146,31 +280,62 @@ def add_modelled_obj(
 
 def add_modelled_agn(
     graph: Graph,
-    modelled_scene: ModelledScene,
+    scene_inst: SceneInstance,
     agn_model: ModelledAgent,
     seen_model_uris: set[URIRef],
 ) -> None:
     graph.add(triple=(agn_model.modelled_uri, RDF.type, URI_AGN_TYPE_MOD_AGN))
     graph.add(triple=(agn_model.modelled_uri, URI_AGN_PRED_OF_AGN, agn_model.agn.uri))
-    graph.add(triple=(modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_AGN, agn_model.modelled_uri))
-    for model in agn_model.models:
+    graph.add(triple=(scene_inst.uri, URI_EXEC_PRED_HAS_MODELLED_AGN, agn_model.modelled_uri))
+
+    # Kinematic chain model
+    kc_model = agn_model.kinematic.model
+    _ensure_unique_scene_models(
+        elem_model=kc_model, scene_inst=scene_inst, seen_model_uris=seen_model_uris
+    )
+    graph.add(triple=(agn_model.modelled_uri, URI_AGN_PRED_HAS_AGN_MODEL, kc_model.uri))
+    graph.add(triple=(kc_model.uri, RDF.type, URI_AGN_TYPE_AGN_MODEL))
+    graph.add(triple=(kc_model.uri, RDF.type, URI_KC_TYPE_KINEMATIC_CHAIN))
+    add_model_spec(graph=graph, elem_model=kc_model)
+
+    # Add geometry model to the same node
+    _add_geometry_model(
+        graph=graph,
+        geom_spec=agn_model.kinematic.geometry,
+        node_id=kc_model.uri,
+        scene_geom=scene_inst.geometry,
+    )
+
+    for attachment in agn_model.attachments:
+        model = attachment.model
+        if model is None:
+            continue
         _ensure_unique_scene_models(
-            elem_model=model, modelled_scene=modelled_scene, seen_model_uris=seen_model_uris
+            elem_model=model, scene_inst=scene_inst, seen_model_uris=seen_model_uris
         )
         graph.add(triple=(agn_model.modelled_uri, URI_AGN_PRED_HAS_AGN_MODEL, model.uri))
+        graph.add(triple=(agn_model.modelled_uri, URI_EXEC_PRED_HAS_FIXED_ATTACHMENT, model.uri))
         graph.add(triple=(model.uri, RDF.type, URI_AGN_TYPE_AGN_MODEL))
+        graph.add(triple=(model.uri, RDF.type, URI_AGN_TYPE_ATTACHMENT_MODEL))
         add_model_spec(graph=graph, elem_model=model)
+        if attachment.geometry is not None:
+            _add_geometry_model(
+                graph=graph,
+                node_id=model.uri,
+                geom_spec=attachment.geometry,
+                scene_geom=scene_inst.geometry,
+            )
 
 
 def add_modelled_obj_set(
     graph: Graph,
-    modelled_scene: ModelledScene,
+    scene_inst: SceneInstance,
     obj_model_set: ModelledObjectSet,
     seen_model_uris: set[URIRef],
 ) -> None:
     for model in obj_model_set.models:
         _ensure_unique_scene_models(
-            elem_model=model, modelled_scene=modelled_scene, seen_model_uris=seen_model_uris
+            elem_model=model, scene_inst=scene_inst, seen_model_uris=seen_model_uris
         )
         graph.add(triple=(model.uri, RDF.type, URI_ENV_TYPE_OBJ_MODEL))
         add_model_spec(graph=graph, elem_model=model)
@@ -179,19 +344,19 @@ def add_modelled_obj_set(
             modelled_uri = obj_model_set.modelled_uri(index=index)
             graph.add(triple=(modelled_uri, RDF.type, URI_ENV_TYPE_MOD_OBJ))
             graph.add(triple=(modelled_uri, URI_ENV_PRED_OF_OBJ, obj.uri))
-            graph.add(triple=(modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, modelled_uri))
+            graph.add(triple=(scene_inst.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, modelled_uri))
             graph.add(triple=(modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, model.uri))
 
 
 def add_modelled_agn_set(
     graph: Graph,
-    modelled_scene: ModelledScene,
+    scene_inst: SceneInstance,
     agn_model_set: ModelledAgentSet,
     seen_model_uris: set[URIRef],
 ) -> None:
     for model in agn_model_set.models:
         _ensure_unique_scene_models(
-            elem_model=model, modelled_scene=modelled_scene, seen_model_uris=seen_model_uris
+            elem_model=model, scene_inst=scene_inst, seen_model_uris=seen_model_uris
         )
         graph.add(triple=(model.uri, RDF.type, URI_AGN_TYPE_AGN_MODEL))
         add_model_spec(graph=graph, elem_model=model)
@@ -200,7 +365,7 @@ def add_modelled_agn_set(
             modelled_uri = agn_model_set.modelled_uri(index=index)
             graph.add(triple=(modelled_uri, RDF.type, URI_AGN_TYPE_MOD_AGN))
             graph.add(triple=(modelled_uri, URI_AGN_PRED_OF_AGN, agn.uri))
-            graph.add(triple=(modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_AGN, modelled_uri))
+            graph.add(triple=(scene_inst.uri, URI_EXEC_PRED_HAS_MODELLED_AGN, modelled_uri))
             graph.add(triple=(modelled_uri, URI_AGN_PRED_HAS_AGN_MODEL, model.uri))
 
 
@@ -368,41 +533,44 @@ def add_scene_model(
     return scene_has_obj, scene_has_ws, scene_has_agn
 
 
-def add_modelled_scene(graph: Graph, modelled_scene: ModelledScene) -> None:
-    graph.bind(prefix=modelled_scene.ns_prefix, namespace=modelled_scene.namespace)
-    graph.add(triple=(modelled_scene.uri, RDF.type, URI_EXEC_TYPE_SCENE_REAL))
-    graph.add(triple=(modelled_scene.uri, URI_BDD_PRED_OF_SCENE, modelled_scene.scene.uri))
+def add_modelled_scene(graph: Graph, scene_inst: SceneInstance) -> None:
+    graph.bind(prefix=scene_inst.ns_prefix, namespace=scene_inst.namespace)
+    graph.add(triple=(scene_inst.uri, RDF.type, URI_EXEC_TYPE_SCENE_INST))
+    graph.add(triple=(scene_inst.uri, URI_BDD_PRED_OF_SCENE, scene_inst.scene.uri))
 
     seen_model_uris = set()
 
-    for obj_model in modelled_scene.modelled_objs:
+    if scene_inst.geometry is not None:
+        _add_geometry_model(graph=graph, geom_spec=scene_inst.geometry)
+
+    for obj_model in scene_inst.modelled_objs:
         add_modelled_obj(
             graph=graph,
-            modelled_scene=modelled_scene,
+            scene_inst=scene_inst,
             obj_model=obj_model,
             seen_model_uris=seen_model_uris,
         )
 
-    for obj_model_set in modelled_scene.modelled_obj_sets:
+    for obj_model_set in scene_inst.modelled_obj_sets:
         add_modelled_obj_set(
             graph=graph,
-            modelled_scene=modelled_scene,
+            scene_inst=scene_inst,
             obj_model_set=obj_model_set,
             seen_model_uris=seen_model_uris,
         )
 
-    for agn_model in modelled_scene.modelled_agns:
+    for agn_model in scene_inst.modelled_agns:
         add_modelled_agn(
             graph=graph,
-            modelled_scene=modelled_scene,
+            scene_inst=scene_inst,
             agn_model=agn_model,
             seen_model_uris=seen_model_uris,
         )
 
-    for agn_model_set in modelled_scene.modelled_agn_sets:
+    for agn_model_set in scene_inst.modelled_agn_sets:
         add_modelled_agn_set(
             graph=graph,
-            modelled_scene=modelled_scene,
+            scene_inst=scene_inst,
             agn_model_set=agn_model_set,
             seen_model_uris=seen_model_uris,
         )
@@ -422,11 +590,11 @@ def create_scene_model_graph(model: Any, g: Optional[Graph] = None) -> Graph:
     for scn in scene_models:
         add_scene_model(graph=g, scene=scn, set_uris=set_uris)
 
-    modelled_scenes = getattr(model, "modelled_scenes", None)
-    assert modelled_scenes is not None and isinstance(
-        modelled_scenes, list
-    ), "no 'modelled_scenes' attr of type 'list' in model"
-    for modelled_scene in modelled_scenes:
-        add_modelled_scene(graph=g, modelled_scene=modelled_scene)
+    scene_insts = getattr(model, "scene_insts", None)
+    assert scene_insts is not None and isinstance(
+        scene_insts, list
+    ), "no 'scene_insts' attr of type 'list' in model"
+    for scene_inst in scene_insts:
+        add_modelled_scene(graph=g, scene_inst=scene_inst)
 
     return g

@@ -31,6 +31,36 @@ class ElementModel(IHasNamespace):
         return self._uri
 
 
+class OrientationSpec:
+    pass
+
+
+class EulerOrientationSpec(OrientationSpec):
+    extrinsic: bool
+
+    def __init__(self, parent, axes, extrinsic, alpha, beta, gamma, unit) -> None:
+        self.parent = parent
+        self.extrinsic = extrinsic
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.axes = axes or "zyx"
+        self.unit = unit or "rad"
+
+
+class PoseSpec:
+    wrt: Optional[Frame]
+    orientation: OrientationSpec
+
+    def __init__(self, parent, wrt, x, y, z, orientation) -> None:
+        self.parent = parent
+        self.wrt = wrt
+        self.x = x
+        self.y = y
+        self.z = z
+        self.orientation = orientation
+
+
 class Object(IHasNamespace):
     _uri: Optional[URIRef]
 
@@ -191,26 +221,30 @@ class SceneModel(IHasNamespaceDeclare):
 class ModelledObject(IHasNamespace):
     obj: Object
     models: list[ElementModel]
+    geometry: GeometrySpec
     _modelled_uri: Optional[URIRef]
 
-    def __init__(self, parent, obj, models) -> None:
+    def __init__(self, parent, obj, models, geometry) -> None:
         super().__init__(parent=parent)
         self.obj = obj
         self.models = models
+        self.geometry = geometry
         self._modelled_uri = None
 
     @property
     def namespace(self) -> Namespace:
         assert isinstance(
-            self.parent, ModelledScene
-        ), f"parent of modelled obj not a 'ModelledScene': {self.parent}"
+            self.parent, SceneInstance
+        ), f"parent of modelled obj not a 'SceneInstance': {self.parent}"
         return self.parent.namespace
 
     @property
     def modelled_uri(self) -> URIRef:
         if self._modelled_uri is None:
-            real_name = self.parent.name
-            self._modelled_uri = self.namespace[f"modelled-obj-{real_name}-{self.obj.name}"]
+            assert isinstance(
+                self.parent, SceneInstance
+            ), f"parent of modelled obj not a 'SceneInstance': {self.parent}"
+            self._modelled_uri = self.namespace[f"modelled-obj-{self.parent.name}-{self.obj.name}"]
         return self._modelled_uri
 
 
@@ -226,42 +260,159 @@ class ModelledObjectSet(IHasNamespace):
     @property
     def namespace(self) -> Namespace:
         assert isinstance(
-            self.parent, ModelledScene
-        ), f"parent of modelled obj set not a 'ModelledScene': {self.parent}"
+            self.parent, SceneInstance
+        ), f"parent of modelled obj set not a 'SceneInstance': {self.parent}"
         return self.parent.namespace
 
     def modelled_uri(self, index: int) -> URIRef:
         obj = self.obj_set.objects[index]
         assert isinstance(
-            self.parent, ModelledScene
-        ), f"parent of modelled obj set not a 'ModelledScene': {self.parent}"
+            self.parent, SceneInstance
+        ), f"parent of modelled obj set not a 'SceneInstance': {self.parent}"
         real_name = self.parent.name
         return self.namespace[f"modelled-obj-{real_name}-{obj.name}"]
 
 
+class Frame(IHasNamespace):
+    _uri: Optional[URIRef]
+    _origin_uri: Optional[URIRef]
+
+    def __init__(self, parent=None, name=None) -> None:
+        super().__init__(parent=parent)
+        self.name = name
+        self._uri = None
+        self._origin_uri = None
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, IHasNamespace
+        ), f"parent of frame has no namespace: {self.parent}"
+        return self.parent.namespace
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            assert isinstance(
+                self.parent, GeometrySpec
+            ), f"parent of frame not a GeometrySpec: {self.parent}"
+            self._uri = self.namespace[f"{self.parent.name}-{self.name}"]
+        return self._uri
+
+    @property
+    def origin_uri(self) -> URIRef:
+        if self._origin_uri is None:
+            self._origin_uri = URIRef(f"{self.uri}-origin")
+        return self._origin_uri
+
+
+class GeometrySpec(IHasNamespace):
+    name: str
+    root: Frame
+    frames: list[Frame]
+    pose: Optional[PoseSpec]
+    _uri: Optional[URIRef]
+
+    def __init__(self, parent, name, root, frames=None, pose=None) -> None:
+        super().__init__(parent=parent)
+        self.name = name
+        self.root = root
+        self.frames = frames or []
+        self.pose = pose
+        self._uri = None
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, IHasNamespace
+        ), f"parent of geometry spec has no namespace: {self.parent}"
+        return self.parent.namespace
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            self._uri = self.namespace[self.name]
+        return self._uri
+
+    def pose_uri(self, wrt: Frame) -> URIRef:
+        return self.namespace[f"{self.root.name}-wrt-{wrt.name}"]
+
+    def pose_coord_uri(self, wrt: Frame) -> URIRef:
+        return self.namespace[f"{self.root.name}-wrt-{wrt.name}-coord"]
+
+
+class KinematicSpec(IHasNamespace):
+    model: ElementModel
+    geometry: GeometrySpec
+
+    def __init__(self, parent, model, geometry) -> None:
+        super().__init__(parent=parent)
+        self.model = model
+        self.geometry = geometry
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, ModelledAgent
+        ), f"parent of kinematic spec not a 'ModelledAgent': {self.parent}"
+        return self.parent.namespace
+
+
+class FixedAttachment(IHasNamespace):
+    model: ElementModel
+    geometry: GeometrySpec
+
+    def __init__(
+        self,
+        parent,
+        name,
+        model,
+        geometry,
+    ) -> None:
+        super().__init__(parent=parent)
+        self.name = name
+        self.model = model
+        self.geometry = geometry
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, ModelledAgent
+        ), f"parent of fixed attachment not a 'ModelledAgent': {self.parent}"
+        return self.parent.namespace
+
+    @property
+    def agent_model(self):
+        return self.parent
+
+
 class ModelledAgent(IHasNamespace):
     agn: Agent
-    models: list[ElementModel]
+    kinematic: KinematicSpec
+    attachments: list[FixedAttachment]
     _modelled_uri: Optional[URIRef]
 
-    def __init__(self, parent, agn, models) -> None:
+    def __init__(self, parent, agn, kinematic, attachments=None) -> None:
         super().__init__(parent=parent)
         self.agn = agn
-        self.models = models
+        self.kinematic = kinematic
+        self.attachments = attachments or []
         self._modelled_uri = None
 
     @property
     def namespace(self) -> Namespace:
         assert isinstance(
-            self.parent, ModelledScene
-        ), f"parent of modelled agn not a 'ModelledScene': {self.parent}"
+            self.parent, SceneInstance
+        ), f"parent of modelled agn not a 'SceneInstance': {self.parent}"
         return self.parent.namespace
 
     @property
     def modelled_uri(self) -> URIRef:
         if self._modelled_uri is None:
-            real_name = self.parent.name
-            self._modelled_uri = self.namespace[f"modelled-agn-{real_name}-{self.agn.name}"]
+            assert isinstance(
+                self.parent, SceneInstance
+            ), f"parent of modelled agn not a 'SceneInstance': {self.parent}"
+            self._modelled_uri = self.namespace[f"modelled-agn-{self.parent}-{self.agn.name}"]
         return self._modelled_uri
 
 
@@ -277,21 +428,22 @@ class ModelledAgentSet(IHasNamespace):
     @property
     def namespace(self) -> Namespace:
         assert isinstance(
-            self.parent, ModelledScene
-        ), f"parent of modelled agn set not a 'ModelledScene': {self.parent}"
+            self.parent, SceneInstance
+        ), f"parent of modelled agn set not a 'SceneInstance': {self.parent}"
         return self.parent.namespace
 
     def modelled_uri(self, index: int) -> URIRef:
         agn = self.agn_set.agents[index]
         assert isinstance(
-            self.parent, ModelledScene
-        ), f"parent of modelled agn set not a 'ModelledScene': {self.parent}"
+            self.parent, SceneInstance
+        ), f"parent of modelled agn set not a 'SceneInstance': {self.parent}"
         real_name = self.parent.name
         return self.namespace[f"modelled-agn-{real_name}-{agn.name}"]
 
 
-class ModelledScene(IHasNamespaceDeclare):
+class SceneInstance(IHasNamespaceDeclare):
     scene: SceneModel
+    geometry: Optional[GeometrySpec]
     modelled_objs: list[ModelledObject]
     modelled_obj_sets: list[ModelledObjectSet]
     modelled_agns: list[ModelledAgent]
@@ -303,6 +455,7 @@ class ModelledScene(IHasNamespaceDeclare):
         ns,
         name,
         scene,
+        geometry,
         modelled_objs,
         modelled_obj_sets,
         modelled_agns,
@@ -310,7 +463,12 @@ class ModelledScene(IHasNamespaceDeclare):
     ) -> None:
         super().__init__(parent=parent, ns=ns, name=name)
         self.scene = scene
+        self.geometry = geometry
         self.modelled_objs = modelled_objs
         self.modelled_obj_sets = modelled_obj_sets
         self.modelled_agns = modelled_agns
         self.modelled_agn_sets = modelled_agn_sets
+
+    @property
+    def root_frame(self) -> Frame:
+        return self.geometry.root_frame
