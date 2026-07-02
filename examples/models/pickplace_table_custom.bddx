@@ -30,7 +30,7 @@ obs policy (ns=bdd_exec_ros) fcx-collision-topic
 
 Scenario Exec (ns=bdd_exec) pickplace-mockup-ros {
     variant: <sim_pickplace.pickplace_table>
-    scene model: <pickplace_scene_mjc>
+    scene inst: <pickplace_scene_mjc>
     bhv: <mockup-pp-server>
     policies: {
         <fcx-located-before-topic>,

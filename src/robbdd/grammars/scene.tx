@@ -19,7 +19,7 @@ ws_comps+=WorkspaceComposition
 |
 scene_models+=SceneModel
 |
-modelled_scenes+=ModelledScene
+scene_insts+=SceneInstance
 )*
 ;
 
@@ -94,9 +94,39 @@ SceneModel:
 '}'
 ;
 
+PoseSpec:
+'pose' '{'
+    ('wrt' ':' '<' wrt=[Frame|FQN] '>')?
+    'xyz' ':' '(' x=FLOAT ',' y=FLOAT ',' z=FLOAT ')'
+    'orientation' ':' orientation=OrientationSpec
+'}'
+;
+
+OrientationSpec: EulerOrientationSpec ;
+EulerOrientationSpec:
+'euler' '{'
+    ('axes' ':' axes=EulerAxes)?
+    extrinsic?='extrinsic'
+    'angles' ':' '(' alpha=FLOAT ',' beta=FLOAT ',' gamma=FLOAT ')'
+    ('unit' ':' unit=AngleUnit)?
+'}'
+;
+EulerAxes: 'xyz' | 'xzy' | 'yxz' | 'yzx' | 'zxy' | 'zyx' ;
+BOOL: 'true' | 'false' ;
+AngleUnit: 'rad' | 'deg' ;
+
+GeometrySpec:
+'geom' name=IRI_TRUNK '{'
+    'root' ':' root=Frame
+    ('frames' '{' frames+=Frame* '}')?
+    pose=PoseSpec?
+'}'
+;
+
 ModelledObject:
 'obj' '<' obj=[Object|FQN] '>' '{'
     models+=ElementModel+
+    geometry=GeometrySpec
 '}'
 ;
 
@@ -106,9 +136,26 @@ ModelledObjectSet:
 '}'
 ;
 
+KinematicSpec:
+'kinematic' '{'
+    model=ElementModel
+    geometry=GeometrySpec
+'}'
+;
+
 ModelledAgent:
 'agn' '<' agn=[Agent|FQN] '>' '{'
-    models+=ElementModel+
+    kinematic=KinematicSpec
+    ('attachments' '{' attachments+=FixedAttachment* '}')?
+'}'
+;
+
+Frame: 'frame' name=IRI_TRUNK ;
+
+FixedAttachment:
+'fixed' name=IRI_TRUNK '{'
+    model=ElementModel
+    geometry=GeometrySpec
 '}'
 ;
 
@@ -118,9 +165,10 @@ ModelledAgentSet:
 '}'
 ;
 
-ModelledScene:
-'modelled' 'scene' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
+SceneInstance:
+'scene' 'inst' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
     'scene' ':' '<' scene=[SceneModel|FQN] '>'
+    geometry=GeometrySpec?
     (
     modelled_objs+=ModelledObject
     |

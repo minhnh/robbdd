@@ -2,23 +2,15 @@
 import unittest
 from os.path import dirname, join
 from urllib.error import HTTPError
-from rdflib import RDF
 from textx import metamodel_for_language
 
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_OF_SCENE,
-    URI_ENV_PRED_HAS_OBJ_MODEL,
-    URI_ENV_TYPE_MOD_OBJ,
-    URI_ENV_TYPE_OBJ,
 )
 from rdf_utils.resolver import install_resolver
+from rdf_utils.constraints import check_shacl_constraints
 from bdd_dsl.models.user_story import UserStoryLoader
 from robbdd.rdf.scene import (
-    URI_EXEC_TYPE_SCENE_REAL,
-    URI_MJCF_MUJOCO,
-    URI_EXEC_PRED_HAS_MODELLED_AGN,
-    URI_EXEC_PRED_HAS_MODELLED_OBJ,
-    URI_XML_DOCUMENT,
     create_scene_model_graph,
 )
 from robbdd.rdf.bdd import create_bdd_model_graph
@@ -30,12 +22,15 @@ MODELS_DIR = join(ROOT_DIR, "examples", "models")
 
 
 class TestTextXLanguages(unittest.TestCase):
+    def setUp(self) -> None:
+        install_resolver()
+
     def test_robbdd_scene(self):
         """Test scene-tx language"""
         scene_mm = metamodel_for_language("robbdd-scene")
         scene_model = scene_mm.model_from_file(join(MODELS_DIR, "lab.scene"))
         assert len(scene_model.scene_models) > 0
-        assert len(scene_model.modelled_scenes) > 0
+        assert len(scene_model.scene_insts) > 0
         assert len(scene_model.sim_obj_sets) > 0
         balls = next(s for s in scene_model.sim_obj_sets if s.name == "balls")
         cubes = next(s for s in scene_model.sim_obj_sets if s.name == "cubes")
@@ -43,48 +38,14 @@ class TestTextXLanguages(unittest.TestCase):
         assert [obj.name for obj in cubes.objects] == ["cube0", "cube1"]
         g = create_scene_model_graph(scene_model)
         assert len(g) > 0
-        assert (balls.objects[0].uri, RDF.type, URI_ENV_TYPE_OBJ) in g
-        assert (cubes.objects[1].uri, RDF.type, URI_ENV_TYPE_OBJ) in g
-        modelled_scene = scene_model.modelled_scenes[0]
-        assert (modelled_scene.uri, RDF.type, URI_EXEC_TYPE_SCENE_REAL) in g
-        assert (
-            modelled_scene.uri,
-            URI_EXEC_PRED_HAS_MODELLED_OBJ,
-            modelled_scene.modelled_objs[0].modelled_uri,
-        ) in g
-        assert (
-            modelled_scene.uri,
-            URI_EXEC_PRED_HAS_MODELLED_AGN,
-            modelled_scene.modelled_agns[0].modelled_uri,
-        ) in g
-        modelled_agn = modelled_scene.modelled_agns[0]
-        model_node = modelled_agn.models[0].uri
-        assert (model_node, RDF.type, URI_MJCF_MUJOCO) in g
-        assert (model_node, RDF.type, URI_XML_DOCUMENT) in g
-
-        setting_modelled_scene = next(
-            s for s in scene_model.modelled_scenes if s.name == "setting_scene_mjc"
+        check_shacl_constraints(
+            graph=g,
+            shacl_dict={
+                "https://comp-rob2b.github.io/metamodels/geometry/spatial-relations.ttl": "turtle",
+                "https://comp-rob2b.github.io/metamodels/geometry/coordinates.ttl": "turtle",
+            },
+            quiet=False,
         )
-        ball0_modelled_uri = setting_modelled_scene.namespace[
-            f"modelled-obj-{setting_modelled_scene.name}-ball0"
-        ]
-        ball1_modelled_uri = setting_modelled_scene.namespace[
-            f"modelled-obj-{setting_modelled_scene.name}-ball1"
-        ]
-        ball_model_uri = setting_modelled_scene.namespace["ball-mjc"]
-        cube0_modelled_uri = setting_modelled_scene.namespace[
-            f"modelled-obj-{setting_modelled_scene.name}-cube0"
-        ]
-        cube_model_uri = setting_modelled_scene.namespace["cube-mjc"]
-        assert (setting_modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, ball0_modelled_uri) in g
-        assert (setting_modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, ball1_modelled_uri) in g
-        assert (setting_modelled_scene.uri, URI_EXEC_PRED_HAS_MODELLED_OBJ, cube0_modelled_uri) in g
-        assert (ball0_modelled_uri, RDF.type, URI_ENV_TYPE_MOD_OBJ) in g
-        assert (ball0_modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, ball_model_uri) in g
-        assert (ball1_modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, ball_model_uri) in g
-        assert (cube0_modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, cube_model_uri) in g
-        assert (ball_model_uri, RDF.type, URI_MJCF_MUJOCO) in g
-        assert (cube_model_uri, RDF.type, URI_MJCF_MUJOCO) in g
 
     def test_robbdd(self):
         """Test RobBDD language"""
@@ -101,7 +62,6 @@ class TestTextXLanguages(unittest.TestCase):
             assert len(bdd_model.stories[0].scenarios) > 0
 
             g = create_bdd_model_graph(model=bdd_model)
-            install_resolver()
             try:
                 _ = UserStoryLoader(g)
             except HTTPError as e:
@@ -116,7 +76,7 @@ class TestTextXLanguages(unittest.TestCase):
         assert len(g) > 0
         scr_exec = bddx_model.scenario_execs[0]
         assert (
-            scr_exec.modelled_scene.uri,
+            scr_exec.scene_inst.uri,
             URI_BDD_PRED_OF_SCENE,
             scr_exec.variant.template.scene_uri,
         ) in g

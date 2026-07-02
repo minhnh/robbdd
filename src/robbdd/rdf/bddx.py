@@ -59,17 +59,17 @@ def add_obs_pol_to_graph(graph: Graph, obs_pol: ObservationPolicy) -> None:
 
 
 def add_scr_exec_to_graph(graph: Graph, scr_exec: ScenarioExecution) -> None:
-    if scr_exec.modelled_scene.scene.uri != scr_exec.variant.scene.uri:
+    if scr_exec.scene_inst.scene.uri != scr_exec.variant.scene.uri:
         raise ValueError(
-            f"ScenarioExecution '{scr_exec.uri}' binds scene model '{scr_exec.modelled_scene.uri}' "
-            f"for scene '{scr_exec.modelled_scene.scene.uri}', expected '{scr_exec.variant.scene.uri}'"
+            f"ScenarioExecution '{scr_exec.uri}' binds scene instance '{scr_exec.scene_inst.uri}' "
+            f"for scene '{scr_exec.scene_inst.scene.uri}', expected '{scr_exec.variant.scene.uri}'"
         )
 
     graph.add(triple=(scr_exec.uri, RDF.type, URI_BDD_TYPE_SCENARIO_EXEC))
     graph.add(triple=(scr_exec.uri, URI_BDD_PRED_OF_VARIANT, scr_exec.variant.uri))
     graph.add(
         triple=(
-            scr_exec.modelled_scene.uri,
+            scr_exec.scene_inst.uri,
             URI_BDD_PRED_OF_SCENE,
             scr_exec.variant.template.scene_uri,
         )

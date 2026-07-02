@@ -15,7 +15,14 @@ from robbdd.classes.scene import (
     ModelledAgentSet,
     ModelledObject,
     ModelledObjectSet,
-    ModelledScene,
+    SceneInstance,
+    KinematicSpec,
+    GeometrySpec,
+    PoseSpec,
+    OrientationSpec,
+    EulerOrientationSpec,
+    Frame,
+    FixedAttachment,
     Object,
     ObjectSet,
     ElementModel,
@@ -108,6 +115,24 @@ class HoldsExprRefScopeProvider:
         return None
 
 
+def _geometry_frame(geometry, frame_name):
+    matches = [frame for frame in [geometry.root, *geometry.frames] if frame.name == frame_name]
+    return matches[0] if len(matches) == 1 else None
+
+
+class FrameRefScopeProvider:
+    def __call__(self, obj, attr, obj_ref):
+        parts = obj_ref.obj_name.split(".")
+        if len(parts) != 2:
+            return None
+        geometry_name, frame_name = parts
+        model = get_model(obj)
+        for geometry in get_children_of_type(GeometrySpec, model):
+            if geometry.name == geometry_name:
+                return _geometry_frame(geometry, frame_name)
+        return None
+
+
 def scene_metamodel():
     mm_scene = metamodel_from_file(
         join(__CWD, "grammars", "scene.tx"),
@@ -127,11 +152,20 @@ def scene_metamodel():
             ModelledObjectSet,
             ModelledAgent,
             ModelledAgentSet,
-            ModelledScene,
+            SceneInstance,
+            KinematicSpec,
+            GeometrySpec,
+            PoseSpec,
+            OrientationSpec,
+            EulerOrientationSpec,
+            Frame,
+            FixedAttachment,
         ],
     )
     mm_scene.register_scope_providers(
         {
+            "*.frame": FrameRefScopeProvider(),
+            "PoseSpec.wrt": FrameRefScopeProvider(),
             "*.*": scoping_providers.FQNImportURI(),
         }
     )
