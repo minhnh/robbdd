@@ -48,7 +48,7 @@ jobs:
         ruff check .
     - name: Install package
       run: |
-        pip install ./rdf-utils
+        pip install "./rdf-utils[all]"
         pip install ./bdd-dsl
         pip install ./robbdd
     - name: Test with pytest
