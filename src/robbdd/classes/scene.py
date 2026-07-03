@@ -269,8 +269,7 @@ class ModelledObjectSet(IHasNamespace):
         assert isinstance(
             self.parent, SceneInstance
         ), f"parent of modelled obj set not a 'SceneInstance': {self.parent}"
-        real_name = self.parent.name
-        return self.namespace[f"modelled-obj-{real_name}-{obj.name}"]
+        return self.namespace[f"modelled-obj-{self.parent.name}-{obj.name}"]
 
 
 class Frame(IHasNamespace):
@@ -412,7 +411,7 @@ class ModelledAgent(IHasNamespace):
             assert isinstance(
                 self.parent, SceneInstance
             ), f"parent of modelled agn not a 'SceneInstance': {self.parent}"
-            self._modelled_uri = self.namespace[f"modelled-agn-{self.parent}-{self.agn.name}"]
+            self._modelled_uri = self.namespace[f"modelled-agn-{self.parent.name}-{self.agn.name}"]
         return self._modelled_uri
 
 
@@ -437,8 +436,7 @@ class ModelledAgentSet(IHasNamespace):
         assert isinstance(
             self.parent, SceneInstance
         ), f"parent of modelled agn set not a 'SceneInstance': {self.parent}"
-        real_name = self.parent.name
-        return self.namespace[f"modelled-agn-{real_name}-{agn.name}"]
+        return self.namespace[f"modelled-agn-{self.parent.name}-{agn.name}"]
 
 
 class SceneInstance(IHasNamespaceDeclare):
@@ -468,7 +466,3 @@ class SceneInstance(IHasNamespaceDeclare):
         self.modelled_obj_sets = modelled_obj_sets
         self.modelled_agns = modelled_agns
         self.modelled_agn_sets = modelled_agn_sets
-
-    @property
-    def root_frame(self) -> Frame:
-        return self.geometry.root_frame
