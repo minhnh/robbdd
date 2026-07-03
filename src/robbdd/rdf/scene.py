@@ -199,7 +199,7 @@ def _add_geom_spec_pose(
         unit_uri = URI_QUDT_TYPE_DEG if pose.orientation.unit == "deg" else URI_QUDT_TYPE_RAD
         graph.add(triple=(coord_uri, URI_QUDT_PRED_UNIT, unit_uri))
     else:
-        raise ValueError(f"Unssuppored orientation: {pose.orientation}")
+        raise ValueError(f"Unsupported orientation: {pose.orientation}")
 
 
 def add_model_spec(graph: Graph, elem_model: ElementModel) -> None:
@@ -369,16 +369,16 @@ def add_modelled_agn_set(
             graph.add(triple=(modelled_uri, URI_AGN_PRED_HAS_AGN_MODEL, model.uri))
 
 
-def _add_scene_set_common(graph: Graph, scene_set: SceneSet, set_uris: set[URIRef]) -> bool:
+def _add_scene_set_common(graph: Graph, scene_set: SceneSet, set_uris: set[URIRef]):
     if scene_set.uri in set_uris:
-        return False
+        return
     set_uris.add(scene_set.uri)
 
     graph.add(triple=(scene_set.uri, RDF.type, URI_BDD_TYPE_SET))
     graph.add(triple=(scene_set.uri, RDF.type, URI_BDD_TYPE_CONST_SET))
     graph.bind(prefix=scene_set.ns_prefix, namespace=scene_set.namespace)
 
-    return True
+    return
 
 
 def add_obj_set(
@@ -387,8 +387,7 @@ def add_obj_set(
     set_uris: set[URIRef],
     scn_comp_uri: Optional[URIRef] = None,
 ) -> None:
-    if not _add_scene_set_common(graph=graph, scene_set=obj_set, set_uris=set_uris):
-        return
+    _add_scene_set_common(graph=graph, scene_set=obj_set, set_uris=set_uris)
 
     for obj in obj_set.objects:
         add_obj(graph=graph, obj=obj)
@@ -400,8 +399,7 @@ def add_obj_set(
 def add_ws_set(
     graph: Graph, ws_set: WorkspaceSet, set_uris: set[URIRef], scn_comp_uri: Optional[URIRef] = None
 ) -> None:
-    if not _add_scene_set_common(graph=graph, scene_set=ws_set, set_uris=set_uris):
-        return
+    _add_scene_set_common(graph=graph, scene_set=ws_set, set_uris=set_uris)
 
     for ws in ws_set.workspaces:
         graph.add(triple=(ws.uri, RDF.type, URI_ENV_TYPE_WS))
@@ -416,8 +414,7 @@ def add_agn_set(
     set_uris: set[URIRef],
     scn_comp_uri: Optional[URIRef] = None,
 ) -> None:
-    if not _add_scene_set_common(graph=graph, scene_set=agn_set, set_uris=set_uris):
-        return
+    _add_scene_set_common(graph=graph, scene_set=agn_set, set_uris=set_uris)
 
     for agn in agn_set.agents:
         add_agn(graph=graph, agn=agn)
@@ -462,7 +459,9 @@ def add_ws_comp(
         graph.add(triple=(ws_comp.uri, RDF.type, URI_ENV_TYPE_WS_WS))
 
     for obj in ws_comp.objects:
-        assert isinstance(obj.parent, ObjectSet), f"parent of obj not an object set: {obj.parent}"
+        assert isinstance(
+            obj.parent, (ObjectSet, SimilarObjectSet)
+        ), f"parent of obj not an object set: {obj.parent}"
         if obj.parent.uri not in set_uris:
             add_obj_set(graph=graph, obj_set=obj.parent, set_uris=set_uris)
             graph.add(triple=(scene.scene_obj_uri, URI_ENV_PRED_HAS_OBJ, obj.uri))
