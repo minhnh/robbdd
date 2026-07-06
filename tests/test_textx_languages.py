@@ -2,6 +2,7 @@
 import unittest
 from os.path import dirname, join
 from urllib.error import HTTPError
+from rdflib import RDF
 from textx import metamodel_for_language
 
 from bdd_dsl.models.urirefs import (
@@ -11,6 +12,8 @@ from rdf_utils.resolver import install_resolver
 from rdf_utils.constraints import check_shacl_constraints
 from bdd_dsl.models.user_story import UserStoryLoader
 from robbdd.rdf.scene import (
+    URI_DYN_TYPE_MASS_SCALAR,
+    URI_GEOM_TYPE_RIGID_BODY,
     create_scene_model_graph,
 )
 from robbdd.rdf.bdd import create_bdd_model_graph
@@ -36,8 +39,29 @@ class TestTextXLanguages(unittest.TestCase):
         cubes = next(s for s in scene_model.sim_obj_sets if s.name == "cubes")
         assert [obj.name for obj in balls.objects] == ["ball0", "ball1", "ball2"]
         assert [obj.name for obj in cubes.objects] == ["cube0", "cube1"]
+        table_obj = next(
+            obj
+            for inst in scene_model.scene_insts
+            for obj in inst.modelled_objs
+            if obj.geometry.name == "table_geom"
+        )
+        assert table_obj.body.name == "table_body"
+        assert table_obj.body.mass == 10.0
+        panda = next(
+            agn
+            for inst in scene_model.scene_insts
+            for agn in inst.modelled_agns
+            if agn.agn.name == "panda"
+        )
+        gripper_body = panda.attachments[0].body
+        assert gripper_body.name == "gripper_body"
+
         g = create_scene_model_graph(scene_model)
         assert len(g) > 0
+        assert (table_obj.body.uri, RDF.type, URI_GEOM_TYPE_RIGID_BODY) in g
+        assert (table_obj.body.inertia_coord_uri, RDF.type, URI_DYN_TYPE_MASS_SCALAR) in g
+        assert (gripper_body.uri, RDF.type, URI_GEOM_TYPE_RIGID_BODY) in g
+
         check_shacl_constraints(
             graph=g,
             shacl_dict={

@@ -123,10 +123,18 @@ GeometrySpec:
 '}'
 ;
 
+BodySpec:
+'body' name=IRI_TRUNK '{'
+    'inertial' 'frame' ':' '<' frame=[Frame|FQN] '>'
+    ('mass' ':' mass=FLOAT)?
+'}'
+;
+
 ModelledObject:
 'obj' '<' obj=[Object|FQN] '>' '{'
     models+=ElementModel+
     geometry=GeometrySpec
+    body=BodySpec?
 '}'
 ;
 
@@ -156,6 +164,7 @@ FixedAttachment:
 'fixed' name=IRI_TRUNK '{'
     model=ElementModel
     geometry=GeometrySpec
+    body=BodySpec?
 '}'
 ;
 

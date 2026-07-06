@@ -36,6 +36,7 @@ from bdd_dsl.models.urirefs import (
 from robbdd.classes.scene import (
     Agent,
     AgentSet,
+    BodySpec,
     ElementModel,
     GeometrySpec,
     ModelledAgent,
@@ -55,7 +56,14 @@ from robbdd.classes.scene import (
     WorkspaceSet,
 )
 from robbdd.rdf.common import add_py_module_attr
-from rdf_utils.namespace import NS_MM_GEOM, NS_MM_GEOM_COORD, NS_MM_GEOM_REL, NS_MM_QUDT
+from rdf_utils.namespace import (
+    NS_MM_GEOM,
+    NS_MM_GEOM_COORD,
+    NS_MM_GEOM_REL,
+    NS_MM_QUDT,
+    NS_MM_QUDT_QTY,
+    NS_MM_QUDT_UNIT,
+)
 from rdf_utils.models.geometry import (
     URI_GEOM_PRED_ALPHA,
     URI_GEOM_PRED_AXES_SEQ,
@@ -90,11 +98,32 @@ URI_EXEC_PRED_HAS_MODELLED_AGN = NS_MM_EXEC["has-modelled-agent"]
 URI_EXEC_PRED_HAS_FIXED_ATTACHMENT = NS_MM_EXEC["has-fixed-attachment"]
 URI_GEOM_TYPE_SIMPLICIAL_COMPLEX = NS_MM_GEOM["SimplicialComplex"]
 URI_GEOM_TYPE_GEOMETRY_MODEL = NS_MM_GEOM["GeometryModel"]
+URI_GEOM_TYPE_RIGID_BODY = NS_MM_GEOM["RigidBody"]
 URI_GEOM_PRED_HAS_FRAME = NS_MM_GEOM["has-frame"]
+URI_GEOM_PRED_SIMPLICES = NS_MM_GEOM["simplices"]
 URI_AGN_TYPE_ATTACHMENT_MODEL = NS_MM_AGN["AttachmentModel"]
 NS_MM_KC = Namespace("https://comp-rob2b.github.io/metamodels/kinematic-chain/structural-entities#")
+NS_MM_DYN_ENT = Namespace(
+    "https://comp-rob2b.github.io/metamodels/newtonian-rigid-body-dynamics/structural-entities#"
+)
+NS_MM_DYN_COORD = Namespace(
+    "https://comp-rob2b.github.io/metamodels/newtonian-rigid-body-dynamics/coordinates#"
+)
 URI_KC_TYPE_KINEMATIC_CHAIN = NS_MM_KC["KinematicChain"]
+URI_DYN_TYPE_RIGID_BODY_INERTIA = NS_MM_DYN_ENT["RigidBodyInertia"]
+URI_DYN_TYPE_INERTIA_REFERENCE = NS_MM_DYN_COORD["InertiaReference"]
+URI_DYN_TYPE_RIGID_BODY_INERTIA_COORD = NS_MM_DYN_COORD["RigidBodyInertiaCoordinate"]
+URI_DYN_TYPE_MASS_SCALAR = NS_MM_DYN_COORD["MassScalar"]
+URI_DYN_PRED_OF_BODY = NS_MM_DYN_ENT["of-body"]
+URI_DYN_PRED_ABOUT = NS_MM_DYN_ENT["about"]
+URI_DYN_PRED_OF_INERTIA = NS_MM_DYN_COORD["of-inertia"]
+URI_DYN_PRED_AS_SEEN_BY = NS_MM_DYN_COORD["as-seen-by"]
+URI_DYN_PRED_MASS = NS_MM_DYN_COORD["mass"]
 URI_QUDT_PRED_UNIT = NS_MM_QUDT["unit"]
+URI_QUDT_PRED_QUANTITY_KIND = NS_MM_QUDT["hasQuantityKind"]
+URI_QUDT_QK_MASS = NS_MM_QUDT_QTY["Mass"]
+URI_QUDT_UNIT_KG = NS_MM_QUDT_UNIT["KiloGM"]
+URI_QUDT_UNIT_M = NS_MM_QUDT_UNIT["M"]
 
 NS_XML = Namespace("https://www.w3.org/TR/2006/REC-xml11-20060816#")
 NS_URDF = Namespace("https://wiki.ros.org/urdf/XML/")
@@ -116,16 +145,19 @@ def _bind_model_kind_namespaces(graph: Graph) -> None:
     graph.bind(prefix="geom-rel", namespace=NS_MM_GEOM_REL)
     graph.bind(prefix="geom-coord", namespace=NS_MM_GEOM_COORD)
     graph.bind(prefix="kc", namespace=NS_MM_KC)
+    graph.bind(prefix="dyn-ent", namespace=NS_MM_DYN_ENT)
+    graph.bind(prefix="dyn-coord", namespace=NS_MM_DYN_COORD)
+    graph.bind(prefix="quantitykind", namespace=NS_MM_QUDT_QTY)
+    graph.bind(prefix="unit", namespace=NS_MM_QUDT_UNIT)
 
 
-def _add_frame(graph: Graph, frame: Frame) -> None:
+def add_frame(graph: Graph, frame: Frame) -> None:
     graph.add(triple=(frame.uri, RDF.type, URI_GEOM_TYPE_FRAME))
-    graph.add(triple=(frame.uri, RDF.type, URI_GEOM_TYPE_SIMPLICIAL_COMPLEX))
     graph.add(triple=(frame.origin_uri, RDF.type, URI_GEOM_TYPE_POINT))
     graph.add(triple=(frame.uri, URI_GEOM_PRED_ORIGIN, frame.origin_uri))
 
 
-def _add_geometry_model(
+def add_geometry_model(
     graph: Graph,
     geom_spec: GeometrySpec,
     node_id: Optional[URIRef] = None,
@@ -137,15 +169,9 @@ def _add_geometry_model(
     graph.add(triple=(node_id, RDF.type, URI_GEOM_TYPE_GEOMETRY_MODEL))
 
     for frame in [geom_spec.root, *geom_spec.frames]:
-        _add_frame(graph=graph, frame=frame)
+        add_frame(graph=graph, frame=frame)
         graph.add(triple=(node_id, URI_GEOM_PRED_HAS_FRAME, frame.uri))
 
-    _add_geom_spec_pose(graph=graph, geom_spec=geom_spec, scene_geom=scene_geom)
-
-
-def _add_geom_spec_pose(
-    graph: Graph, geom_spec: GeometrySpec, scene_geom: Optional[GeometrySpec]
-) -> None:
     if geom_spec.pose is None:
         return
 
@@ -180,6 +206,7 @@ def _add_geom_spec_pose(
     graph.add(triple=(coord_uri, URI_GEOM_PRED_X, Literal(pose.x)))
     graph.add(triple=(coord_uri, URI_GEOM_PRED_Y, Literal(pose.y)))
     graph.add(triple=(coord_uri, URI_GEOM_PRED_Z, Literal(pose.z)))
+    graph.add(triple=(coord_uri, URI_QUDT_PRED_UNIT, URI_QUDT_UNIT_M))
 
     if isinstance(pose.orientation, EulerOrientationSpec):
         graph.add(triple=(coord_uri, RDF.type, URI_GEOM_TYPE_EULER_ANGLES))
@@ -200,6 +227,29 @@ def _add_geom_spec_pose(
         graph.add(triple=(coord_uri, URI_QUDT_PRED_UNIT, unit_uri))
     else:
         raise ValueError(f"Unsupported orientation: {pose.orientation}")
+
+
+def add_body(graph: Graph, body: BodySpec) -> None:
+    graph.add(triple=(body.uri, RDF.type, URI_GEOM_TYPE_RIGID_BODY))
+    graph.add(triple=(body.uri, RDF.type, URI_GEOM_TYPE_SIMPLICIAL_COMPLEX))
+    graph.add(triple=(body.uri, URI_GEOM_PRED_SIMPLICES, body.frame.uri))
+    graph.add(triple=(body.uri, URI_GEOM_PRED_SIMPLICES, body.frame.origin_uri))
+
+    if body.mass is None:
+        return
+
+    graph.add(triple=(body.inertia_uri, RDF.type, URI_DYN_TYPE_RIGID_BODY_INERTIA))
+    graph.add(triple=(body.inertia_uri, URI_DYN_PRED_OF_BODY, body.uri))
+    graph.add(triple=(body.inertia_uri, URI_DYN_PRED_ABOUT, body.frame.origin_uri))
+    graph.add(triple=(body.inertia_uri, URI_QUDT_PRED_QUANTITY_KIND, URI_QUDT_QK_MASS))
+
+    graph.add(triple=(body.inertia_coord_uri, RDF.type, URI_DYN_TYPE_INERTIA_REFERENCE))
+    graph.add(triple=(body.inertia_coord_uri, RDF.type, URI_DYN_TYPE_RIGID_BODY_INERTIA_COORD))
+    graph.add(triple=(body.inertia_coord_uri, RDF.type, URI_DYN_TYPE_MASS_SCALAR))
+    graph.add(triple=(body.inertia_coord_uri, URI_DYN_PRED_OF_INERTIA, body.inertia_uri))
+    graph.add(triple=(body.inertia_coord_uri, URI_DYN_PRED_AS_SEEN_BY, body.frame.uri))
+    graph.add(triple=(body.inertia_coord_uri, URI_QUDT_PRED_UNIT, URI_QUDT_UNIT_KG))
+    graph.add(triple=(body.inertia_coord_uri, URI_DYN_PRED_MASS, Literal(body.mass)))
 
 
 def add_model_spec(graph: Graph, elem_model: ElementModel) -> None:
@@ -265,9 +315,14 @@ def add_modelled_obj(
     obj_geom = obj_model.geometry
     if obj_geom is not None:
         graph.add(triple=(obj_model.modelled_uri, URI_ENV_PRED_HAS_OBJ_MODEL, obj_geom.uri))
-        _add_geometry_model(
-            graph=graph, node_id=obj_geom.uri, geom_spec=obj_geom, scene_geom=scene_inst.geometry
+        add_geometry_model(
+            graph=graph,
+            node_id=obj_geom.uri,
+            geom_spec=obj_geom,
+            scene_geom=scene_inst.geometry,
         )
+    if obj_model.body is not None:
+        add_body(graph=graph, body=obj_model.body)
 
     for model in obj_model.models:
         _ensure_unique_scene_models(
@@ -299,7 +354,7 @@ def add_modelled_agn(
     add_model_spec(graph=graph, elem_model=kc_model)
 
     # Add geometry model to the same node
-    _add_geometry_model(
+    add_geometry_model(
         graph=graph,
         geom_spec=agn_model.kinematic.geometry,
         node_id=kc_model.uri,
@@ -319,12 +374,14 @@ def add_modelled_agn(
         graph.add(triple=(model.uri, RDF.type, URI_AGN_TYPE_ATTACHMENT_MODEL))
         add_model_spec(graph=graph, elem_model=model)
         if attachment.geometry is not None:
-            _add_geometry_model(
+            add_geometry_model(
                 graph=graph,
                 node_id=model.uri,
                 geom_spec=attachment.geometry,
                 scene_geom=scene_inst.geometry,
             )
+        if attachment.body is not None:
+            add_body(graph=graph, body=attachment.body)
 
 
 def add_modelled_obj_set(
@@ -540,7 +597,7 @@ def add_modelled_scene(graph: Graph, scene_inst: SceneInstance) -> None:
     seen_model_uris = set()
 
     if scene_inst.geometry is not None:
-        _add_geometry_model(graph=graph, geom_spec=scene_inst.geometry)
+        add_geometry_model(graph=graph, geom_spec=scene_inst.geometry)
 
     for obj_model in scene_inst.modelled_objs:
         add_modelled_obj(

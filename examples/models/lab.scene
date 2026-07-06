@@ -78,6 +78,10 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
                 }
             }
         }
+        body table_body {
+            inertial frame: <table_geom.table_root>
+            mass: 10.0
+        }
     }
 
     agn <isaac_agents.panda> {
@@ -116,6 +120,9 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
                             unit: deg
                         }
                     }
+                }
+                body gripper_body {
+                    inertial frame: <gripper_geom.gripper_base>
                 }
             }
         }
