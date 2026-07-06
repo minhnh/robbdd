@@ -237,15 +237,11 @@ ConstSetLink:
 (
 'set' '<' linked_set=[ExplicitSet|FQN] '>'
 |
-'obj' 'set' '<' linked_set=[ObjectSet|FQN] '>'
-|
-'obj' 'set' '<' linked_set=[SimilarObjectSet|FQN] '>'
+'obj' 'set' '<' linked_set=[ObjectSetBase|FQN] '>'
 |
 'ws' 'set' '<' linked_set=[WorkspaceSet|FQN] '>'
 |
-'agn' 'set' '<' linked_set=[AgentSet|FQN] '>'
-|
-'agn' 'set' '<' linked_set=[SimilarAgentSet|FQN] '>'
+'agn' 'set' '<' linked_set=[AgentSetBase|FQN] '>'
 )
 ;
 SetExpr: '{' elems+=ValidVarValue[','] '}' ;

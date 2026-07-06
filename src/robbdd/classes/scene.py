@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from __future__ import annotations
 from typing import Any, Optional
+from math import isclose
 from rdflib import URIRef, Namespace
 from robbdd.classes.common import IHasNamespace, IHasNamespaceDeclare, SetBase
 
@@ -351,11 +352,15 @@ class BodySpec(IHasNamespace):
 
     def __init__(self, parent, name, frame, mass=None) -> None:
         super().__init__(parent=parent)
-        mass = mass or None
-        if mass is not None and mass <= 0:
-            raise ValueError(f"BodySpec '{name}' must have mass > 0, got {mass}")
         self.name = name
         self.frame = frame
+        if mass is not None:
+            if mass < 0:
+                raise ValueError(f"BodySpec '{name}' must have mass > 0, got {mass}")
+            elif isclose(mass, 0.0):
+                # Since textx store 0.0 even if no mass specified,
+                # treat zero mass as unspecified.
+                self.mass = None
         self.mass = mass
         self._uri = None
         self._inertia_uri = None
