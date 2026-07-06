@@ -57,8 +57,8 @@ from robbdd.classes.bdd import (
     UserStory,
     VariableBase,
 )
-from robbdd.classes.common import SetBase
-from robbdd.classes.scene import (
+from scene_dsl.classes.common import SetBase
+from scene_dsl.classes.scene import (
     AgentSet,
     ObjectSet,
     SceneModel,
@@ -69,7 +69,7 @@ from robbdd.classes.scene import (
 )
 from robbdd.rdf.clauses import add_clause_expr, add_gwt_expr, add_node_time_constraint
 from robbdd.rdf.common import add_node_list_pred
-from robbdd.rdf.scene import add_agn_set, add_obj_set, add_scene_model, add_scene_set, add_ws_set
+from scene_dsl.rdf.scene import add_agn_set, add_obj_set, add_scene_model, add_scene_set, add_ws_set
 
 
 def add_scenario_tmpl(graph: Graph, tmpl: ScenarioTemplate):
@@ -239,7 +239,7 @@ def add_task_variation(
                         raise ValueError(
                             f"ScenarioSetVariable '{var.name}' assigned a non-set value: {var_value}"
                         )
-                    if hasattr(v, "linked_val") and isinstance(v.linked_val, SetBase):
+                    if hasattr(v, "linked_val") and isinstance(v.linked_val, (SetBase, SceneSet)):
                         raise ValueError(
                             f"ScenarioVariable '{var.name}' assigned a set: {var_value}"
                         )

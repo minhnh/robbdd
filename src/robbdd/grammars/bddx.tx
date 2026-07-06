@@ -1,6 +1,6 @@
 import base
 import bdd
-import scene
+reference scenex as sx
 
 Model:
 imports*=Import
@@ -19,7 +19,7 @@ scenario_execs+=ScenarioExecution
 ScenarioExecution:
 'Scenario' 'Exec' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
   'variant' ':' '<' variant=[ScenarioVariant|FQN] '>'
-  'scene' 'inst' ':' '<' scene_inst=[SceneInstance|FQN] '>'
+  'scene' 'inst' ':' '<' scene_inst=[sx.SceneInstance|FQN] '>'
   'bhv' ':' '<' bhv_impl=[BehaviourImplementation|FQN] '>'
   'policies' ':' '{'
     ('<' obs_policies=[ObservationPolicy|FQN] '>')+[',']

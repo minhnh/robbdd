@@ -1,39 +1,15 @@
 # SPDX-License-Identifier: MPL-2.0
 from os.path import abspath, dirname, join
+
 from textx import get_children_of_type, get_model, metamodel_from_file, textx_isinstance
 import textx.scoping.providers as scoping_providers
+
 from robbdd.classes.bddx import (
     BehaviourImplementation,
     ObservationPolicy,
     ScenarioExecution,
 )
-from robbdd.classes.common import SetBase
-from robbdd.classes.scene import (
-    Agent,
-    AgentSet,
-    ModelledAgent,
-    ModelledAgentSet,
-    ModelledObject,
-    ModelledObjectSet,
-    SceneInstance,
-    KinematicSpec,
-    GeometrySpec,
-    BodySpec,
-    PoseSpec,
-    OrientationSpec,
-    EulerOrientationSpec,
-    Frame,
-    FixedAttachment,
-    Object,
-    ObjectSet,
-    ElementModel,
-    SceneModel,
-    SimilarAgentSet,
-    SimilarObjectSet,
-    Workspace,
-    WorkspaceComposition,
-    WorkspaceSet,
-)
+from scene_dsl.classes.common import SetBase
 from robbdd.classes.bdd import (
     AfterEvent,
     BeforeEvent,
@@ -116,65 +92,6 @@ class HoldsExprRefScopeProvider:
         return None
 
 
-def _geometry_frame(geometry, frame_name):
-    matches = [frame for frame in [geometry.root, *geometry.frames] if frame.name == frame_name]
-    return matches[0] if len(matches) == 1 else None
-
-
-class FrameRefScopeProvider:
-    def __call__(self, obj, attr, obj_ref):
-        parts = obj_ref.obj_name.split(".")
-        if len(parts) != 2:
-            return None
-        geometry_name, frame_name = parts
-        model = get_model(obj)
-        for geometry in get_children_of_type(GeometrySpec, model):
-            if geometry.name == geometry_name:
-                return _geometry_frame(geometry, frame_name)
-        return None
-
-
-def scene_metamodel():
-    mm_scene = metamodel_from_file(
-        join(__CWD, "grammars", "scene.tx"),
-        classes=[
-            ElementModel,
-            Object,
-            Workspace,
-            Agent,
-            ObjectSet,
-            SimilarObjectSet,
-            WorkspaceSet,
-            AgentSet,
-            SimilarAgentSet,
-            WorkspaceComposition,
-            SceneModel,
-            ModelledObject,
-            ModelledObjectSet,
-            ModelledAgent,
-            ModelledAgentSet,
-            SceneInstance,
-            KinematicSpec,
-            GeometrySpec,
-            BodySpec,
-            PoseSpec,
-            OrientationSpec,
-            EulerOrientationSpec,
-            Frame,
-            FixedAttachment,
-        ],
-    )
-    mm_scene.register_scope_providers(
-        {
-            "*.frame": FrameRefScopeProvider(),
-            "PoseSpec.wrt": FrameRefScopeProvider(),
-            "BodySpec.frame": FrameRefScopeProvider(),
-            "*.*": scoping_providers.FQNImportURI(),
-        }
-    )
-    return mm_scene
-
-
 def bdd_metamodel():
     mm_bdd = metamodel_from_file(
         join(__CWD, "grammars", "bdd.tx"),
@@ -214,18 +131,18 @@ def bdd_metamodel():
             DuringEvent,
         ],
     )
-    mm_bdd.register_scope_providers(
-        {
-            "*.*": scoping_providers.FQNImportURI(),
-        }
-    )
+    mm_bdd.register_scope_providers({"*.*": scoping_providers.FQNImportURI()})
     return mm_bdd
 
 
 def bddx_metamodel():
     mm_bddx = metamodel_from_file(
         join(__CWD, "grammars", "bddx.tx"),
-        classes=[ScenarioExecution, BehaviourImplementation, ObservationPolicy],
+        classes=[
+            ScenarioExecution,
+            BehaviourImplementation,
+            ObservationPolicy,
+        ],
     )
     mm_bddx.register_scope_providers(
         {

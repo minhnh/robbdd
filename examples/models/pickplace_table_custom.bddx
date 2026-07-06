@@ -1,5 +1,5 @@
 import "pickplace_table_custom.bdd"
-import "lab.scene"
+import "lab.scenex"
 
 ns bdd_exec='https://secorolab.github.io/models/acceptance-criteria/bdd/executions/'
 ns bdd_exec_ros='https://secorolab.github.io/models/acceptance-criteria/bdd/executions/ros/'

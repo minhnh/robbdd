@@ -1,5 +1,5 @@
 import base
-import scene
+reference scene as scn
 
 Model:
 imports*=Import
@@ -53,7 +53,7 @@ ScenarioTemplate:
 ScenarioVariant:
 'Scenario' name=IRI_TRUNK '{'
     'template' ':' '<' template=[ScenarioTemplate|FQN] '>'
-    'scene' ':' '<' scene=[SceneModel|FQN] '>'
+    'scene' ':' '<' scene=[scn.SceneModel|FQN] '>'
 
     (given_expr=GivenExpr)?
     ('When' ':' when_events=WhenEventClause+)?
@@ -221,11 +221,6 @@ ValidCellValue: ValidVarValue | ConstSetLink | SetExpr ;
 // Sets
 SetBase:
     ExplicitSet
-  | ObjectSet
-  | SimilarObjectSet
-  | WorkspaceSet
-  | AgentSet
-  | SimilarAgentSet
   | ScenarioSetVariable
 ;
 ExplicitSet :
@@ -237,11 +232,11 @@ ConstSetLink:
 (
 'set' '<' linked_set=[ExplicitSet|FQN] '>'
 |
-'obj' 'set' '<' linked_set=[ObjectSetBase|FQN] '>'
+'obj' 'set' '<' (linked_set=[scn.ObjectSet|FQN] | linked_set=[scn.SimilarObjectSet|FQN]) '>'
 |
-'ws' 'set' '<' linked_set=[WorkspaceSet|FQN] '>'
+'ws' 'set' '<' linked_set=[scn.WorkspaceSet|FQN] '>'
 |
-'agn' 'set' '<' linked_set=[AgentSetBase|FQN] '>'
+'agn' 'set' '<' (linked_set=[scn.AgentSet|FQN] | linked_set=[scn.SimilarAgentSet|FQN]) '>'
 )
 ;
 SetExpr: '{' elems+=ValidVarValue[','] '}' ;
@@ -253,10 +248,10 @@ sets+=SetExpr[',']
 
 // Set enumeration
 Combination:
-'select' length=INT repeated?='repeated' 'combinations' 'from' '<' from_set=[SetBase|FQN] '>'
+'select' length=INT repeated?='repeated' 'combinations' 'from' '<' (from_set=[SetBase|FQN] | from_set=[scn.ObjectSet|FQN] | from_set=[scn.SimilarObjectSet|FQN] | from_set=[scn.WorkspaceSet|FQN] | from_set=[scn.AgentSet|FQN] | from_set=[scn.SimilarAgentSet|FQN]) '>'
 ;
 Permutation:
-'select' length=INT 'permutations' 'from' '<' from_set=[SetBase|FQN] '>'
+'select' length=INT 'permutations' 'from' '<' (from_set=[SetBase|FQN] | from_set=[scn.ObjectSet|FQN] | from_set=[scn.SimilarObjectSet|FQN] | from_set=[scn.WorkspaceSet|FQN] | from_set=[scn.AgentSet|FQN] | from_set=[scn.SimilarAgentSet|FQN]) '>'
 ;
 
 // Variables
@@ -267,11 +262,11 @@ ScenarioVariable: 'var' name=IRI_TRUNK ;
 // Valid values for variables
 ValidVarValue:
 (
-'<' linked_val=[Object|FQN] '>'
+'<' linked_val=[scn.Object|FQN] '>'
 |
-'<' linked_val=[Workspace|FQN] '>'
+'<' linked_val=[scn.Workspace|FQN] '>'
 |
-'<' linked_val=[Agent|FQN] '>'
+'<' linked_val=[scn.Agent|FQN] '>'
 |
 num_val=NUMBER
 |

@@ -11,10 +11,10 @@ from bdd_dsl.models.urirefs import (
 from rdf_utils.resolver import install_resolver
 from rdf_utils.constraints import check_shacl_constraints
 from bdd_dsl.models.user_story import UserStoryLoader
-from robbdd.rdf.scene import (
+from scene_dsl.rdf.scenex import (
     URI_DYN_TYPE_MASS_SCALAR,
     URI_GEOM_TYPE_RIGID_BODY,
-    create_scene_model_graph,
+    create_scenex_model_graph,
 )
 from robbdd.rdf.bdd import create_bdd_model_graph
 from robbdd.rdf.bddx import create_bddx_model_graph
@@ -28,15 +28,19 @@ class TestTextXLanguages(unittest.TestCase):
     def setUp(self) -> None:
         install_resolver()
 
-    def test_robbdd_scene(self):
-        """Test scene-tx language"""
-        scene_mm = metamodel_for_language("robbdd-scene")
+    def test_scene_dsl(self):
+        """Test scene and scenex languages"""
+        scene_mm = metamodel_for_language("scene")
         scene_model = scene_mm.model_from_file(join(MODELS_DIR, "lab.scene"))
         assert len(scene_model.scene_models) > 0
-        assert len(scene_model.scene_insts) > 0
         assert len(scene_model.sim_obj_sets) > 0
         balls = next(s for s in scene_model.sim_obj_sets if s.name == "balls")
         cubes = next(s for s in scene_model.sim_obj_sets if s.name == "cubes")
+
+        scenex_mm = metamodel_for_language("scenex")
+        scene_model = scenex_mm.model_from_file(join(MODELS_DIR, "lab.scenex"))
+        assert len(scene_model.scene_insts) > 0
+        assert scene_model.scene_insts[0].scene.name == "pickplace_scene"
         assert [obj.name for obj in balls.objects] == ["ball0", "ball1", "ball2"]
         assert [obj.name for obj in cubes.objects] == ["cube0", "cube1"]
         table_obj = next(
@@ -56,7 +60,7 @@ class TestTextXLanguages(unittest.TestCase):
         gripper_body = panda.attachments[0].body
         assert gripper_body.name == "gripper_body"
 
-        g = create_scene_model_graph(scene_model)
+        g = create_scenex_model_graph(scene_model)
         assert len(g) > 0
         assert (table_obj.body.uri, RDF.type, URI_GEOM_TYPE_RIGID_BODY) in g
         assert (table_obj.body.inertia_coord_uri, RDF.type, URI_DYN_TYPE_MASS_SCALAR) in g
