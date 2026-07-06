@@ -18,6 +18,7 @@ from robbdd.classes.scene import (
     SceneInstance,
     KinematicSpec,
     GeometrySpec,
+    BodySpec,
     PoseSpec,
     OrientationSpec,
     EulerOrientationSpec,
@@ -155,6 +156,7 @@ def scene_metamodel():
             SceneInstance,
             KinematicSpec,
             GeometrySpec,
+            BodySpec,
             PoseSpec,
             OrientationSpec,
             EulerOrientationSpec,
@@ -166,6 +168,7 @@ def scene_metamodel():
         {
             "*.frame": FrameRefScopeProvider(),
             "PoseSpec.wrt": FrameRefScopeProvider(),
+            "BodySpec.frame": FrameRefScopeProvider(),
             "*.*": scoping_providers.FQNImportURI(),
         }
     )

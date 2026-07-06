@@ -222,13 +222,15 @@ class ModelledObject(IHasNamespace):
     obj: Object
     models: list[ElementModel]
     geometry: GeometrySpec
+    body: Optional[BodySpec]
     _modelled_uri: Optional[URIRef]
 
-    def __init__(self, parent, obj, models, geometry) -> None:
+    def __init__(self, parent, obj, models, geometry, body=None) -> None:
         super().__init__(parent=parent)
         self.obj = obj
         self.models = models
         self.geometry = geometry
+        self.body = body
         self._modelled_uri = None
 
     @property
@@ -340,6 +342,51 @@ class GeometrySpec(IHasNamespace):
         return self.namespace[f"{self.root.name}-wrt-{wrt.name}-coord"]
 
 
+class BodySpec(IHasNamespace):
+    frame: Frame
+    mass: Optional[float]
+    _uri: Optional[URIRef]
+    _inertia_uri: Optional[URIRef]
+    _inertia_coord_uri: Optional[URIRef]
+
+    def __init__(self, parent, name, frame, mass=None) -> None:
+        super().__init__(parent=parent)
+        mass = mass or None
+        if mass is not None and mass <= 0:
+            raise ValueError(f"BodySpec '{name}' must have mass > 0, got {mass}")
+        self.name = name
+        self.frame = frame
+        self.mass = mass
+        self._uri = None
+        self._inertia_uri = None
+        self._inertia_coord_uri = None
+
+    @property
+    def namespace(self) -> Namespace:
+        assert isinstance(
+            self.parent, (ModelledObject, FixedAttachment)
+        ), f"parent of body spec not a modelled object or attachment: {self.parent}"
+        return self.parent.namespace
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is None:
+            self._uri = self.namespace[self.name]
+        return self._uri
+
+    @property
+    def inertia_uri(self) -> URIRef:
+        if self._inertia_uri is None:
+            self._inertia_uri = self.namespace[f"{self.name}-inertia"]
+        return self._inertia_uri
+
+    @property
+    def inertia_coord_uri(self) -> URIRef:
+        if self._inertia_coord_uri is None:
+            self._inertia_coord_uri = self.namespace[f"{self.name}-inertia-coord"]
+        return self._inertia_coord_uri
+
+
 class KinematicSpec(IHasNamespace):
     model: ElementModel
     geometry: GeometrySpec
@@ -360,6 +407,7 @@ class KinematicSpec(IHasNamespace):
 class FixedAttachment(IHasNamespace):
     model: ElementModel
     geometry: GeometrySpec
+    body: Optional[BodySpec]
 
     def __init__(
         self,
@@ -367,11 +415,13 @@ class FixedAttachment(IHasNamespace):
         name,
         model,
         geometry,
+        body=None,
     ) -> None:
         super().__init__(parent=parent)
         self.name = name
         self.model = model
         self.geometry = geometry
+        self.body = body
 
     @property
     def namespace(self) -> Namespace:
