@@ -3,24 +3,16 @@ from textx import (
     LanguageDesc,
     GeneratorDesc,
 )
-from robbdd.langs import scene_metamodel, bdd_metamodel, bddx_metamodel
+from robbdd.langs import bdd_metamodel, bddx_metamodel
 from robbdd.gens import (
     bdd_graph_gen_console,
     bdd_graph_gen,
     bddx_graph_gen,
     bddx_graph_gen_console,
     gherkin_gen,
-    scene_graph_gen_console,
-    scene_graph_gen,
 )
 
 
-scene_lang = LanguageDesc(
-    "robbdd-scene",
-    pattern="*.scene",
-    description="Language for describing robotic scenes",
-    metamodel=scene_metamodel,
-)
 bdd_lang = LanguageDesc(
     "robbdd",
     pattern="*.bdd",
@@ -63,16 +55,4 @@ robbdd_gherkin_gen = GeneratorDesc(
     target="gherkin",
     description="Generate Gherkin feature files from RobBDD models",
     generator=gherkin_gen,
-)
-robbdd_scene_console_gen = GeneratorDesc(
-    language="robbdd-scene",
-    target="console",
-    description="Print a representation of RobBDD scene model graph to the console, default format is JSON-LD",
-    generator=scene_graph_gen_console,
-)
-robbdd_scene_graph_gen = GeneratorDesc(
-    language="robbdd-scene",
-    target="graph",
-    description="Generate a RDF serialization of the given RobBDD scene model graph, default format is JSON-LD",
-    generator=scene_graph_gen,
 )

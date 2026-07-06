@@ -7,7 +7,7 @@ from rdf_utils.models.python import (
 )
 from rdflib import RDF, Graph, URIRef, Node, BNode, Literal
 from rdflib.collection import Collection
-from robbdd.classes.common import parse_py_module_attr
+from scene_dsl.classes.common import parse_py_module_attr
 
 
 def add_node_list_pred(

@@ -3,8 +3,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Generator, Optional
 from rdflib import Namespace, URIRef
-from robbdd.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasParent, IHasUUID, SetBase
-from robbdd.classes.scene import SceneModel
+from scene_dsl.classes.common import (
+    IHasNamespace,
+    IHasNamespaceDeclare,
+    IHasParent,
+    IHasUUID,
+    SetBase,
+)
+from scene_dsl.classes.scene import SceneModel
 
 
 class Behaviour(IHasNamespaceDeclare):
