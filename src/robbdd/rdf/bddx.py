@@ -16,6 +16,8 @@ from bdd_dsl.models.urirefs import (
     URI_ROS_TYPE_ACTION,
     URI_ROS_TYPE_TOPIC,
 )
+from scene_dsl.rdf.scenex import add_modelled_scene
+
 from robbdd.classes.bddx import BehaviourImplementation, ObservationPolicy, ScenarioExecution
 from robbdd.rdf.common import add_py_module_attr
 
@@ -102,7 +104,11 @@ def create_bddx_model_graph(model: Any, g: Optional[Graph] = None) -> Graph:
     if g is None:
         g = Graph()
 
+    scene_inst_uris = set()
     for scr_exec in model.scenario_execs:
         add_scr_exec_to_graph(graph=g, scr_exec=scr_exec)
+        if scr_exec.scene_inst.uri not in scene_inst_uris:
+            add_modelled_scene(graph=g, scene_inst=scr_exec.scene_inst)
+            scene_inst_uris.add(scr_exec.scene_inst.uri)
 
     return g
