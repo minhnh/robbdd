@@ -20,22 +20,27 @@ jobs:
 
     steps:
     - name: Checkout rdf-utils
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: minhnh/rdf-utils
         path: rdf-utils
     - name: Checkout bdd-dsl
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: minhnh/bdd-dsl
         path: bdd-dsl
         ref: devel
+    - name: Checkout scene-dsl
+      uses: actions/checkout@v7
+      with:
+        repository: secorolab/scene-dsl
+        path: scene-dsl
     - name: Checkout robbdd
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         path: robbdd
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6.3.0
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -50,6 +55,7 @@ jobs:
       run: |
         pip install "./rdf-utils[all]"
         pip install ./bdd-dsl
+        pip install ./scene-dsl
         pip install ./robbdd
     - name: Test with pytest
       run: |
