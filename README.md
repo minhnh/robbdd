@@ -13,6 +13,7 @@ The following Python packages must also be installed as dependencies:
 
 - [rdf-utils](https://github.com/minhnh/rdf-utils)
 - [bdd-dsl](https://github.com/minhnh/bdd-dsl)
+- [scene-dsl](https://github.com/secorolab/scene-dsl)
 
 ## Model generators
 

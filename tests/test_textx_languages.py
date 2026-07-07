@@ -50,7 +50,8 @@ class TestTextXLanguages(unittest.TestCase):
             if obj.geometry.name == "table_geom"
         )
         assert table_obj.body.name == "table_body"
-        assert table_obj.body.mass == 10.0
+        assert table_obj.body.mass.value == 10.0
+        assert table_obj.body.mass.unit == "kg"
         panda = next(
             agn
             for inst in scene_model.scene_insts

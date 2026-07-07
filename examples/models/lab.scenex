@@ -12,7 +12,7 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
         geom table_geom {
             root: frame table_root
             pose {
-                xyz: (0.0, 0.0, 0.0)
+                xyz: (0.0, 0.0, 0.0) m
                 orientation: euler {
                     angles: (0.0, 0.0, 0.0)
                     unit: rad
@@ -21,7 +21,7 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
         }
         body table_body {
             inertial frame: <table_geom.table_root>
-            mass: 10.0
+            mass: 10.0 kg
         }
     }
 
@@ -37,7 +37,7 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
                     frame tool0
                 }
                 pose {
-                    xyz: (0.0, 0.0, 0.0)
+                    xyz: (0.0, 0.0, 0.0) m
                     orientation: euler {
                         angles: (0.0, 0.0, 0.0)
                         unit: rad
@@ -54,7 +54,7 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
                     root: frame gripper_base
                     pose {
                         wrt: <panda_geom.tool0>
-                        xyz: (0.0, 0.0, -0.061525)
+                        xyz: (0.0, 0.0, -0.061525) m
                         orientation: euler {
                             axes: xyz extrinsic
                             angles: (180.0, 0.0, 0.0)
