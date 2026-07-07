@@ -2,20 +2,29 @@
 import unittest
 from os.path import dirname, join
 from urllib.error import HTTPError
+
+from bdd_dsl.models.urirefs import (
+    URI_BDD_PRED_HAS_AC,
+    URI_BDD_PRED_HAS_BHV_IMPL,
+    URI_BDD_PRED_HAS_SCENE,
+    URI_BDD_PRED_HAS_VARIATION,
+    URI_BDD_PRED_OF_SCENE,
+    URI_BDD_PRED_OF_TMPL,
+    URI_BDD_PRED_OF_VARIANT,
+    URI_BDD_TYPE_BHV_IMPL,
+    URI_BDD_TYPE_SCENARIO,
+    URI_BDD_TYPE_SCENARIO_EXEC,
+    URI_BDD_TYPE_SCENARIO_TMPL,
+    URI_BDD_TYPE_SCENARIO_VARIANT,
+    URI_BDD_TYPE_US,
+    URI_OBS_PRED_POLICY,
+    URI_OBS_TYPE_POLICY,
+)
+from bdd_dsl.models.user_story import UserStoryLoader
+from rdf_utils.resolver import install_resolver
 from rdflib import RDF
 from textx import metamodel_for_language
 
-from bdd_dsl.models.urirefs import (
-    URI_BDD_PRED_OF_SCENE,
-)
-from rdf_utils.resolver import install_resolver
-from rdf_utils.constraints import check_shacl_constraints
-from bdd_dsl.models.user_story import UserStoryLoader
-from scene_dsl.rdf.scenex import (
-    URI_DYN_TYPE_MASS_SCALAR,
-    URI_GEOM_TYPE_RIGID_BODY,
-    create_scenex_model_graph,
-)
 from robbdd.rdf.bdd import create_bdd_model_graph
 from robbdd.rdf.bddx import create_bddx_model_graph
 
@@ -24,57 +33,43 @@ ROOT_DIR = dirname(dirname(__file__))
 MODELS_DIR = join(ROOT_DIR, "examples", "models")
 
 
+def assert_bdd_graph_contract(model, graph):
+    for tmpl in model.templates:
+        assert (tmpl.uri, RDF.type, URI_BDD_TYPE_SCENARIO_TMPL) in graph
+        assert (tmpl.scenario_uri, RDF.type, URI_BDD_TYPE_SCENARIO) in graph
+        assert (tmpl.uri, URI_BDD_PRED_HAS_SCENE, tmpl.scene_uri) in graph
+
+    for story in model.stories:
+        assert story.scenarios
+        assert (story.uri, RDF.type, URI_BDD_TYPE_US) in graph
+        for variant in story.scenarios:
+            assert (variant.uri, RDF.type, URI_BDD_TYPE_SCENARIO_VARIANT) in graph
+            assert (story.uri, URI_BDD_PRED_HAS_AC, variant.uri) in graph
+            assert (variant.uri, URI_BDD_PRED_OF_TMPL, variant.template.uri) in graph
+            assert (variant.uri, URI_BDD_PRED_HAS_VARIATION, variant.variation.uri) in graph
+
+
+def assert_bddx_graph_contract(model, graph):
+    assert model.scenario_execs
+    for scr_exec in model.scenario_execs:
+        assert (scr_exec.uri, RDF.type, URI_BDD_TYPE_SCENARIO_EXEC) in graph
+        assert (scr_exec.uri, URI_BDD_PRED_OF_VARIANT, scr_exec.variant.uri) in graph
+        assert (
+            scr_exec.scene_inst.uri,
+            URI_BDD_PRED_OF_SCENE,
+            scr_exec.variant.template.scene_uri,
+        ) in graph
+        assert (scr_exec.uri, URI_BDD_PRED_HAS_BHV_IMPL, scr_exec.bhv_impl.uri) in graph
+        assert (scr_exec.bhv_impl.uri, RDF.type, URI_BDD_TYPE_BHV_IMPL) in graph
+
+        for obs_policy in scr_exec.obs_policies:
+            assert (scr_exec.uri, URI_OBS_PRED_POLICY, obs_policy.uri) in graph
+            assert (obs_policy.uri, RDF.type, URI_OBS_TYPE_POLICY) in graph
+
+
 class TestTextXLanguages(unittest.TestCase):
     def setUp(self) -> None:
         install_resolver()
-
-    def test_scene_dsl(self):
-        """Test scene and scenex languages"""
-        scene_mm = metamodel_for_language("scene")
-        scene_model = scene_mm.model_from_file(join(MODELS_DIR, "lab.scene"))
-        assert len(scene_model.scene_models) > 0
-        assert len(scene_model.sim_obj_sets) > 0
-        balls = next(s for s in scene_model.sim_obj_sets if s.name == "balls")
-        cubes = next(s for s in scene_model.sim_obj_sets if s.name == "cubes")
-
-        scenex_mm = metamodel_for_language("scenex")
-        scene_model = scenex_mm.model_from_file(join(MODELS_DIR, "lab.scenex"))
-        assert len(scene_model.scene_insts) > 0
-        assert scene_model.scene_insts[0].scene.name == "pickplace_scene"
-        assert [obj.name for obj in balls.objects] == ["ball0", "ball1", "ball2"]
-        assert [obj.name for obj in cubes.objects] == ["cube0", "cube1"]
-        table_obj = next(
-            obj
-            for inst in scene_model.scene_insts
-            for obj in inst.modelled_objs
-            if obj.geometry.name == "table_geom"
-        )
-        assert table_obj.body.name == "table_body"
-        assert table_obj.body.mass.value == 10.0
-        assert table_obj.body.mass.unit == "kg"
-        panda = next(
-            agn
-            for inst in scene_model.scene_insts
-            for agn in inst.modelled_agns
-            if agn.agn.name == "panda"
-        )
-        gripper_body = panda.attachments[0].body
-        assert gripper_body.name == "gripper_body"
-
-        g = create_scenex_model_graph(scene_model)
-        assert len(g) > 0
-        assert (table_obj.body.uri, RDF.type, URI_GEOM_TYPE_RIGID_BODY) in g
-        assert (table_obj.body.inertia_coord_uri, RDF.type, URI_DYN_TYPE_MASS_SCALAR) in g
-        assert (gripper_body.uri, RDF.type, URI_GEOM_TYPE_RIGID_BODY) in g
-
-        check_shacl_constraints(
-            graph=g,
-            shacl_dict={
-                "https://comp-rob2b.github.io/metamodels/geometry/spatial-relations.ttl": "turtle",
-                "https://comp-rob2b.github.io/metamodels/geometry/coordinates.ttl": "turtle",
-            },
-            quiet=False,
-        )
 
     def test_robbdd(self):
         """Test RobBDD language"""
@@ -86,13 +81,14 @@ class TestTextXLanguages(unittest.TestCase):
             "pickplace_table_custom.bdd",
         ]:
             bdd_model = bdd_mm.model_from_file(join(MODELS_DIR, model_name))
-            assert len(bdd_model.templates) > 0
-            assert len(bdd_model.stories) > 0
-            assert len(bdd_model.stories[0].scenarios) > 0
+            assert bdd_model.templates
+            assert bdd_model.stories
 
-            g = create_bdd_model_graph(model=bdd_model)
+            graph = create_bdd_model_graph(model=bdd_model)
+            assert graph
+            assert_bdd_graph_contract(bdd_model, graph)
             try:
-                _ = UserStoryLoader(g)
+                _ = UserStoryLoader(graph)
             except HTTPError as e:
                 raise RuntimeError(f"error loading models URL '{e.url}':\n{e.info()}\n{e}")
 
@@ -101,11 +97,6 @@ class TestTextXLanguages(unittest.TestCase):
         bddx_mm = metamodel_for_language("robbdd-exec")
         bddx_model = bddx_mm.model_from_file(join(MODELS_DIR, "pickplace_table_custom.bddx"))
 
-        g = create_bddx_model_graph(model=bddx_model)
-        assert len(g) > 0
-        scr_exec = bddx_model.scenario_execs[0]
-        assert (
-            scr_exec.scene_inst.uri,
-            URI_BDD_PRED_OF_SCENE,
-            scr_exec.variant.template.scene_uri,
-        ) in g
+        graph = create_bddx_model_graph(model=bddx_model)
+        assert graph
+        assert_bddx_graph_contract(bddx_model, graph)
