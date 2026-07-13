@@ -57,7 +57,7 @@ from robbdd.classes.bdd import (
     VariableBase,
     WhenBehaviourClause,
 )
-from robbdd.rdf.common import add_literal_list_pred, add_node_list_pred
+from rdf_utils.collection import add_literal_list_pred, add_node_list_pred
 
 
 def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
