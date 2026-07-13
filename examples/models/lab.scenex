@@ -37,7 +37,7 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
         joints {
             fixed panda_on_table {
                 parent: <table_body.table_root>
-                child: <panda_base_body.base_link>
+                child: <panda_tree.panda_base_body.base_link>
             }
         }
     }
@@ -50,15 +50,19 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
 
     agn <isaac_agents.panda> {
         model panda-mjc as mjcf {
-            sys path = '~/.cache/mj_kdl_wrapper/menagerie/franka_emika_panda/mjx_panda.xml'
+            sys path = '../robot-models/franka_emika_panda/mjx_panda.xml'
         }
         ktree (ns=scene_lab_mjc) panda_tree {
             body panda_base_body {
                 frame base_link {
                     pose panda_on_table {
-                        wrt: <table_body.table_root>
+                        wrt: <world_tree.table_body.table_root>
                         xyz: (0.0, 0.0, 0.0) m
-                        orientation: euler { angles: (0.0, 0.0, 0.0) }
+                        orientation: direction-cosine {
+                            x: (1.0, 0.0, 0.0)
+                            y: (0.0, 1.0, 0.0)
+                            z: (0.0, 0.0, 1.0)
+                        }
                     }
                 }
                 frame bracelet_link { }
@@ -77,12 +81,30 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
                     }
                 }
             }
+            body panda_link1_body {
+                frame panda_joint1 { }
+                frame panda_link1 { }
+            }
             joints {
                 fixed robotiq_2f85 {
                     parent: <panda_base_body.tool0>
                     child: <gripper_body.gripper_base>
                 }
+                revolute panda_joint1 {
+                    parent: <panda_base_body.bracelet_link>.z
+                    child: <panda_link1_body.panda_joint1>.z
+                    offset { xyz: (0.0, 0.0, 0.333) m }
+                    polarity: PositivePolarity
+                }
+                serial joints { <panda_joint1> }
             }
+        }
+        camera wrist_cam {
+            body: <panda_tree.panda_base_body>
+            type: rgb
+            resolution: (640, 480)
+            fov: 1.2 rad
+            update-rate: 30.0 Hz
         }
     }
 
