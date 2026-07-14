@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any, Optional
-from rdf_utils.namespace import NS_MM_TIME
 from rdflib import RDF, XSD, BNode, Graph, IdentifiedNode, Literal, Node, URIRef
 from rdflib.collection import Collection
+from rdf_utils.namespace import NS_MM_TIME
+from rdf_utils.collection import add_node_list_pred
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_ELEMS,
     URI_BDD_PRED_GIVEN,
@@ -57,6 +58,7 @@ from robbdd.classes.bdd import (
     UserStory,
     VariableBase,
 )
+from robbdd.rdf.clauses import add_clause_expr, add_gwt_expr, add_node_time_constraint
 from scene_dsl.classes.common import SetBase
 from scene_dsl.classes.scene import (
     AgentSet,
@@ -67,8 +69,6 @@ from scene_dsl.classes.scene import (
     SimilarObjectSet,
     WorkspaceSet,
 )
-from robbdd.rdf.clauses import add_clause_expr, add_gwt_expr, add_node_time_constraint
-from robbdd.rdf.common import add_node_list_pred
 from scene_dsl.rdf.scene import add_agn_set, add_obj_set, add_scene_model, add_scene_set, add_ws_set
 
 

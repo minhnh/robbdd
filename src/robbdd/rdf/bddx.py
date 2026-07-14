@@ -19,7 +19,7 @@ from bdd_dsl.models.urirefs import (
 from scene_dsl.rdf.scenex import add_modelled_scene
 
 from robbdd.classes.bddx import BehaviourImplementation, ObservationPolicy, ScenarioExecution
-from robbdd.rdf.common import add_py_module_attr
+from scene_dsl.rdf.common import add_py_module_attr
 
 
 def add_bhv_impl_to_graph(graph: Graph, bhv_impl: BehaviourImplementation) -> None:
