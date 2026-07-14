@@ -87,7 +87,7 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
             }
             body panda_link2_body {
                 frame panda_joint2 { }
-                frame panda_link2 { }
+                frame panda_tip { }
             }
             joints {
                 fixed robotiq_2f85 {
@@ -115,7 +115,10 @@ scene inst (ns=scene_lab_mjc) pickplace_scene_mjc {
                     }
                     polarity: PositivePolarity
                 }
-                serial joints { <panda_joint1> <panda_joint2> }
+                serial {
+                    root: <panda_base_body.base_link>
+                    tip: <panda_link2_body.panda_tip>
+                }
             }
         }
         camera wrist_cam {
