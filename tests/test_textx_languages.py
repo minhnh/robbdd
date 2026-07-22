@@ -22,8 +22,8 @@ from bdd_dsl.models.urirefs import (
 )
 from bdd_dsl.models.user_story import UserStoryLoader
 from rdf_utils.resolver import install_resolver
+from rdf_utils.models.vocab import URI_EXEC_TYPE_SCENE_INST
 from rdflib import RDF
-from scene_dsl.rdf.scenex import URI_EXEC_TYPE_SCENE_INST
 from textx import metamodel_for_language
 
 from robbdd.rdf.bdd import create_bdd_model_graph
