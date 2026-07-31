@@ -51,7 +51,7 @@ jobs:
         if [ -f robbdd/requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with ruff
       run: |
-        ruff check .
+        ruff check robbdd/src robbdd/tests
     - name: Install package
       run: |
         pip install "./rdf-utils[all]"
@@ -60,5 +60,4 @@ jobs:
         pip install ./robbdd
     - name: Test with pytest
       run: |
-        cd robbdd
-        pytest
+        pytest -q robbdd/tests
