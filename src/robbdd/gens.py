@@ -2,14 +2,15 @@
 import sys
 from os.path import abspath, dirname, join
 from urllib.error import HTTPError
-from rdf_utils.naming import get_valid_filename
-from rdf_utils.resolver import install_resolver
+
 from bdd_dsl.models.user_story import UserStoryLoader
 from bdd_dsl.utils.jinja import load_template_from_file, prepare_jinja2_template_data
-from robbdd.rdf.bdd import create_bdd_model_graph
-from robbdd.rdf.bddx import create_bddx_model_graph
+from rdf_utils.naming import get_valid_filename
+from rdf_utils.resolver import install_resolver
 from scene_dsl.gens import graph_gen, graph_gen_console
 
+from robbdd.rdf.bdd import create_bdd_model_graph
+from robbdd.rdf.bddx import create_bddx_model_graph
 
 __CWD = abspath(dirname(__file__))
 

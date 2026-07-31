@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
-from typing import Any, Optional
-from rdflib import Graph, RDF, Literal
+from typing import Any
+
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_BHV_IMPL,
     URI_BDD_PRED_OF_CLAUSE,
-    URI_BDD_PRED_OF_SCENE,
     URI_BDD_PRED_OF_VARIANT,
     URI_BDD_TYPE_BHV_IMPL,
     URI_BDD_TYPE_SCENARIO_EXEC,
@@ -16,10 +15,11 @@ from bdd_dsl.models.urirefs import (
     URI_ROS_TYPE_ACTION,
     URI_ROS_TYPE_TOPIC,
 )
+from rdflib import RDF, Graph, Literal
+from scene_dsl.rdf.common import add_py_module_attr
 from scene_dsl.rdf.scenex import add_modelled_scene
 
 from robbdd.classes.bddx import BehaviourImplementation, ObservationPolicy, ScenarioExecution
-from scene_dsl.rdf.common import add_py_module_attr
 
 
 def add_bhv_impl_to_graph(graph: Graph, bhv_impl: BehaviourImplementation) -> None:
@@ -69,13 +69,6 @@ def add_scr_exec_to_graph(graph: Graph, scr_exec: ScenarioExecution) -> None:
 
     graph.add(triple=(scr_exec.uri, RDF.type, URI_BDD_TYPE_SCENARIO_EXEC))
     graph.add(triple=(scr_exec.uri, URI_BDD_PRED_OF_VARIANT, scr_exec.variant.uri))
-    graph.add(
-        triple=(
-            scr_exec.scene_inst.uri,
-            URI_BDD_PRED_OF_SCENE,
-            scr_exec.variant.template.scene_uri,
-        )
-    )
 
     # behaviour implementation
     graph.add(triple=(scr_exec.uri, URI_BDD_PRED_HAS_BHV_IMPL, scr_exec.bhv_impl.uri))
@@ -100,7 +93,7 @@ def add_scr_exec_to_graph(graph: Graph, scr_exec: ScenarioExecution) -> None:
         add_obs_pol_to_graph(graph=graph, obs_pol=obs_pol)
 
 
-def create_bddx_model_graph(model: Any, g: Optional[Graph] = None) -> Graph:
+def create_bddx_model_graph(model: Any, g: Graph | None = None) -> Graph:
     if g is None:
         g = Graph()
 
@@ -108,7 +101,11 @@ def create_bddx_model_graph(model: Any, g: Optional[Graph] = None) -> Graph:
     for scr_exec in model.scenario_execs:
         add_scr_exec_to_graph(graph=g, scr_exec=scr_exec)
         if scr_exec.scene_inst.uri not in scene_inst_uris:
-            add_modelled_scene(graph=g, scene_inst=scr_exec.scene_inst)
+            add_modelled_scene(
+                graph=g,
+                scene_inst=scr_exec.scene_inst,
+                of_scene_id=scr_exec.variant.template.scene_uri,
+            )
             scene_inst_uris.add(scr_exec.scene_inst.uri)
 
     return g

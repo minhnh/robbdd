@@ -1,15 +1,10 @@
 # SPDX-License-Identifier: MPL-2.0
 from os.path import abspath, dirname, join
 
-from textx import get_children_of_type, get_model, metamodel_from_file, textx_isinstance
 import textx.scoping.providers as scoping_providers
-
-from robbdd.classes.bddx import (
-    BehaviourImplementation,
-    ObservationPolicy,
-    ScenarioExecution,
-)
 from scene_dsl.classes.common import SetBase
+from textx import get_children_of_type, get_model, metamodel_from_file, textx_isinstance
+
 from robbdd.classes.bdd import (
     AfterEvent,
     BeforeEvent,
@@ -17,11 +12,10 @@ from robbdd.classes.bdd import (
     CartesianProductVariation,
     Clause,
     Combination,
-    ExplicitSet,
-    Permutation,
     DuringEvent,
     Event,
     ExistsExpr,
+    ExplicitSet,
     FluentAndExpr,
     FluentLogicExpr,
     FluentNotExpr,
@@ -30,7 +24,9 @@ from robbdd.classes.bdd import (
     GivenExpr,
     GivenWhenThenExpr,
     HoldsExpr,
+    Permutation,
     ScenarioSetVariable,
+    ScenarioTemplate,
     ScenarioVariable,
     ScenarioVariant,
     TableVariation,
@@ -39,12 +35,15 @@ from robbdd.classes.bdd import (
     ThenExpr,
     TimeConstraint,
     UserStory,
-    ScenarioTemplate,
     VariableBase,
     WhenBehaviourClause,
     WhenExpr,
 )
-
+from robbdd.classes.bddx import (
+    BehaviourImplementation,
+    ObservationPolicy,
+    ScenarioExecution,
+)
 
 __CWD = abspath(dirname(__file__))
 

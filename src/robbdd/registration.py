@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: MPL-2.0
 from textx import (
-    LanguageDesc,
     GeneratorDesc,
+    LanguageDesc,
 )
-from robbdd.langs import bdd_metamodel, bddx_metamodel
+
 from robbdd.gens import (
-    bdd_graph_gen_console,
     bdd_graph_gen,
+    bdd_graph_gen_console,
     bddx_graph_gen,
     bddx_graph_gen_console,
     gherkin_gen,
 )
-
+from robbdd.langs import bdd_metamodel, bddx_metamodel
 
 bdd_lang = LanguageDesc(
     "robbdd",

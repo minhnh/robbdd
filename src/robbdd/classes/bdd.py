@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: MPL-2.0
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any, Generator, Optional
+from collections.abc import Generator
+from typing import Any
+
 from rdflib import Namespace, URIRef
 from scene_dsl.classes.common import (
     IHasNamespace,
@@ -37,7 +40,7 @@ class ExplicitSet(SetBase, IHasNamespaceDeclare):
 class Combination(IHasUUID, IHasNamespace):
     length: int
     repeated: bool
-    _uri: Optional[URIRef]
+    _uri: URIRef | None
 
     def __init__(self, parent, length, repeated, from_set) -> None:
         super().__init__(parent=parent)
@@ -50,9 +53,9 @@ class Combination(IHasUUID, IHasNamespace):
     def namespace(self) -> Namespace:
         # expect grandparent to be a TaskVariation
         assert self.parent is not None, f"Combination '{self.uri}' has None parent"
-        assert isinstance(
-            self.parent.parent, IHasNamespace
-        ), f"grandparent of 'Combination' not instance of IHasNamespace: {self.parent.parent}"
+        assert isinstance(self.parent.parent, IHasNamespace), (
+            f"grandparent of 'Combination' not instance of IHasNamespace: {self.parent.parent}"
+        )
         return self.parent.parent.namespace
 
     @property
@@ -64,7 +67,7 @@ class Combination(IHasUUID, IHasNamespace):
 
 class Permutation(IHasUUID, IHasNamespace):
     length: int
-    _uri: Optional[URIRef]
+    _uri: URIRef | None
 
     def __init__(self, parent, length, from_set) -> None:
         super().__init__(parent=parent)
@@ -76,9 +79,9 @@ class Permutation(IHasUUID, IHasNamespace):
     def namespace(self) -> Namespace:
         # expect grandparent to be a TaskVariation
         assert self.parent is not None, f"Permutation '{self.uri}' has None parent"
-        assert isinstance(
-            self.parent.parent, IHasNamespace
-        ), f"grandparent of 'Permutation' not instance of IHasNamespace: {self.parent.parent}"
+        assert isinstance(self.parent.parent, IHasNamespace), (
+            f"grandparent of 'Permutation' not instance of IHasNamespace: {self.parent.parent}"
+        )
         return self.parent.parent.namespace
 
     @property
@@ -89,7 +92,7 @@ class Permutation(IHasUUID, IHasNamespace):
 
 
 class VariableBase(IHasParent):
-    _uri: Optional[URIRef]
+    _uri: URIRef | None
 
     def __init__(self, name, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -105,9 +108,9 @@ class VariableBase(IHasParent):
         'ns' property not being available.
         """
         if self._uri is None:
-            assert isinstance(
-                self.parent, IHasNamespace
-            ), f"parent of variable '{self.name}' not an instance of 'IHasNamespace': {self.parent}"
+            assert isinstance(self.parent, IHasNamespace), (
+                f"parent of variable '{self.name}' not an instance of 'IHasNamespace': {self.parent}"
+            )
             self._uri = self.parent.namespace[f"var-{self.name}"]
         return self._uri
 
@@ -129,15 +132,15 @@ class TimeConstraint(IHasNamespace):
 
     @property
     def namespace(self) -> Namespace:
-        assert isinstance(
-            self.parent, IHasNamespace
-        ), f"parent of 'TimeConstraint' not instance of IHasNamespace: {self.parent}"
+        assert isinstance(self.parent, IHasNamespace), (
+            f"parent of 'TimeConstraint' not instance of IHasNamespace: {self.parent}"
+        )
         return self.parent.namespace
 
 
 class BeforeEvent(TimeConstraint):
     event: Event
-    horizon: Optional[Any]
+    horizon: Any | None
 
     def __init__(self, parent, horizon, event) -> None:
         super().__init__(parent=parent)
@@ -147,7 +150,7 @@ class BeforeEvent(TimeConstraint):
 
 class AfterEvent(TimeConstraint):
     event: Event
-    horizon: Optional[Any]
+    horizon: Any | None
 
     def __init__(self, parent, horizon, event) -> None:
         super().__init__(parent=parent)
@@ -171,9 +174,9 @@ class Clause(IHasNamespace):
 
     @property
     def namespace(self) -> Namespace:
-        assert isinstance(
-            self.parent, IHasNamespace
-        ), f"parent of 'Clause' not instance of IHasNamespace: {self.parent}"
+        assert isinstance(self.parent, IHasNamespace), (
+            f"parent of 'Clause' not instance of IHasNamespace: {self.parent}"
+        )
         return self.parent.namespace
 
 
@@ -184,7 +187,7 @@ class FluentLogicExpr(Clause):
 
 class HoldsExpr(FluentLogicExpr):
     tc: TimeConstraint
-    _uri: Optional[URIRef]
+    _uri: URIRef | None
 
     def __init__(self, parent, name, predicate, tc) -> None:
         self.name = name
@@ -255,7 +258,7 @@ class FluentNotExpr(FluentLogicExpr, IHasHoldsExpr):
 class ExistsExpr(Clause, IHasUUID, IHasHoldsExpr):
     var: ScenarioVariable
     fl_expr: FluentLogicExpr
-    _uri: Optional[URIRef]
+    _uri: URIRef | None
 
     def __init__(self, parent, var, in_set, fl_expr) -> None:
         super().__init__(parent=parent)
@@ -281,7 +284,7 @@ class WhenBehaviourClause(IHasUUID):
     behaviour: Behaviour
     duration: DuringEvent
     parent: WhenExpr
-    _uri: Optional[URIRef]
+    _uri: URIRef | None
 
     def __init__(self, parent, behaviour, duration, param_bhv) -> None:
         super().__init__(parent=parent)
@@ -300,7 +303,7 @@ class WhenBehaviourClause(IHasUUID):
 class ForAllExpr(IHasNamespace, IHasUUID):
     var: ScenarioVariable
     gwt_expr: GivenWhenThenExpr
-    _uri: Optional[URIRef]
+    _uri: URIRef | None
 
     def __init__(self, parent, var, in_set, gwt_expr) -> None:
         super().__init__(parent=parent)
@@ -316,9 +319,9 @@ class ForAllExpr(IHasNamespace, IHasUUID):
         This needs to be a property since textX doesn't/may not call the the constructor of parent
         classes before the creation of this class, resulting in the 'ns' property not being available.
         """
-        assert isinstance(
-            self.parent, IHasNamespace
-        ), f"parent of ForAllExpr not an instance of 'IHasNamespace': {self.parent}"
+        assert isinstance(self.parent, IHasNamespace), (
+            f"parent of ForAllExpr not an instance of 'IHasNamespace': {self.parent}"
+        )
         return self.parent.namespace
 
     @property
@@ -337,9 +340,9 @@ class GivenExpr(IHasNamespace, IHasHoldsExpr):
 
     @property
     def namespace(self) -> Namespace:
-        assert isinstance(
-            self.parent, IHasNamespace
-        ), f"parent of GivenExpr not instance of IHasNamespace: {self.parent}"
+        assert isinstance(self.parent, IHasNamespace), (
+            f"parent of GivenExpr not instance of IHasNamespace: {self.parent}"
+        )
         return self.parent.namespace
 
     def get_holds_exprs(self) -> Generator[HoldsExpr, None, None]:
@@ -359,9 +362,9 @@ class WhenExpr(IHasNamespace):
 
     @property
     def namespace(self) -> Namespace:
-        assert isinstance(
-            self.parent, IHasNamespace
-        ), f"parent of WhenExpr not instance of IHasNamespace: {self.parent}"
+        assert isinstance(self.parent, IHasNamespace), (
+            f"parent of WhenExpr not instance of IHasNamespace: {self.parent}"
+        )
         return self.parent.namespace
 
 
@@ -374,9 +377,9 @@ class ThenExpr(IHasNamespace, IHasHoldsExpr):
 
     @property
     def namespace(self) -> Namespace:
-        assert isinstance(
-            self.parent, IHasNamespace
-        ), f"parent of ThenExpr not instance of IHasNamespace: {self.parent}"
+        assert isinstance(self.parent, IHasNamespace), (
+            f"parent of ThenExpr not instance of IHasNamespace: {self.parent}"
+        )
         return self.parent.namespace
 
     def get_holds_exprs(self) -> Generator[HoldsExpr, None, None]:
@@ -387,10 +390,10 @@ class ThenExpr(IHasNamespace, IHasHoldsExpr):
 
 
 class GivenWhenThenExpr(IHasNamespace, IHasHoldsExpr):
-    given_expr: Optional[GivenExpr]
-    when_expr: Optional[WhenExpr]
-    forall_expr: Optional[ForAllExpr]
-    then_expr: Optional[ThenExpr]
+    given_expr: GivenExpr | None
+    when_expr: WhenExpr | None
+    forall_expr: ForAllExpr | None
+    then_expr: ThenExpr | None
 
     def __init__(self, parent, given_expr, when_expr, forall_expr, then_expr) -> None:
         super().__init__(parent=parent)
@@ -400,7 +403,7 @@ class GivenWhenThenExpr(IHasNamespace, IHasHoldsExpr):
         self.then_expr = then_expr
 
     @property
-    def when_bhv(self) -> Optional[WhenBehaviourClause]:
+    def when_bhv(self) -> WhenBehaviourClause | None:
         if self.forall_expr is not None:
             return self.forall_expr.gwt_expr.when_bhv
 
@@ -411,9 +414,9 @@ class GivenWhenThenExpr(IHasNamespace, IHasHoldsExpr):
 
     @property
     def namespace(self) -> Namespace:
-        assert isinstance(
-            self.parent, IHasNamespace
-        ), f"parent of GivenWhenThenExpr not instance of IHasNamespace: {self.parent}"
+        assert isinstance(self.parent, IHasNamespace), (
+            f"parent of GivenWhenThenExpr not instance of IHasNamespace: {self.parent}"
+        )
         return self.parent.namespace
 
     def get_holds_exprs(self) -> Generator[HoldsExpr, None, None]:
@@ -481,14 +484,14 @@ class TaskVariation(IHasUUID, IHasNamespace):
 
     @property
     def namespace(self) -> Namespace:
-        assert isinstance(
-            self.parent, IHasNamespace
-        ), f"parent of TaskVariation not instance of IHasNamespace: {self.parent}"
+        assert isinstance(self.parent, IHasNamespace), (
+            f"parent of TaskVariation not instance of IHasNamespace: {self.parent}"
+        )
         return self.parent.namespace
 
 
 class TableVariation(TaskVariation):
-    _uri: Optional[URIRef]
+    _uri: URIRef | None
 
     def __init__(self, parent, header, rows) -> None:
         super().__init__(parent=parent)
@@ -503,7 +506,7 @@ class TableVariation(TaskVariation):
 
 
 class CartesianProductVariation(TaskVariation):
-    _uri: Optional[URIRef]
+    _uri: URIRef | None
 
     def __init__(self, parent, var_sets) -> None:
         super().__init__(parent=parent)
@@ -520,11 +523,11 @@ class ScenarioVariant(IHasNamespace, IHasHoldsExpr):
     parent: UserStory
     template: ScenarioTemplate
     scene: SceneModel
-    given_expr: Optional[GivenExpr]
-    then_expr: Optional[ThenExpr]
+    given_expr: GivenExpr | None
+    then_expr: ThenExpr | None
     variation: TaskVariation
-    _uri: Optional[URIRef]
-    _holds_exprs_uris: Optional[set[URIRef]]
+    _uri: URIRef | None
+    _holds_exprs_uris: set[URIRef] | None
 
     def __init__(
         self, parent, name, template, scene, given_expr, when_events, then_expr, variation
