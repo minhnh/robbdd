@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any
-from bdd_dsl.representation import VariableStrTemplate
-from rdflib import Graph, Literal, URIRef, RDF
+
 from bdd_dsl.models.namespace import NS_MM_BDD
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_ARG_NAMES,
@@ -42,7 +41,11 @@ from bdd_dsl.models.urirefs import (
     URI_TIME_TYPE_DURING,
     URI_TIME_TYPE_TC,
 )
+from bdd_dsl.representation import VariableStrTemplate
+from rdf_utils.collection import add_literal_list_pred, add_node_list_pred
+from rdflib import RDF, Graph, Literal, URIRef
 from rdflib.collection import Collection
+
 from robbdd.classes.bdd import (
     AfterEvent,
     BeforeEvent,
@@ -57,7 +60,6 @@ from robbdd.classes.bdd import (
     VariableBase,
     WhenBehaviourClause,
 )
-from rdf_utils.collection import add_literal_list_pred, add_node_list_pred
 
 
 def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
@@ -67,15 +69,15 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_LOCATED_AT))
 
         obj_var = getattr(clause.predicate, "object", None)
-        assert (
-            obj_var is not None and isinstance(obj_var, VariableBase)
-        ), f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        assert obj_var is not None and isinstance(obj_var, VariableBase), (
+            f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_OBJ, obj_var.uri))
 
         ws_var = getattr(clause.predicate, "workspace", None)
-        assert (
-            ws_var is not None and isinstance(ws_var, VariableBase)
-        ), f"unexpected 'workspace' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {ws_var}"
+        assert ws_var is not None and isinstance(ws_var, VariableBase), (
+            f"unexpected 'workspace' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {ws_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_WS, ws_var.uri))
         return
 
@@ -83,15 +85,15 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_IS_HELD))
 
         obj_var = getattr(clause.predicate, "object", None)
-        assert (
-            obj_var is not None and isinstance(obj_var, VariableBase)
-        ), f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        assert obj_var is not None and isinstance(obj_var, VariableBase), (
+            f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_OBJ, obj_var.uri))
 
         agent_var = getattr(clause.predicate, "agent", None)
-        assert (
-            agent_var is not None and isinstance(agent_var, VariableBase)
-        ), f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        assert agent_var is not None and isinstance(agent_var, VariableBase), (
+            f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_AGN, agent_var.uri))
         return
 
@@ -99,15 +101,15 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["CanReach"]))
 
         obj_var = getattr(clause.predicate, "object", None)
-        assert (
-            obj_var is not None and isinstance(obj_var, VariableBase)
-        ), f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        assert obj_var is not None and isinstance(obj_var, VariableBase), (
+            f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_OBJ, obj_var.uri))
 
         agent_var = getattr(clause.predicate, "agent", None)
-        assert (
-            agent_var is not None and isinstance(agent_var, VariableBase)
-        ), f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        assert agent_var is not None and isinstance(agent_var, VariableBase), (
+            f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_AGN, agent_var.uri))
         return
 
@@ -115,15 +117,15 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["DoesNotDropPredicate"]))
 
         agent_var = getattr(clause.predicate, "agent", None)
-        assert (
-            agent_var is not None and isinstance(agent_var, VariableBase)
-        ), f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        assert agent_var is not None and isinstance(agent_var, VariableBase), (
+            f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_AGN, agent_var.uri))
 
         obj_var = getattr(clause.predicate, "object", None)
-        assert (
-            obj_var is not None and isinstance(obj_var, VariableBase)
-        ), f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        assert obj_var is not None and isinstance(obj_var, VariableBase), (
+            f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_OBJ, obj_var.uri))
         return
 
@@ -131,15 +133,15 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         graph.add(triple=(clause_uri, RDF.type, NS_MM_BDD["DoesNotCollidePredicate"]))
 
         agent_var = getattr(clause.predicate, "agent", None)
-        assert (
-            agent_var is not None and isinstance(agent_var, VariableBase)
-        ), f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        assert agent_var is not None and isinstance(agent_var, VariableBase), (
+            f"unexpected 'agent' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_AGN, agent_var.uri))
 
         target_var = getattr(clause.predicate, "target", None)
-        assert (
-            target_var is not None and isinstance(target_var, VariableBase)
-        ), f"unexpected 'target' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        assert target_var is not None and isinstance(target_var, VariableBase), (
+            f"unexpected 'target' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {agent_var}"
+        )
         graph.add(triple=(clause_uri, NS_MM_BDD["target"], target_var.uri))
         return
 
@@ -147,21 +149,21 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_CONFIG))
 
         cfg_name = getattr(clause.predicate, "cfg_name", None)
-        assert isinstance(
-            cfg_name, str
-        ), f"unexpected 'cfg_name' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {cfg_name}"
+        assert isinstance(cfg_name, str), (
+            f"unexpected 'cfg_name' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {cfg_name}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_CFG_NAME, Literal(cfg_name)))
 
         cfg_target = getattr(clause.predicate, "cfg_target", None)
-        assert isinstance(
-            cfg_target, VariableBase
-        ), f"unexpected 'cfg_target' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {cfg_target}"
+        assert isinstance(cfg_target, VariableBase), (
+            f"unexpected 'cfg_target' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {cfg_target}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_CFG_TARGET, cfg_target.uri))
 
         cfg_var = getattr(clause.predicate, "cfg_var", None)
-        assert isinstance(
-            cfg_var, VariableBase
-        ), f"unexpected 'cfg_var' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {cfg_var}"
+        assert isinstance(cfg_var, VariableBase), (
+            f"unexpected 'cfg_var' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {cfg_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_CFG_VAR, cfg_var.uri))
         return
 
@@ -169,15 +171,15 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_STR_TMPL))
 
         tmpl_str = getattr(clause.predicate, "tmpl_str", None)
-        assert isinstance(
-            tmpl_str, str
-        ), f"unexpected 'tmpl_str' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {tmpl_str}"
+        assert isinstance(tmpl_str, str), (
+            f"unexpected 'tmpl_str' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {tmpl_str}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_TMPL_STR, Literal(tmpl_str)))
 
         arg_maps = getattr(clause.predicate, "arg_maps", None)
-        assert isinstance(
-            arg_maps, list
-        ), f"unexpected 'arg_maps' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {arg_maps}"
+        assert isinstance(arg_maps, list), (
+            f"unexpected 'arg_maps' attr for '{pred_type_str}' predicate of clause '{clause_uri}': {arg_maps}"
+        )
 
         arg_names = []
         arg_vars = []
@@ -186,9 +188,9 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
             arg_names.append(arg_m.arg_name)
             arg_var_uri = arg_m.arg_var.uri
             arg_vars.append(arg_var_uri)
-            assert (
-                arg_var_uri not in var_map
-            ), f"clause '{clause_uri}': duplicate refs to '{arg_var_uri}'"
+            assert arg_var_uri not in var_map, (
+                f"clause '{clause_uri}': duplicate refs to '{arg_var_uri}'"
+            )
             var_map[arg_var_uri] = arg_m.arg_name
 
         # Create string template obj to test valid argument mappings
@@ -206,15 +208,15 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
         graph.add(triple=(clause_uri, RDF.type, URI_BDD_TYPE_SORTED))
 
         obj_var = getattr(clause.predicate, "objects", None)
-        assert (
-            obj_var is not None and isinstance(obj_var, ScenarioSetVariable)
-        ), f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        assert obj_var is not None and isinstance(obj_var, ScenarioSetVariable), (
+            f"unexpected 'object' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {obj_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_OBJ, obj_var.uri))
 
         ws_var = getattr(clause.predicate, "workspaces", None)
-        assert (
-            ws_var is not None and isinstance(ws_var, ScenarioSetVariable)
-        ), f"unexpected 'workspaces' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {ws_var}"
+        assert ws_var is not None and isinstance(ws_var, ScenarioSetVariable), (
+            f"unexpected 'workspaces' variable for '{pred_type_str}' predicate of clause '{clause_uri}': {ws_var}"
+        )
         graph.add(triple=(clause_uri, URI_BDD_PRED_REF_WS, ws_var.uri))
         return
 
@@ -291,7 +293,7 @@ def add_clause_expr(
         clause_col.append(clause.uri)
 
     else:
-        raise ValueError(f"clause expression of type '{type(clause)}' is not handled: {clause}")
+        raise TypeError(f"clause expression of type '{type(clause)}' is not handled: {clause}")
 
 
 def add_when_behaviour(graph: Graph, wbh_clause: WhenBehaviourClause, when_uri: URIRef) -> URIRef:

@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any
-from robbdd.classes.bdd import HoldsExpr, ScenarioVariant
+
 from scene_dsl.classes.common import IHasNamespaceDeclare
 from scene_dsl.classes.scenex import SceneInstance
+
+from robbdd.classes.bdd import HoldsExpr, ScenarioVariant
 
 
 class BehaviourImplementation(IHasNamespaceDeclare):

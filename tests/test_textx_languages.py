@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import unittest
 from os.path import dirname, join
 from urllib.error import HTTPError
@@ -21,14 +20,13 @@ from bdd_dsl.models.urirefs import (
     URI_OBS_TYPE_POLICY,
 )
 from bdd_dsl.models.user_story import UserStoryLoader
-from rdf_utils.resolver import install_resolver
 from rdf_utils.models.vocab import URI_EXEC_TYPE_SCENE_INST
+from rdf_utils.resolver import install_resolver
 from rdflib import RDF
 from textx import metamodel_for_language
 
 from robbdd.rdf.bdd import create_bdd_model_graph
 from robbdd.rdf.bddx import create_bddx_model_graph
-
 
 ROOT_DIR = dirname(dirname(__file__))
 MODELS_DIR = join(ROOT_DIR, "examples", "models")
