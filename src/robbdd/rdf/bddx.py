@@ -15,6 +15,7 @@ from bdd_dsl.models.urirefs import (
     URI_ROS_TYPE_ACTION,
     URI_ROS_TYPE_TOPIC,
 )
+from rdf_utils.models.vocab import URI_EXEC_PRED_RUNS_SCENE
 from rdflib import RDF, Graph, Literal
 from scene_dsl.rdf.common import add_py_module_attr
 from scene_dsl.rdf.scenex import add_modelled_scene
@@ -69,6 +70,7 @@ def add_scr_exec_to_graph(graph: Graph, scr_exec: ScenarioExecution) -> None:
 
     graph.add(triple=(scr_exec.uri, RDF.type, URI_BDD_TYPE_SCENARIO_EXEC))
     graph.add(triple=(scr_exec.uri, URI_BDD_PRED_OF_VARIANT, scr_exec.variant.uri))
+    graph.add(triple=(scr_exec.uri, URI_EXEC_PRED_RUNS_SCENE, scr_exec.scene_inst.uri))
 
     # behaviour implementation
     graph.add(triple=(scr_exec.uri, URI_BDD_PRED_HAS_BHV_IMPL, scr_exec.bhv_impl.uri))

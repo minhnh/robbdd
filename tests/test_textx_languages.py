@@ -20,7 +20,7 @@ from bdd_dsl.models.urirefs import (
     URI_OBS_TYPE_POLICY,
 )
 from bdd_dsl.models.user_story import UserStoryLoader
-from rdf_utils.models.vocab import URI_EXEC_TYPE_SCENE_INST
+from rdf_utils.models.vocab import URI_EXEC_PRED_RUNS_SCENE, URI_EXEC_TYPE_SCENE_INST
 from rdf_utils.resolver import install_resolver
 from rdflib import RDF
 from textx import metamodel_for_language
@@ -53,6 +53,11 @@ def assert_bddx_graph_contract(model, graph):
     for scr_exec in model.scenario_execs:
         assert (scr_exec.uri, RDF.type, URI_BDD_TYPE_SCENARIO_EXEC) in graph
         assert (scr_exec.uri, URI_BDD_PRED_OF_VARIANT, scr_exec.variant.uri) in graph
+        assert (
+            scr_exec.uri,
+            URI_EXEC_PRED_RUNS_SCENE,
+            scr_exec.scene_inst.uri,
+        ) in graph
         assert (scr_exec.scene_inst.uri, RDF.type, URI_EXEC_TYPE_SCENE_INST) in graph
         assert (
             scr_exec.scene_inst.uri,
