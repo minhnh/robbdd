@@ -36,11 +36,15 @@ class Observation(IHasNamespace):
 
     @property
     def namespace(self):
+        if not isinstance(self.parent, IHasNamespace):
+            raise TypeError(
+                f"Observation.namespace: parent '{self.parent}' of '{self.name}' is not a IHasNamespace"
+            )
         return self.parent.namespace
 
     @property
     def uri(self) -> URIRef:
-        return self.namespace[f"{self.parent.name}/{self.name}"]
+        return self.namespace[self.name]
 
 
 class ObservationPolicy(IHasNamespaceDeclare):

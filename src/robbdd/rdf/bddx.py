@@ -15,8 +15,8 @@ from bdd_dsl.models.urirefs import (
     URI_OBS_PRED_PROVIDER,
     URI_OBS_TYPE_OBSERVATION,
     URI_OBS_TYPE_POLICY,
-    URI_OBS_TYPE_PROVIDER,
     URI_OBS_TYPE_POSE_PROVIDER,
+    URI_OBS_TYPE_PROVIDER,
     URI_ROS_PRED_CHNL_NAME,
     URI_ROS_PRED_TYPE_NAME,
     URI_ROS_TYPE_ACTION,
@@ -30,7 +30,7 @@ from rdf_utils.models.vocab import (
     URI_QUDT_PRED_VALUE,
 )
 from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_GEOM_REL, NS_MM_QUDT_QTY
-from rdflib import BNode, RDF, XSD, Graph, Literal
+from rdflib import RDF, XSD, BNode, Graph, Literal
 from scene_dsl.rdf.common import add_py_module_attr
 from scene_dsl.rdf.geom import LENGTH_UNITS
 from scene_dsl.rdf.scenex import add_modelled_scene
@@ -75,14 +75,18 @@ def add_obs_provider_to_graph(graph: Graph, provider: ObservationProvider) -> No
 
     if spec_type == "RosTopicProvider":
         graph.add((provider.uri, RDF.type, URI_ROS_TYPE_TOPIC))
-        graph.add((provider.uri, URI_ROS_PRED_CHNL_NAME, Literal(provider.provider_spec.topic_name)))
+        graph.add(
+            (provider.uri, URI_ROS_PRED_CHNL_NAME, Literal(provider.provider_spec.topic_name))
+        )
         graph.add((provider.uri, URI_ROS_PRED_TYPE_NAME, Literal(provider.provider_spec.type_name)))
         return
 
     raise ValueError(f"unhandled observation provider type: {provider.provider_spec.__class__}")
 
 
-def add_observation_to_graph(graph: Graph, observation: Observation, policy: ObservationPolicy) -> None:
+def add_observation_to_graph(
+    graph: Graph, observation: Observation, policy: ObservationPolicy
+) -> None:
     graph.add((observation.uri, RDF.type, URI_OBS_TYPE_OBSERVATION))
     graph.add((policy.uri, URI_OBS_PRED_HAS_OBSERVATION, observation.uri))
     graph.add((observation.uri, URI_OBS_PRED_PROVIDER, observation.provider.uri))
@@ -120,15 +124,25 @@ def add_linear_distance_to_graph(graph: Graph, policy: ObservationPolicy) -> Non
         graph.add((constraint, NS_MM_CSTR.threshold, add_distance_value(graph, distance.less_than)))
     elif distance.greater_than is not None:
         graph.add((constraint, RDF.type, NS_MM_CSTR.GreaterThanConstraint))
-        graph.add((constraint, NS_MM_CSTR.threshold, add_distance_value(graph, distance.greater_than)))
+        graph.add(
+            (constraint, NS_MM_CSTR.threshold, add_distance_value(graph, distance.greater_than))
+        )
     elif distance.lower is not None:
         graph.add((constraint, RDF.type, NS_MM_CSTR.BilateralConstraint))
-        graph.add((constraint, NS_MM_CSTR["lower-threshold"], add_distance_value(graph, distance.lower)))
-        graph.add((constraint, NS_MM_CSTR["upper-threshold"], add_distance_value(graph, distance.upper)))
+        graph.add(
+            (constraint, NS_MM_CSTR["lower-threshold"], add_distance_value(graph, distance.lower))
+        )
+        graph.add(
+            (constraint, NS_MM_CSTR["upper-threshold"], add_distance_value(graph, distance.upper))
+        )
     else:
         graph.add((constraint, RDF.type, NS_MM_CSTR.EqualityConstraint))
-        graph.add((constraint, NS_MM_CSTR["reference-value"], add_distance_value(graph, distance.equals)))
-        graph.add((constraint, NS_MM_CSTR_EXT.tolerance, add_distance_value(graph, distance.tolerance)))
+        graph.add(
+            (constraint, NS_MM_CSTR["reference-value"], add_distance_value(graph, distance.equals))
+        )
+        graph.add(
+            (constraint, NS_MM_CSTR_EXT.tolerance, add_distance_value(graph, distance.tolerance))
+        )
 
 
 def add_obs_pol_to_graph(graph: Graph, obs_pol: ObservationPolicy) -> None:
