@@ -29,11 +29,16 @@ from bdd_dsl.models.user_story import UserStoryLoader
 from rdf_utils.models.vocab import (
     URI_EXEC_PRED_RUNS_SCENE,
     URI_EXEC_TYPE_SCENE_INST,
+    URI_QUDT_PRED_QUANTITY_KIND,
+    URI_QUDT_PRED_UNIT,
+    URI_QUDT_PRED_VALUE,
+    URI_QUDT_QK_FREQ,
+    URI_QUDT_TYPE_QUANTITY,
 )
-from rdf_utils.namespace import NS_MM_GEOM_COORD
+from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_QUDT_UNIT
 from rdf_utils.resolver import install_resolver
-from rdflib import RDF
-from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE
+from rdflib import RDF, URIRef
+from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE, URI_SOSA_TYPE_SENSOR
 from textx import metamodel_for_language
 from textx.exceptions import TextXSyntaxError
 
@@ -129,8 +134,16 @@ class TestTextXLanguages(unittest.TestCase):
 
         assert (entity_state.uri, RDF.type, URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER) in graph
         assert (entity_state.uri, RDF.type, NS_MM_OBS.PoseProvider) in graph
+        assert (entity_state.uri, RDF.type, URI_SOSA_TYPE_SENSOR) in graph
         rate = graph.value(entity_state.uri, URI_SENS_PRED_UPDATE_RATE, any=False)
-        assert rate.toPython() == 10.0
+        assert isinstance(rate, URIRef)
+        assert graph.value(rate, RDF.type, any=False) == URI_QUDT_TYPE_QUANTITY
+        assert (
+            graph.value(rate, URI_QUDT_PRED_VALUE, any=False).toPython()
+            == entity_state.provider_spec.update_rate
+        )
+        assert graph.value(rate, URI_QUDT_PRED_UNIT, any=False) == NS_MM_QUDT_UNIT["HZ"]
+        assert graph.value(rate, URI_QUDT_PRED_QUANTITY_KIND, any=False) == URI_QUDT_QK_FREQ
         assert (recognized_poses.uri, RDF.type, URI_ROS_TYPE_TOPIC) in graph
         assert (recognized_poses.uri, RDF.type, NS_MM_OBS.PoseProvider) not in graph
         assert all(

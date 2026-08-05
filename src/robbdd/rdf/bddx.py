@@ -28,13 +28,15 @@ from rdf_utils.models.vocab import (
     URI_QUDT_PRED_QUANTITY_KIND,
     URI_QUDT_PRED_UNIT,
     URI_QUDT_PRED_VALUE,
+    URI_QUDT_QK_FREQ,
+    URI_QUDT_TYPE_QUANTITY,
 )
-from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_GEOM_REL, NS_MM_QUDT_QTY
+from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_GEOM_REL, NS_MM_QUDT_QTY, NS_MM_QUDT_UNIT
 from rdflib import RDF, XSD, BNode, Graph, Literal
 from scene_dsl.rdf.common import add_py_module_attr
 from scene_dsl.rdf.geom import LENGTH_UNITS
 from scene_dsl.rdf.scenex import add_modelled_scene
-from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE
+from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE, URI_SOSA_TYPE_SENSOR
 
 from robbdd.classes.bddx import (
     BehaviourImplementation,
@@ -75,13 +77,19 @@ def add_obs_provider_to_graph(graph: Graph, provider: ObservationProvider) -> No
             raise ValueError("simulation entity-state update-rate must be positive")
         graph.add((provider.uri, RDF.type, URI_OBS_TYPE_POSE_PROVIDER))
         graph.add((provider.uri, RDF.type, URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER))
+        graph.add((provider.uri, RDF.type, URI_SOSA_TYPE_SENSOR))
+        update_rate_uri = provider.namespace[f"{provider.name}/update-rate"]
+        graph.add((provider.uri, URI_SENS_PRED_UPDATE_RATE, update_rate_uri))
+        graph.add((update_rate_uri, RDF.type, URI_QUDT_TYPE_QUANTITY))
         graph.add(
             (
-                provider.uri,
-                URI_SENS_PRED_UPDATE_RATE,
+                update_rate_uri,
+                URI_QUDT_PRED_VALUE,
                 Literal(provider.provider_spec.update_rate, datatype=XSD.double),
             )
         )
+        graph.add((update_rate_uri, URI_QUDT_PRED_UNIT, NS_MM_QUDT_UNIT["HZ"]))
+        graph.add((update_rate_uri, URI_QUDT_PRED_QUANTITY_KIND, URI_QUDT_QK_FREQ))
         return
 
     if spec_type == "RosTopicProvider":
