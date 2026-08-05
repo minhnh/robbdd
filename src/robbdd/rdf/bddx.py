@@ -34,6 +34,7 @@ from rdflib import RDF, XSD, BNode, Graph, Literal
 from scene_dsl.rdf.common import add_py_module_attr
 from scene_dsl.rdf.geom import LENGTH_UNITS
 from scene_dsl.rdf.scenex import add_modelled_scene
+from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE
 
 from robbdd.classes.bddx import (
     BehaviourImplementation,
@@ -45,6 +46,7 @@ from robbdd.classes.bddx import (
 
 
 def add_bhv_impl_to_graph(graph: Graph, bhv_impl: BehaviourImplementation) -> None:
+    graph.bind(prefix=bhv_impl.ns_prefix, namespace=bhv_impl.namespace)
     graph.add(triple=(bhv_impl.uri, RDF.type, URI_BDD_TYPE_BHV_IMPL))
 
     bhv_spec_type = bhv_impl.bhv_spec.__class__.__name__
@@ -65,12 +67,21 @@ def add_bhv_impl_to_graph(graph: Graph, bhv_impl: BehaviourImplementation) -> No
 
 
 def add_obs_provider_to_graph(graph: Graph, provider: ObservationProvider) -> None:
+    graph.bind(prefix=provider.ns_prefix, namespace=provider.namespace)
     graph.add((provider.uri, RDF.type, URI_OBS_TYPE_PROVIDER))
     spec_type = provider.provider_spec.__class__.__name__
-    # textX reduces the literal-only simulation-provider rule to this token string.
-    if provider.provider_spec == "rossimulationentitystate":
+    if spec_type == "SimulationEntityStateProvider":
+        if provider.provider_spec.update_rate <= 0:
+            raise ValueError("simulation entity-state update-rate must be positive")
         graph.add((provider.uri, RDF.type, URI_OBS_TYPE_POSE_PROVIDER))
         graph.add((provider.uri, RDF.type, URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER))
+        graph.add(
+            (
+                provider.uri,
+                URI_SENS_PRED_UPDATE_RATE,
+                Literal(provider.provider_spec.update_rate, datatype=XSD.double),
+            )
+        )
         return
 
     if spec_type == "RosTopicProvider":
@@ -146,6 +157,7 @@ def add_linear_distance_to_graph(graph: Graph, policy: ObservationPolicy) -> Non
 
 
 def add_obs_pol_to_graph(graph: Graph, obs_pol: ObservationPolicy) -> None:
+    graph.bind(prefix=obs_pol.ns_prefix, namespace=obs_pol.namespace)
     graph.add(triple=(obs_pol.uri, RDF.type, URI_OBS_TYPE_POLICY))
     graph.add(triple=(obs_pol.uri, URI_BDD_PRED_OF_CLAUSE, obs_pol.fluent.uri))
     if "RosTrinaryTopic" in obs_pol.policy_spec.__class__.__name__:
@@ -179,6 +191,7 @@ def add_scr_exec_to_graph(graph: Graph, scr_exec: ScenarioExecution) -> None:
             f"for scene '{scr_exec.scene_inst.scene.uri}', expected '{scr_exec.variant.scene.uri}'"
         )
 
+    graph.bind(prefix=scr_exec.ns_prefix, namespace=scr_exec.namespace)
     graph.add(triple=(scr_exec.uri, RDF.type, URI_BDD_TYPE_SCENARIO_EXEC))
     graph.add(triple=(scr_exec.uri, URI_BDD_PRED_OF_VARIANT, scr_exec.variant.uri))
     graph.add(triple=(scr_exec.uri, URI_EXEC_PRED_RUNS_SCENE, scr_exec.scene_inst.uri))

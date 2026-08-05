@@ -1,8 +1,10 @@
 import unittest
-from pathlib import Path
 from os.path import dirname, join
+from pathlib import Path
 from urllib.error import HTTPError
 
+from bdd_dsl.models.namespace import NS_MM_CSTR, NS_MM_OBS
+from bdd_dsl.models.observation import ObservationManager, ObservationStamped
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_AC,
     URI_BDD_PRED_HAS_BHV_IMPL,
@@ -23,13 +25,15 @@ from bdd_dsl.models.urirefs import (
     URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER,
     URI_ROS_TYPE_TOPIC,
 )
-from bdd_dsl.models.namespace import NS_MM_CSTR, NS_MM_OBS
-from bdd_dsl.models.observation import ObservationManager, ObservationStamped
 from bdd_dsl.models.user_story import UserStoryLoader
-from rdf_utils.models.vocab import URI_EXEC_PRED_RUNS_SCENE, URI_EXEC_TYPE_SCENE_INST
+from rdf_utils.models.vocab import (
+    URI_EXEC_PRED_RUNS_SCENE,
+    URI_EXEC_TYPE_SCENE_INST,
+)
 from rdf_utils.namespace import NS_MM_GEOM_COORD
 from rdf_utils.resolver import install_resolver
 from rdflib import RDF
+from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE
 from textx import metamodel_for_language
 from textx.exceptions import TextXSyntaxError
 
@@ -125,6 +129,8 @@ class TestTextXLanguages(unittest.TestCase):
 
         assert (entity_state.uri, RDF.type, URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER) in graph
         assert (entity_state.uri, RDF.type, NS_MM_OBS.PoseProvider) in graph
+        rate = graph.value(entity_state.uri, URI_SENS_PRED_UPDATE_RATE, any=False)
+        assert rate.toPython() == 10.0
         assert (recognized_poses.uri, RDF.type, URI_ROS_TYPE_TOPIC) in graph
         assert (recognized_poses.uri, RDF.type, NS_MM_OBS.PoseProvider) not in graph
         assert all(
@@ -169,16 +175,18 @@ class TestTextXLanguages(unittest.TestCase):
         policy_model = manager.obs_policies[policy.uri]
         if policy_model.start_event is not None:
             manager.on_event(policy_model.start_event, 1.0)
-        for stamp, observation in zip((1.1, 1.2), policy.observations, strict=True):
-            accepted, message = manager.update_observation(
+        results = manager.update_observations(
+            [
                 ObservationStamped(
                     observation_uri=observation.uri,
                     provider_uri=observation.provider.uri,
                     stamp=stamp,
                     value=True,
                 )
-            )
-            assert accepted, message
+                for stamp, observation in zip((1.1, 1.2), policy.observations, strict=True)
+            ]
+        )
+        assert results[policy.uri] == (True, "")
         assert manager.obs_policies[policy.uri].trinary_timeline[-1].trinary
 
     def test_robbdd_between_rejects_tolerance(self):
@@ -192,3 +200,12 @@ class TestTextXLanguages(unittest.TestCase):
                 invalid_model,
                 file_name=str(fixture),
             )
+
+    def test_simulation_provider_rejects_non_positive_update_rate(self):
+        fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))
+        model = metamodel_for_language("robbdd-exec").model_from_str(
+            fixture.read_text().replace("update-rate: 10 Hz", "update-rate: 0 Hz"),
+            file_name=str(fixture),
+        )
+        with self.assertRaisesRegex(ValueError, "must be positive"):
+            create_bddx_model_graph(model=model)

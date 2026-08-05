@@ -55,7 +55,10 @@ RosTopicProvider:
   'ros' 'topic' ':' topic_name=STRING
   'type' ':' type_name=STRING
 ;
-SimulationEntityStateProvider: 'ros' 'simulation' 'entity' 'state' ;
+SimulationEntityStateProvider:
+  'ros' 'simulation' 'entity' 'state'
+  'update-rate' ':' update_rate=FLOAT 'Hz'
+;
 
 Observation:
   'observation' name=IRI_TRUNK '{'

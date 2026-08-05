@@ -10,6 +10,7 @@ bhv impl (ns=bdd_exec_ros) mockup-pp-server {
 
 obs provider (ns=bdd_exec_ros) entity-state {
     ros simulation entity state
+    update-rate: 10 Hz
 }
 obs provider (ns=bdd_exec_ros) recognized-poses {
     ros topic: "/recognized_poses"

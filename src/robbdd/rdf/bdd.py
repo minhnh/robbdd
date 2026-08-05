@@ -141,6 +141,7 @@ def get_var_value_node(graph: Graph, var_val: Any, set_uris: set[URIRef]) -> Nod
 
 
 def add_explicit_set(graph: Graph, const_set: ExplicitSet, set_uris: set[URIRef]) -> IdentifiedNode:
+    graph.bind(prefix=const_set.ns_prefix, namespace=const_set.namespace)
     if const_set.uri in set_uris:
         return const_set.uri
 

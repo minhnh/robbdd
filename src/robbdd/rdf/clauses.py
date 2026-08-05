@@ -297,6 +297,10 @@ def add_clause_expr(
 
 
 def add_when_behaviour(graph: Graph, wbh_clause: WhenBehaviourClause, when_uri: URIRef) -> URIRef:
+    graph.bind(
+        prefix=wbh_clause.behaviour.ns_prefix,
+        namespace=wbh_clause.behaviour.namespace,
+    )
     graph.add(triple=(wbh_clause.behaviour.uri, RDF.type, URI_BHV_TYPE_BHV))
     graph.add(triple=(wbh_clause.uri, RDF.type, URI_BDD_TYPE_WHEN_BHV))
     graph.add(triple=(wbh_clause.uri, URI_BHV_PRED_OF_BHV, wbh_clause.behaviour.uri))
