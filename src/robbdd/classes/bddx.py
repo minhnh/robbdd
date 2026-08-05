@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any
 
-from scene_dsl.classes.common import IHasNamespaceDeclare
+from rdflib import URIRef
+from scene_dsl.classes.common import IHasNamespace, IHasNamespaceDeclare
 from scene_dsl.classes.scenex import SceneInstance
 
 from robbdd.classes.bdd import HoldsExpr, ScenarioVariant
@@ -15,14 +16,47 @@ class BehaviourImplementation(IHasNamespaceDeclare):
         self.bhv_spec = bhv_spec
 
 
+class ObservationProvider(IHasNamespaceDeclare):
+    provider_spec: Any
+
+    def __init__(self, parent, ns, name, provider_spec) -> None:
+        super().__init__(parent=parent, ns=ns, name=name)
+        self.provider_spec = provider_spec
+
+
+class Observation(IHasNamespace):
+    provider: ObservationProvider
+    target: Any | None
+
+    def __init__(self, parent, name, provider, target=None) -> None:
+        super().__init__(parent=parent)
+        self.name = name
+        self.provider = provider
+        self.target = target
+
+    @property
+    def namespace(self):
+        if not isinstance(self.parent, IHasNamespace):
+            raise TypeError(
+                f"Observation.namespace: parent '{self.parent}' of '{self.name}' is not a IHasNamespace"
+            )
+        return self.parent.namespace
+
+    @property
+    def uri(self) -> URIRef:
+        return self.namespace[self.name]
+
+
 class ObservationPolicy(IHasNamespaceDeclare):
     fluent_ref: Any
-    obs_spec: Any
+    observations: list[Observation]
+    policy_spec: Any
     fluent: HoldsExpr
 
-    def __init__(self, parent, ns, name, fluent_ref, obs_spec) -> None:
+    def __init__(self, parent, ns, name, fluent_ref, observations, policy_spec) -> None:
         super().__init__(parent=parent, ns=ns, name=name)
-        self.obs_spec = obs_spec
+        self.observations = observations
+        self.policy_spec = policy_spec
         self.fluent_ref = fluent_ref
         self.fluent = fluent_ref.fluent
 

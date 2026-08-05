@@ -55,8 +55,8 @@ jobs:
     - name: Install package
       run: |
         pip install "./rdf-utils[all]"
-        pip install ./bdd-dsl
         pip install ./scene-dsl
+        pip install ./bdd-dsl
         pip install ./robbdd
     - name: Test with pytest
       run: |

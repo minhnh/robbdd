@@ -41,7 +41,9 @@ from robbdd.classes.bdd import (
 )
 from robbdd.classes.bddx import (
     BehaviourImplementation,
+    Observation,
     ObservationPolicy,
+    ObservationProvider,
     ScenarioExecution,
 )
 
@@ -140,6 +142,8 @@ def bddx_metamodel():
         classes=[
             ScenarioExecution,
             BehaviourImplementation,
+            ObservationProvider,
+            Observation,
             ObservationPolicy,
         ],
     )
