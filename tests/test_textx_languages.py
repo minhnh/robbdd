@@ -4,7 +4,11 @@ from pathlib import Path
 from urllib.error import HTTPError
 
 from bdd_dsl.models.namespace import NS_MM_CSTR, NS_MM_OBS
-from bdd_dsl.models.observation import ObservationManager, ObservationStamped
+from bdd_dsl.models.observation import (
+    ObservationManager,
+    ObservationPolicyEvaluator,
+    ObservationStamped,
+)
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_AC,
     URI_BDD_PRED_HAS_BHV_IMPL,
@@ -38,12 +42,19 @@ from rdf_utils.models.vocab import (
 from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_QUDT_UNIT
 from rdf_utils.resolver import install_resolver
 from rdflib import RDF, URIRef
-from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE, URI_SOSA_TYPE_SENSOR
+from rdflib.namespace import SOSA
+from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE
 from textx import metamodel_for_language
 from textx.exceptions import TextXSyntaxError
 
 from robbdd.rdf.bdd import create_bdd_model_graph
 from robbdd.rdf.bddx import create_bddx_model_graph
+
+
+class TruthWithReasonEvaluator(ObservationPolicyEvaluator):
+    def _evaluate_samples(self, samples):
+        return bool(samples), "samples are present"
+
 
 ROOT_DIR = dirname(dirname(__file__))
 MODELS_DIR = join(ROOT_DIR, "examples", "models")
@@ -134,7 +145,7 @@ class TestTextXLanguages(unittest.TestCase):
 
         assert (entity_state.uri, RDF.type, URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER) in graph
         assert (entity_state.uri, RDF.type, NS_MM_OBS.PoseProvider) in graph
-        assert (entity_state.uri, RDF.type, URI_SOSA_TYPE_SENSOR) in graph
+        assert (entity_state.uri, RDF.type, SOSA.Sensor) in graph
         rate = graph.value(entity_state.uri, URI_SENS_PRED_UPDATE_RATE, any=False)
         assert isinstance(rate, URIRef)
         assert graph.value(rate, RDF.type, any=False) == URI_QUDT_TYPE_QUANTITY
@@ -161,7 +172,7 @@ class TestTextXLanguages(unittest.TestCase):
             """    linear distance between <object-pose> and <workspace-pose> {
         equals: 0.10 m tolerance: 0.01 m
     }""",
-            """    py { module: operator, attr: truth}""",
+            """    py { module: test_textx_languages, attr: TruthWithReasonEvaluator}""",
         )
         model = metamodel_for_language("robbdd-exec").model_from_str(
             model_text, file_name=str(fixture)
@@ -200,6 +211,7 @@ class TestTextXLanguages(unittest.TestCase):
             ]
         )
         assert results[policy.uri] == (True, "")
+        assert manager.obs_policies[policy.uri].trinary_timeline[-1].reason == "samples are present"
         assert manager.obs_policies[policy.uri].trinary_timeline[-1].trinary
 
     def test_robbdd_between_rejects_tolerance(self):
