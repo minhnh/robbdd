@@ -223,21 +223,23 @@ def add_fc_predicate(graph: Graph, clause: HoldsExpr, clause_uri: URIRef):
     raise ValueError(f"unhandled predicate type: {pred_type_str}")
 
 
-def add_node_time_constraint(graph: Graph, tc: TimeConstraint, node_uri: URIRef):
+def add_node_time_constraint(
+    graph: Graph, tc: TimeConstraint, node_uri: URIRef, horizon: float | None = None
+):
     graph.add(triple=(node_uri, RDF.type, URI_TIME_TYPE_TC))
 
     if isinstance(tc, BeforeEvent):
         graph.add(triple=(node_uri, RDF.type, URI_TIME_TYPE_BEFORE_EVT))
         graph.add(triple=(node_uri, URI_TIME_PRED_BEFORE_EVT, tc.event.uri))
-        if tc.horizon is not None:
-            graph.add(triple=(node_uri, URI_TIME_PRED_HRZN_SEC, Literal(tc.horizon.val)))
+        if horizon is not None:
+            graph.add(triple=(node_uri, URI_TIME_PRED_HRZN_SEC, Literal(horizon)))
         return
 
     if isinstance(tc, AfterEvent):
         graph.add(triple=(node_uri, RDF.type, URI_TIME_TYPE_AFTER_EVT))
         graph.add(triple=(node_uri, URI_TIME_PRED_AFTER_EVT, tc.event.uri))
-        if tc.horizon is not None:
-            graph.add(triple=(node_uri, URI_TIME_PRED_HRZN_SEC, Literal(tc.horizon.val)))
+        if horizon is not None:
+            graph.add(triple=(node_uri, URI_TIME_PRED_HRZN_SEC, Literal(horizon)))
         return
 
     if isinstance(tc, DuringEvent):

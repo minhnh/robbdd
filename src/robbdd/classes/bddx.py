@@ -52,13 +52,17 @@ class ObservationPolicy(IHasNamespaceDeclare):
     observations: list[Observation]
     policy_spec: Any
     fluent: HoldsExpr
+    policy_horizon: Any | None
 
-    def __init__(self, parent, ns, name, fluent_ref, observations, policy_spec) -> None:
+    def __init__(
+        self, parent, ns, name, fluent_ref, policy_horizon, observations, policy_spec
+    ) -> None:
         super().__init__(parent=parent, ns=ns, name=name)
         self.observations = observations
         self.policy_spec = policy_spec
         self.fluent_ref = fluent_ref
         self.fluent = fluent_ref.fluent
+        self.policy_horizon = policy_horizon
 
 
 class ScenarioExecution(IHasNamespaceDeclare):

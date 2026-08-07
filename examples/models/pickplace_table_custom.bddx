@@ -14,11 +14,13 @@ bhv impl (ns=bdd_exec_py) mockup-pp-class {
 
 obs policy (ns=bdd_exec_ros) fcx-located-before-topic
     for <tmpl_pickplace.fc-located-before>
+    horizon: 0.5 seconds
 {
     trinary topic: "/obs_policy/located_at_pick_ws"
 }
 obs policy (ns=bdd_exec_ros) fcx-located-after-topic
     for <tmpl_pickplace.fc-located-after>
+    horizon: 0.5 seconds
 {
     trinary topic: "/obs_policy/located_at_place_ws"
 }

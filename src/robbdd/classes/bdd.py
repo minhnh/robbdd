@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Generator
-from typing import Any
 
 from rdflib import Namespace, URIRef
 from scene_dsl.classes.common import (
@@ -140,21 +139,17 @@ class TimeConstraint(IHasNamespace):
 
 class BeforeEvent(TimeConstraint):
     event: Event
-    horizon: Any | None
 
-    def __init__(self, parent, horizon, event) -> None:
+    def __init__(self, parent, event) -> None:
         super().__init__(parent=parent)
-        self.horizon = horizon
         self.event = event
 
 
 class AfterEvent(TimeConstraint):
     event: Event
-    horizon: Any | None
 
-    def __init__(self, parent, horizon, event) -> None:
+    def __init__(self, parent, event) -> None:
         super().__init__(parent=parent)
-        self.horizon = horizon
         self.event = event
 
 

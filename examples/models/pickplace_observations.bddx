@@ -19,6 +19,7 @@ obs provider (ns=bdd_exec_ros) recognized-poses {
 
 obs policy (ns=bdd_exec_ros) fcx-located-after-distance
     for <tmpl_pickplace.fc-located-after>
+    horizon: 0.5 seconds
 {
     observation object-pose {
         provider: <entity-state>

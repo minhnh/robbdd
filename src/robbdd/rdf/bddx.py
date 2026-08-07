@@ -39,6 +39,7 @@ from scene_dsl.rdf.geom import LENGTH_UNITS
 from scene_dsl.rdf.scenex import add_modelled_scene
 from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE
 
+from robbdd.classes.bdd import DuringEvent
 from robbdd.classes.bddx import (
     BehaviourImplementation,
     Observation,
@@ -46,6 +47,7 @@ from robbdd.classes.bddx import (
     ObservationProvider,
     ScenarioExecution,
 )
+from robbdd.rdf.clauses import add_node_time_constraint
 
 
 def add_bhv_impl_to_graph(graph: Graph, bhv_impl: BehaviourImplementation) -> None:
@@ -169,6 +171,15 @@ def add_obs_pol_to_graph(graph: Graph, obs_pol: ObservationPolicy) -> None:
     graph.bind(prefix=obs_pol.ns_prefix, namespace=obs_pol.namespace)
     graph.add(triple=(obs_pol.uri, RDF.type, URI_OBS_TYPE_POLICY))
     graph.add(triple=(obs_pol.uri, URI_BDD_PRED_OF_CLAUSE, obs_pol.fluent.uri))
+    policy_horizon = obs_pol.policy_horizon.val if obs_pol.policy_horizon is not None else None
+    if isinstance(obs_pol.fluent.tc, DuringEvent) and policy_horizon is not None:
+        raise ValueError(f"ObservationPolicy '{obs_pol.uri}' must not specify a during horizon")
+    add_node_time_constraint(
+        graph=graph,
+        tc=obs_pol.fluent.tc,
+        node_uri=obs_pol.uri,
+        horizon=policy_horizon,
+    )
     if "RosTrinaryTopic" in obs_pol.policy_spec.__class__.__name__:
         graph.add(triple=(obs_pol.uri, RDF.type, URI_ROS_TYPE_TOPIC))
         topic_name = obs_pol.policy_spec.topic_name
