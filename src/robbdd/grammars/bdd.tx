@@ -143,10 +143,9 @@ FluentNotExpr:
 
 // Time constraints
 TimeConstraint: BeforeEvent | AfterEvent | DuringEvent ;
-BeforeEvent: horizon=HorizonSeconds? 'before' '<' event=[Event|FQN] '>';
-AfterEvent: horizon=HorizonSeconds? 'after' '<' event=[Event|FQN] '>';
+BeforeEvent: 'before' '<' event=[Event|FQN] '>';
+AfterEvent: 'after' '<' event=[Event|FQN] '>';
 DuringEvent: 'from' '<' start_event=[Event|FQN] '>' 'until' '<' end_event=[Event|FQN] '>';
-HorizonSeconds: val=FLOAT 'seconds' ;
 
 // First Order Logic terms
 FOLExpr:

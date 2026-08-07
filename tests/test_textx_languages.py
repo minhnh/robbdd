@@ -28,6 +28,8 @@ from bdd_dsl.models.urirefs import (
     URI_OBS_TYPE_POLICY,
     URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER,
     URI_ROS_TYPE_TOPIC,
+    URI_TIME_PRED_HRZN_SEC,
+    URI_TIME_TYPE_AFTER_EVT,
 )
 from bdd_dsl.models.user_story import UserStoryLoader
 from rdf_utils.models.vocab import (
@@ -165,6 +167,9 @@ class TestTextXLanguages(unittest.TestCase):
         )
         assert any(graph.triples((None, RDF.type, NS_MM_CSTR.LinearDistanceConstraint)))
         assert any(graph.triples((None, NS_MM_GEOM_COORD.of, None)))
+        assert graph.value(policy.uri, URI_TIME_PRED_HRZN_SEC, any=False).toPython() == 0.5
+        assert graph.value(policy.fluent.uri, URI_TIME_PRED_HRZN_SEC, any=False) is None
+        assert (policy.uri, RDF.type, URI_TIME_TYPE_AFTER_EVT) in graph
 
     def test_robbdd_python_observation_policy(self):
         fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))
@@ -213,6 +218,30 @@ class TestTextXLanguages(unittest.TestCase):
         assert results[policy.uri] == (True, "")
         assert manager.obs_policies[policy.uri].trinary_timeline[-1].reason == "samples are present"
         assert manager.obs_policies[policy.uri].trinary_timeline[-1].trinary
+
+    def test_robbdd_fluent_horizon_is_rejected(self):
+        fixture = Path(join(MODELS_DIR, "pickplace_table_custom.bdd"))
+        invalid_model = fixture.read_text().replace(
+            "after <evt-place-end>", "0.5 seconds after <evt-place-end>"
+        )
+        with self.assertRaises(TextXSyntaxError):
+            metamodel_for_language("robbdd").model_from_str(
+                invalid_model,
+                file_name=str(fixture),
+            )
+
+    def test_robbdd_during_policy_horizon_is_rejected(self):
+        fixture = Path(join(MODELS_DIR, "pickplace_table_custom.bddx"))
+        invalid_model = fixture.read_text().replace(
+            "for <pickplace_table.fc-collide>\n{",
+            "for <pickplace_table.fc-collide>\n    horizon: 0.5 seconds\n{",
+        )
+        model = metamodel_for_language("robbdd-exec").model_from_str(
+            invalid_model,
+            file_name=str(fixture),
+        )
+        with self.assertRaisesRegex(ValueError, "during horizon"):
+            create_bddx_model_graph(model=model)
 
     def test_robbdd_between_rejects_tolerance(self):
         fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))

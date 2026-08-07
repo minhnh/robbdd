@@ -44,11 +44,13 @@ ObservationProvider:
 
 ObservationPolicy:
 'obs' 'policy' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK
-  'for' fluent_ref=HoldsExprRef '{'
+  'for' fluent_ref=HoldsExprRef
+  ('horizon' ':' policy_horizon=HorizonSeconds)? '{'
   observations+=Observation*
   policy_spec=PolicySpec
 '}'
 ;
+HorizonSeconds: val=FLOAT 'seconds' ;
 
 ProviderSpec: RosTopicProvider | SimulationEntityStateProvider ;
 RosTopicProvider:
