@@ -6,9 +6,9 @@ from urllib.error import HTTPError
 from bdd_dsl.models.namespace import NS_MM_CSTR, NS_MM_OBS
 from bdd_dsl.models.observation import (
     LinearDistanceEvaluator,
-    ObservationManager,
     ObservationPolicyEvaluator,
     ObservationStamped,
+    ObsPolicyModel,
 )
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_AC,
@@ -106,6 +106,15 @@ def assert_bddx_graph_contract(model, graph):
             assert (obs_policy.uri, RDF.type, URI_OBS_TYPE_POLICY) in graph
 
 
+def load_observation_policy(graph, scr_var, policy):
+    fluent = next(fc for fc in scr_var.fluent_clauses() if fc.id == policy.fluent.uri)
+    return next(
+        policy_model
+        for policy_model in ObsPolicyModel.policies_for_fluent_clause(graph=graph, fc=fluent)
+        if policy_model.id == policy.uri
+    )
+
+
 class TestTextXLanguages(unittest.TestCase):
     def setUp(self) -> None:
         install_resolver()
@@ -193,16 +202,11 @@ class TestTextXLanguages(unittest.TestCase):
         scr_var = UserStoryLoader(full_graph).load_scenario_variant(
             full_graph=full_graph, variant_id=bddx_model.scenario_execs[0].variant.uri
         )
-        manager = ObservationManager.from_scenario_variant(
-            graph=full_graph,
-            scr_var=scr_var,
-            bhv_loaders=[],
-            obs_loaders=[],
-        )
-        policy_model = manager.obs_policies[policy.uri]
+        policy_model = load_observation_policy(full_graph, scr_var, policy)
         assert isinstance(policy_model.evaluator, LinearDistanceEvaluator)
-        manager.on_event(policy_model.start_event, 1.0)
-        results = manager.update_observations(
+        assert policy_model.start_event is not None
+        policy_model.on_event(policy_model.start_event, 1.0)
+        accepted, _ = policy_model.add_samples(
             [
                 ObservationStamped(
                     observation_uri=observation.uri,
@@ -215,7 +219,7 @@ class TestTextXLanguages(unittest.TestCase):
                 )
             ]
         )
-        assert results[policy.uri] == (True, "")
+        assert accepted
 
     def test_robbdd_python_observation_policy(self):
         fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))
@@ -239,21 +243,14 @@ class TestTextXLanguages(unittest.TestCase):
         scr_var = UserStoryLoader(full_graph).load_scenario_variant(
             full_graph=full_graph, variant_id=model.scenario_execs[0].variant.uri
         )
-        manager = ObservationManager.from_scenario_variant(
-            graph=full_graph,
-            scr_var=scr_var,
-            bhv_loaders=[],
-            obs_loaders=[],
-        )
-        assert policy.uri in manager.obs_policies
         assert graph.value(policy.uri, NS_MM_OBS["time-extractor"], any=False) is not None
         assert graph.value(policy.uri, NS_MM_OBS["has-evaluator"], any=False) is not None
 
-        policy_model = manager.obs_policies[policy.uri]
+        policy_model = load_observation_policy(full_graph, scr_var, policy)
         assert isinstance(policy_model.evaluator, TruthWithReasonEvaluator)
         if policy_model.start_event is not None:
-            manager.on_event(policy_model.start_event, 1.0)
-        results = manager.update_observations(
+            policy_model.on_event(policy_model.start_event, 1.0)
+        accepted, _ = policy_model.add_samples(
             [
                 ObservationStamped(
                     observation_uri=observation.uri,
@@ -266,11 +263,9 @@ class TestTextXLanguages(unittest.TestCase):
                 )
             ]
         )
-        assert results[policy.uri] == (True, "")
-        assert manager.obs_policies[policy.uri].trinary_timeline[-1].reason == (
-            "samples are present"
-        )
-        assert manager.obs_policies[policy.uri].trinary_timeline[-1].trinary
+        assert accepted
+        assert policy_model.trinary_timeline[-1].reason == "samples are present"
+        assert policy_model.trinary_timeline[-1].trinary
 
     def test_linear_distance_constraint_forms_round_trip_to_bdd_dsl(self):
         fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))
@@ -295,12 +290,10 @@ class TestTextXLanguages(unittest.TestCase):
                 scr_var = UserStoryLoader(graph).load_scenario_variant(
                     full_graph=graph, variant_id=model.scenario_execs[0].variant.uri
                 )
-                manager = ObservationManager.from_scenario_variant(
-                    graph=graph, scr_var=scr_var, bhv_loaders=[], obs_loaders=[]
-                )
-                policy = manager.obs_policies[model.obs_policies[0].uri]
-                manager.on_event(policy.start_event, 1.0)
-                manager.update_observations(
+                policy = load_observation_policy(graph, scr_var, model.obs_policies[0])
+                assert policy.start_event is not None
+                policy.on_event(policy.start_event, 1.0)
+                accepted, _ = policy.add_samples(
                     [
                         ObservationStamped(
                             observation.uri,
@@ -315,6 +308,7 @@ class TestTextXLanguages(unittest.TestCase):
                         )
                     ]
                 )
+                assert accepted
                 assert policy.trinary_timeline[-1].trinary is expected
 
     def test_observation_target_qualifiers_round_trip_to_bdd_dsl(self):
