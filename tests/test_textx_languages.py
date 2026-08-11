@@ -5,9 +5,10 @@ from urllib.error import HTTPError
 
 from bdd_dsl.models.namespace import NS_MM_CSTR, NS_MM_OBS
 from bdd_dsl.models.observation import (
-    ObservationManager,
+    LinearDistanceEvaluator,
     ObservationPolicyEvaluator,
     ObservationStamped,
+    ObsPolicyModel,
 )
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_AC,
@@ -25,6 +26,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_TYPE_US,
     URI_OBS_PRED_POLICY,
     URI_OBS_PRED_PROVIDER,
+    URI_OBS_TYPE_DIRECT_TRINARY_POLICY,
     URI_OBS_TYPE_POLICY,
     URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER,
     URI_ROS_TYPE_TOPIC,
@@ -45,10 +47,12 @@ from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_QUDT_UNIT
 from rdf_utils.resolver import install_resolver
 from rdflib import RDF, URIRef
 from rdflib.namespace import SOSA
+from scene_dsl.rdf.scene import create_scene_model_graph
 from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE
 from textx import metamodel_for_language
 from textx.exceptions import TextXSyntaxError
 
+from robbdd.classes.bddx import EvaluatedObservationPolicy, RosTrinaryTopicPolicy
 from robbdd.rdf.bdd import create_bdd_model_graph
 from robbdd.rdf.bddx import create_bddx_model_graph
 
@@ -102,6 +106,15 @@ def assert_bddx_graph_contract(model, graph):
             assert (obs_policy.uri, RDF.type, URI_OBS_TYPE_POLICY) in graph
 
 
+def load_observation_policy(graph, scr_var, policy):
+    fluent = next(fc for fc in scr_var.fluent_clauses() if fc.id == policy.fluent.uri)
+    return next(
+        policy_model
+        for policy_model in ObsPolicyModel.policies_for_fluent_clause(graph=graph, fc=fluent)
+        if policy_model.id == policy.uri
+    )
+
+
 class TestTextXLanguages(unittest.TestCase):
     def setUp(self) -> None:
         install_resolver()
@@ -135,6 +148,15 @@ class TestTextXLanguages(unittest.TestCase):
         graph = create_bddx_model_graph(model=bddx_model)
         assert graph
         assert_bddx_graph_contract(bddx_model, graph)
+        assert all(
+            isinstance(policy.policy_spec, RosTrinaryTopicPolicy)
+            for policy in bddx_model.obs_policies
+        )
+        assert all(
+            (policy.uri, RDF.type, URI_OBS_TYPE_DIRECT_TRINARY_POLICY) in graph
+            and (policy.uri, RDF.type, URI_ROS_TYPE_TOPIC) in graph
+            for policy in bddx_model.obs_policies
+        )
 
     def test_robbdd_observations(self):
         bddx_model = metamodel_for_language("robbdd-exec").model_from_file(
@@ -143,6 +165,7 @@ class TestTextXLanguages(unittest.TestCase):
         graph = create_bddx_model_graph(model=bddx_model)
 
         policy = bddx_model.obs_policies[0]
+        assert isinstance(policy.policy_spec, EvaluatedObservationPolicy)
         entity_state, recognized_poses = bddx_model.obs_providers
 
         assert (entity_state.uri, RDF.type, URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER) in graph
@@ -163,7 +186,7 @@ class TestTextXLanguages(unittest.TestCase):
             (policy.uri, NS_MM_OBS["has-observation"], observation.uri) in graph
             and (observation.uri, URI_OBS_PRED_PROVIDER, entity_state.uri) in graph
             and (observation.uri, NS_MM_OBS["observes-target"], observation.target.uri) in graph
-            for observation in policy.observations
+            for observation in policy.policy_spec.observations
         )
         assert any(graph.triples((None, RDF.type, NS_MM_CSTR.LinearDistanceConstraint)))
         assert any(graph.triples((None, NS_MM_GEOM_COORD.of, None)))
@@ -171,13 +194,40 @@ class TestTextXLanguages(unittest.TestCase):
         assert graph.value(policy.fluent.uri, URI_TIME_PRED_HRZN_SEC, any=False) is None
         assert (policy.uri, RDF.type, URI_TIME_TYPE_AFTER_EVT) in graph
 
+        bdd_model = metamodel_for_language("robbdd").model_from_file(
+            join(MODELS_DIR, "pickplace_table_custom.bdd")
+        )
+        full_graph = create_bdd_model_graph(model=bdd_model)
+        full_graph += graph
+        scr_var = UserStoryLoader(full_graph).load_scenario_variant(
+            full_graph=full_graph, variant_id=bddx_model.scenario_execs[0].variant.uri
+        )
+        policy_model = load_observation_policy(full_graph, scr_var, policy)
+        assert isinstance(policy_model.evaluator, LinearDistanceEvaluator)
+        assert policy_model.start_event is not None
+        policy_model.on_event(policy_model.start_event, 1.0)
+        accepted, _ = policy_model.add_samples(
+            [
+                ObservationStamped(
+                    observation_uri=observation.uri,
+                    provider_uri=observation.provider.uri,
+                    stamp=1.1,
+                    value=position,
+                )
+                for observation, position in zip(
+                    policy.policy_spec.observations, ((0.0, 0.0, 0.0), (0.1, 0.0, 0.0)), strict=True
+                )
+            ]
+        )
+        assert accepted
+
     def test_robbdd_python_observation_policy(self):
         fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))
         model_text = fixture.read_text().replace(
-            """    linear distance between <object-pose> and <workspace-pose> {
+            """    evaluator: linear distance {
         equals: 0.10 m tolerance: 0.01 m
     }""",
-            """    py { module: test_textx_languages, attr: TruthWithReasonEvaluator}""",
+            """    evaluator: py { module: test_textx_languages, attr: TruthWithReasonEvaluator}""",
         )
         model = metamodel_for_language("robbdd-exec").model_from_str(
             model_text, file_name=str(fixture)
@@ -193,18 +243,14 @@ class TestTextXLanguages(unittest.TestCase):
         scr_var = UserStoryLoader(full_graph).load_scenario_variant(
             full_graph=full_graph, variant_id=model.scenario_execs[0].variant.uri
         )
-        manager = ObservationManager.from_scenario_variant(
-            graph=full_graph,
-            scr_var=scr_var,
-            bhv_loaders=[],
-            obs_loaders=[],
-        )
-        assert policy.uri in manager.obs_policies
+        assert graph.value(policy.uri, NS_MM_OBS["time-extractor"], any=False) is not None
+        assert graph.value(policy.uri, NS_MM_OBS["has-evaluator"], any=False) is not None
 
-        policy_model = manager.obs_policies[policy.uri]
+        policy_model = load_observation_policy(full_graph, scr_var, policy)
+        assert isinstance(policy_model.evaluator, TruthWithReasonEvaluator)
         if policy_model.start_event is not None:
-            manager.on_event(policy_model.start_event, 1.0)
-        results = manager.update_observations(
+            policy_model.on_event(policy_model.start_event, 1.0)
+        accepted, _ = policy_model.add_samples(
             [
                 ObservationStamped(
                     observation_uri=observation.uri,
@@ -212,12 +258,89 @@ class TestTextXLanguages(unittest.TestCase):
                     stamp=stamp,
                     value=True,
                 )
-                for stamp, observation in zip((1.1, 1.2), policy.observations, strict=True)
+                for stamp, observation in zip(
+                    (1.1, 1.2), policy.policy_spec.observations, strict=True
+                )
             ]
         )
-        assert results[policy.uri] == (True, "")
-        assert manager.obs_policies[policy.uri].trinary_timeline[-1].reason == "samples are present"
-        assert manager.obs_policies[policy.uri].trinary_timeline[-1].trinary
+        assert accepted
+        assert policy_model.trinary_timeline[-1].reason == "samples are present"
+        assert policy_model.trinary_timeline[-1].trinary
+
+    def test_linear_distance_constraint_forms_round_trip_to_bdd_dsl(self):
+        fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))
+        original = "equals: 0.10 m tolerance: 0.01 m"
+        cases = (
+            ("less-than: 10 cm", False),
+            ("greater-than: 100 mm", False),
+            ("between: 10 cm and 0.2 m", True),
+            ("equals: 100 mm tolerance: 0 mm", True),
+        )
+        bdd_model = metamodel_for_language("robbdd").model_from_file(
+            join(MODELS_DIR, "pickplace_table_custom.bdd")
+        )
+        for constraint, expected in cases:
+            with self.subTest(constraint=constraint):
+                model = metamodel_for_language("robbdd-exec").model_from_str(
+                    fixture.read_text().replace(original, constraint),
+                    file_name=str(fixture),
+                )
+                graph = create_bdd_model_graph(model=bdd_model)
+                graph += create_bddx_model_graph(model=model)
+                scr_var = UserStoryLoader(graph).load_scenario_variant(
+                    full_graph=graph, variant_id=model.scenario_execs[0].variant.uri
+                )
+                policy = load_observation_policy(graph, scr_var, model.obs_policies[0])
+                assert policy.start_event is not None
+                policy.on_event(policy.start_event, 1.0)
+                accepted, _ = policy.add_samples(
+                    [
+                        ObservationStamped(
+                            observation.uri,
+                            observation.provider.uri,
+                            1.1,
+                            position,
+                        )
+                        for observation, position in zip(
+                            model.obs_policies[0].policy_spec.observations,
+                            ((0.0, 0.0, 0.0), (0.1, 0.0, 0.0)),
+                            strict=True,
+                        )
+                    ]
+                )
+                assert accepted
+                assert policy.trinary_timeline[-1].trinary is expected
+
+    def test_observation_target_qualifiers_round_trip_to_bdd_dsl(self):
+        fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))
+        original = "observes var <tmpl_pickplace.target_object>"
+        targets = (
+            ("obj", "pickplace_objects.box1"),
+            ("agn", "isaac_agents.panda"),
+            ("ws", "lab_workspaces.table_ws"),
+        )
+        bdd_model = metamodel_for_language("robbdd").model_from_file(
+            join(MODELS_DIR, "pickplace_table_custom.bdd")
+        )
+        scene_model = metamodel_for_language("scene").model_from_file(join(MODELS_DIR, "lab.scene"))
+        scene_graph = create_scene_model_graph(model=scene_model)
+        for qualifier, target in targets:
+            with self.subTest(qualifier=qualifier):
+                model_text = fixture.read_text().replace(
+                    'import "lab.scenex"', 'import "lab.scenex"\nimport "lab.scene"'
+                )
+                model = metamodel_for_language("robbdd-exec").model_from_str(
+                    model_text.replace(original, f"observes {qualifier} <{target}>"),
+                    file_name=str(fixture),
+                )
+                graph = create_bdd_model_graph(model=bdd_model)
+                target_uri = model.obs_policies[0].policy_spec.observations[0].target.uri
+                for triple in scene_graph.triples((target_uri, RDF.type, None)):
+                    graph.add(triple)
+                graph += create_bddx_model_graph(model=model)
+                UserStoryLoader(graph).load_scenario_variant(
+                    full_graph=graph, variant_id=model.scenario_execs[0].variant.uri
+                )
 
     def test_robbdd_fluent_horizon_is_rejected(self):
         fixture = Path(join(MODELS_DIR, "pickplace_table_custom.bdd"))
