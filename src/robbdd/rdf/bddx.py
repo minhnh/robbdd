@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Any
 
-from bdd_dsl.models.namespace import NS_MM_CSTR, NS_MM_CSTR_EXT
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_BHV_IMPL,
     URI_BDD_PRED_OF_CLAUSE,
@@ -9,14 +8,38 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_TYPE_BHV_IMPL,
     URI_BDD_TYPE_SCENARIO_EXEC,
     URI_BHV_PRED_OF_BHV,
+    URI_CSTR_PRED_HAS_CONSTRAINT,
+    URI_CSTR_PRED_LOWER_THRESHOLD,
+    URI_CSTR_PRED_QUANTITY,
+    URI_CSTR_PRED_REFERENCE_VALUE,
+    URI_CSTR_PRED_THRESHOLD,
+    URI_CSTR_PRED_TOLERANCE,
+    URI_CSTR_PRED_UPPER_THRESHOLD,
+    URI_CSTR_TYPE_BILATERAL,
+    URI_CSTR_TYPE_EQUALITY,
+    URI_CSTR_TYPE_GREATER_THAN,
+    URI_CSTR_TYPE_LESS_THAN,
+    URI_CSTR_TYPE_LINEAR_DISTANCE,
+    URI_GEOM_PRED_BETWEEN_ENTITIES,
+    URI_GEOM_PRED_COORD_OF,
+    URI_GEOM_TYPE_DISTANCE_REF,
+    URI_GEOM_TYPE_LINEAR_DISTANCE,
+    URI_GEOM_TYPE_LINEAR_DISTANCE_COORD,
+    URI_OBS_PRED_ENTITY_MAPPER,
+    URI_OBS_PRED_HAS_EVALUATOR,
     URI_OBS_PRED_HAS_OBSERVATION,
     URI_OBS_PRED_OBSERVES_TARGET,
     URI_OBS_PRED_POLICY,
     URI_OBS_PRED_PROVIDER,
+    URI_OBS_PRED_TIME_EXTRACTOR,
+    URI_OBS_TYPE_DIRECT_TRINARY_POLICY,
+    URI_OBS_TYPE_EVALUATED_POLICY,
+    URI_OBS_TYPE_LINEAR_DISTANCE_EVALUATOR,
     URI_OBS_TYPE_OBSERVATION,
     URI_OBS_TYPE_POLICY,
     URI_OBS_TYPE_POSE_PROVIDER,
     URI_OBS_TYPE_PROVIDER,
+    URI_QUDT_QK_DISTANCE,
     URI_ROS_PRED_CHNL_NAME,
     URI_ROS_PRED_TYPE_NAME,
     URI_ROS_TYPE_ACTION,
@@ -31,8 +54,8 @@ from rdf_utils.models.vocab import (
     URI_QUDT_QK_FREQ,
     URI_QUDT_TYPE_QUANTITY,
 )
-from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_GEOM_REL, NS_MM_QUDT_QTY, NS_MM_QUDT_UNIT
-from rdflib import RDF, XSD, BNode, Graph, Literal
+from rdf_utils.namespace import NS_MM_QUDT_UNIT
+from rdflib import RDF, XSD, Graph, Literal, URIRef
 from rdflib.namespace import SOSA
 from scene_dsl.rdf.common import add_py_module_attr
 from scene_dsl.rdf.geom import LENGTH_UNITS
@@ -42,9 +65,12 @@ from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE
 from robbdd.classes.bdd import DuringEvent
 from robbdd.classes.bddx import (
     BehaviourImplementation,
+    EvaluatedObservationPolicy,
+    LinearDistanceEvaluator,
     Observation,
     ObservationPolicy,
     ObservationProvider,
+    RosTrinaryTopicPolicy,
     ScenarioExecution,
 )
 from robbdd.rdf.clauses import add_node_time_constraint
@@ -116,54 +142,88 @@ def add_observation_to_graph(
         graph.add((observation.uri, URI_OBS_PRED_OBSERVES_TARGET, observation.target.uri))
 
 
-def add_distance_value(graph: Graph, value) -> BNode:
-    quantity = BNode()
-    graph.add((quantity, RDF.type, NS_MM_QUDT_QTY.Distance))
-    graph.add((quantity, URI_QUDT_PRED_VALUE, Literal(value.value, datatype=XSD.double)))
-    graph.add((quantity, URI_QUDT_PRED_UNIT, LENGTH_UNITS[value.unit]))
-    return quantity
+def add_distance_value(graph: Graph, value, quantity_uri: URIRef) -> URIRef:
+    graph.add((quantity_uri, RDF.type, URI_QUDT_QK_DISTANCE))
+    graph.add((quantity_uri, URI_QUDT_PRED_VALUE, Literal(value.value, datatype=XSD.double)))
+    graph.add((quantity_uri, URI_QUDT_PRED_UNIT, LENGTH_UNITS[value.unit]))
+    return quantity_uri
 
 
-def add_linear_distance_to_graph(graph: Graph, policy: ObservationPolicy) -> None:
-    spec = policy.policy_spec
-    relation = BNode()
-    coordinate = BNode()
-    constraint = BNode()
-    graph.add((relation, RDF.type, NS_MM_GEOM_REL.LinearDistance))
-    graph.add((relation, NS_MM_GEOM_REL["between-entities"], spec.left.uri))
-    graph.add((relation, NS_MM_GEOM_REL["between-entities"], spec.right.uri))
-    graph.add((coordinate, RDF.type, NS_MM_GEOM_COORD.LinearDistanceCoordinate))
-    graph.add((coordinate, RDF.type, NS_MM_GEOM_COORD.DistanceReference))
-    graph.add((coordinate, URI_QUDT_PRED_QUANTITY_KIND, NS_MM_QUDT_QTY.Distance))
-    graph.add((coordinate, NS_MM_GEOM_COORD.of, relation))
-    graph.add((policy.uri, NS_MM_CSTR_EXT["has-constraint"], constraint))
-    graph.add((constraint, RDF.type, NS_MM_CSTR.LinearDistanceConstraint))
-    graph.add((constraint, NS_MM_CSTR.quantity, coordinate))
+def add_linear_distance_to_graph(
+    graph: Graph,
+    eval_uri: URIRef,
+    evaluator: LinearDistanceEvaluator,
+    observations: list[Observation],
+) -> None:
+    if len(observations) != 2:
+        raise ValueError(f"LinearDistanceEvaluator {eval_uri} requires exactly two observations")
+    graph.add(triple=(eval_uri, RDF.type, URI_OBS_TYPE_LINEAR_DISTANCE_EVALUATOR))
+    graph.add(triple=(eval_uri, RDF.type, URI_GEOM_TYPE_LINEAR_DISTANCE))
+    for obs in observations:
+        graph.add((eval_uri, URI_GEOM_PRED_BETWEEN_ENTITIES, obs.uri))
 
-    distance = spec.constraint
+    coord_uri = evaluator.coordinate_uri
+    cstr_uri = evaluator.constraint_uri
+    graph.add(triple=(coord_uri, RDF.type, URI_GEOM_TYPE_LINEAR_DISTANCE_COORD))
+    graph.add(triple=(coord_uri, RDF.type, URI_GEOM_TYPE_DISTANCE_REF))
+    graph.add(triple=(coord_uri, URI_QUDT_PRED_QUANTITY_KIND, URI_QUDT_QK_DISTANCE))
+    graph.add(triple=(coord_uri, URI_GEOM_PRED_COORD_OF, eval_uri))
+    graph.add(triple=(eval_uri, URI_CSTR_PRED_HAS_CONSTRAINT, cstr_uri))
+    graph.add(triple=(cstr_uri, RDF.type, URI_CSTR_TYPE_LINEAR_DISTANCE))
+    graph.add(triple=(cstr_uri, URI_CSTR_PRED_QUANTITY, coord_uri))
+
+    distance = evaluator.constraint
+    lower_uri = evaluator.lower_uri
+    upper_uri = evaluator.upper_uri
     if distance.less_than is not None:
-        graph.add((constraint, RDF.type, NS_MM_CSTR.LessThanConstraint))
-        graph.add((constraint, NS_MM_CSTR.threshold, add_distance_value(graph, distance.less_than)))
-    elif distance.greater_than is not None:
-        graph.add((constraint, RDF.type, NS_MM_CSTR.GreaterThanConstraint))
+        graph.add((cstr_uri, RDF.type, URI_CSTR_TYPE_LESS_THAN))
         graph.add(
-            (constraint, NS_MM_CSTR.threshold, add_distance_value(graph, distance.greater_than))
+            (
+                cstr_uri,
+                URI_CSTR_PRED_THRESHOLD,
+                add_distance_value(graph, distance.less_than, upper_uri),
+            )
+        )
+    elif distance.greater_than is not None:
+        graph.add((cstr_uri, RDF.type, URI_CSTR_TYPE_GREATER_THAN))
+        graph.add(
+            triple=(
+                cstr_uri,
+                URI_CSTR_PRED_THRESHOLD,
+                add_distance_value(graph, distance.greater_than, lower_uri),
+            )
         )
     elif distance.lower is not None:
-        graph.add((constraint, RDF.type, NS_MM_CSTR.BilateralConstraint))
+        graph.add((cstr_uri, RDF.type, URI_CSTR_TYPE_BILATERAL))
         graph.add(
-            (constraint, NS_MM_CSTR["lower-threshold"], add_distance_value(graph, distance.lower))
+            triple=(
+                cstr_uri,
+                URI_CSTR_PRED_LOWER_THRESHOLD,
+                add_distance_value(graph, distance.lower, lower_uri),
+            )
         )
         graph.add(
-            (constraint, NS_MM_CSTR["upper-threshold"], add_distance_value(graph, distance.upper))
+            triple=(
+                cstr_uri,
+                URI_CSTR_PRED_UPPER_THRESHOLD,
+                add_distance_value(graph, distance.upper, upper_uri),
+            )
         )
     else:
-        graph.add((constraint, RDF.type, NS_MM_CSTR.EqualityConstraint))
+        graph.add(triple=(cstr_uri, RDF.type, URI_CSTR_TYPE_EQUALITY))
         graph.add(
-            (constraint, NS_MM_CSTR["reference-value"], add_distance_value(graph, distance.equals))
+            triple=(
+                cstr_uri,
+                URI_CSTR_PRED_REFERENCE_VALUE,
+                add_distance_value(graph, distance.equals, evaluator.ref_value_uri),
+            )
         )
         graph.add(
-            (constraint, NS_MM_CSTR_EXT.tolerance, add_distance_value(graph, distance.tolerance))
+            triple=(
+                cstr_uri,
+                URI_CSTR_PRED_TOLERANCE,
+                add_distance_value(graph, distance.tolerance, evaluator.tolerance_uri),
+            )
         )
 
 
@@ -180,7 +240,9 @@ def add_obs_pol_to_graph(graph: Graph, obs_pol: ObservationPolicy) -> None:
         node_uri=obs_pol.uri,
         horizon=policy_horizon,
     )
-    if "RosTrinaryTopic" in obs_pol.policy_spec.__class__.__name__:
+
+    if isinstance(obs_pol.policy_spec, RosTrinaryTopicPolicy):
+        graph.add(triple=(obs_pol.uri, RDF.type, URI_OBS_TYPE_DIRECT_TRINARY_POLICY))
         graph.add(triple=(obs_pol.uri, RDF.type, URI_ROS_TYPE_TOPIC))
         topic_name = obs_pol.policy_spec.topic_name
         graph.add(
@@ -193,15 +255,40 @@ def add_obs_pol_to_graph(graph: Graph, obs_pol: ObservationPolicy) -> None:
         graph.add(triple=(obs_pol.uri, URI_ROS_PRED_CHNL_NAME, Literal(topic_name)))
         return
 
-    for observation in obs_pol.observations:
-        add_observation_to_graph(graph, observation, obs_pol)
-    if "LinearDistanceObservation" in obs_pol.policy_spec.__class__.__name__:
-        add_linear_distance_to_graph(graph, obs_pol)
-        return
-    if "PyModuleAttr" in obs_pol.policy_spec.__class__.__name__:
-        add_py_module_attr(graph=graph, node_uri=obs_pol.uri, py_model=obs_pol.policy_spec)
-        return
-    raise ValueError(f"unhandled PolicySpec type: {obs_pol.policy_spec.__class__.__name__}")
+    if isinstance(obs_pol.policy_spec, EvaluatedObservationPolicy):
+        spec = obs_pol.policy_spec
+        graph.add(triple=(obs_pol.uri, RDF.type, URI_OBS_TYPE_EVALUATED_POLICY))
+        for observation in spec.observations:
+            add_observation_to_graph(graph, observation, obs_pol)
+
+        te_uri = spec.time_extractor_uri
+        graph.add(triple=(obs_pol.uri, URI_OBS_PRED_TIME_EXTRACTOR, te_uri))
+        add_py_module_attr(graph=graph, node_uri=te_uri, py_model=spec.time_extractor)
+
+        if spec.entity_mapper is not None:
+            em_uri = spec.entity_mapper_uri
+            graph.add(triple=(obs_pol.uri, URI_OBS_PRED_ENTITY_MAPPER, em_uri))
+            add_py_module_attr(graph=graph, node_uri=em_uri, py_model=spec.entity_mapper)
+
+        evaluator_type = spec.evaluator.__class__.__name__
+        eval_uri = spec.evaluator_uri
+        graph.add(triple=(obs_pol.uri, URI_OBS_PRED_HAS_EVALUATOR, eval_uri))
+        if evaluator_type == "LinearDistanceEvaluator":
+            add_linear_distance_to_graph(
+                graph=graph,
+                eval_uri=eval_uri,
+                evaluator=spec.evaluator,
+                observations=spec.observations,
+            )
+            return
+
+        if evaluator_type == "PyModuleAttr":
+            add_py_module_attr(graph=graph, node_uri=eval_uri, py_model=spec.evaluator)
+            return
+
+        raise ValueError(f"unhandled evaluator type: {evaluator_type}")
+
+    raise TypeError(f"unsupported ObservationPolicy type: {type(obs_pol)}")
 
 
 def add_scr_exec_to_graph(graph: Graph, scr_exec: ScenarioExecution) -> None:
