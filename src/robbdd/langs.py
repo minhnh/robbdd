@@ -3,6 +3,7 @@ from os.path import abspath, dirname, join
 
 import textx.scoping.providers as scoping_providers
 from scene_dsl.classes.common import SetBase
+from scene_dsl.langs import InstancedRefScopeProvider, build_instance_trees
 from textx import get_children_of_type, get_model, metamodel_from_file, textx_isinstance
 
 from robbdd.classes.bdd import (
@@ -156,7 +157,12 @@ def bddx_metamodel():
     mm_bddx.register_scope_providers(
         {
             "*.*": scoping_providers.FQNImportURI(),
+            # TODO(minhnh): required because of secorolab/scene-dsl#35
+            "*.ktree": InstancedRefScopeProvider(),
+            "*.scenex": InstancedRefScopeProvider(),
             "HoldsExprRef.fluent": HoldsExprRefScopeProvider(),
         }
     )
+    # TODO(minhnh): required because of secorolab/scene-dsl#35
+    mm_bddx.register_model_processor(build_instance_trees)
     return mm_bddx
