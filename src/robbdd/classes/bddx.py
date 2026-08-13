@@ -27,40 +27,40 @@ class ObservationProvider(IHasNamespaceDeclare):
         self.provider_spec = provider_spec
 
 
-class Observation(IHasNamespace):
+class Observation(IHasNamespaceDeclare):
     provider: ObservationProvider
     target: VariableBase | ScnObject | ScnAgent | ScnWorkspace | None
 
     def __init__(
         self,
         parent,
+        ns,
         name,
         provider,
         var_target,
         obj_target,
         agn_target,
         ws_target,
+        time_extractor,
+        entity_mapper,
     ) -> None:
-        super().__init__(parent=parent)
-        self.name = name
+        super().__init__(parent=parent, ns=ns, name=name)
         self.provider = provider
         self.var_target: VariableBase | None = var_target
         self.obj_target: ScnObject | None = obj_target
         self.agn_target: ScnAgent | None = agn_target
         self.ws_target: ScnWorkspace | None = ws_target
         self.target = var_target or obj_target or agn_target or ws_target
+        self.time_extractor = time_extractor
+        self.entity_mapper = entity_mapper
 
     @property
-    def namespace(self):
-        if not isinstance(self.parent, IHasNamespace):
-            raise TypeError(
-                f"Observation.namespace: parent '{self.parent}' of '{self.name}' is not a IHasNamespace"
-            )
-        return self.parent.namespace
+    def time_extractor_uri(self):
+        return self.namespace[f"{self.name}/time-extractor"]
 
     @property
-    def uri(self) -> URIRef:
-        return self.namespace[self.name]
+    def entity_mapper_uri(self):
+        return self.namespace[f"{self.name}/entity-mapper"]
 
 
 class RosTrinaryTopicPolicy:
@@ -77,14 +77,10 @@ class EvaluatedObservationPolicy(IHasNamespace):
         self,
         parent,
         observations,
-        time_extractor,
-        entity_mapper,
         evaluator,
     ) -> None:
         self.parent = parent
         self.observations = observations
-        self.time_extractor = time_extractor
-        self.entity_mapper = entity_mapper
         self.evaluator = evaluator
         self._policy_name = None
 
@@ -107,14 +103,6 @@ class EvaluatedObservationPolicy(IHasNamespace):
             )
         self._policy_name = self.parent.name
         return self._policy_name
-
-    @property
-    def time_extractor_uri(self):
-        return self.namespace[f"{self.policy_name}/time-extractor"]
-
-    @property
-    def entity_mapper_uri(self):
-        return self.namespace[f"{self.policy_name}/entity-mapper"]
 
     @property
     def evaluator_uri(self):

@@ -17,20 +17,24 @@ obs provider (ns=bdd_exec_ros) recognized-poses {
     type: "geometry_msgs/msg/PoseArray"
 }
 
+observation (ns=bdd_exec_ros) object-pose {
+    provider: <entity-state>
+    observes var <tmpl_pickplace.target_object>
+    time extractor: py { module: bdd_exec_ros2.observation, attr: latest_identified_pose_stamp }
+    entity mapper: py { module: bdd_exec_ros2.observation, attr: map_identified_pose_batch }
+}
+observation (ns=bdd_exec_ros) workspace-pose {
+    provider: <entity-state>
+    observes var <tmpl_pickplace.place_ws>
+    time extractor: py { module: bdd_exec_ros2.observation, attr: latest_identified_pose_stamp }
+    entity mapper: py { module: bdd_exec_ros2.observation, attr: map_identified_pose_batch }
+}
+
 obs policy (ns=bdd_exec_ros) fcx-located-after-distance
     for <tmpl_pickplace.fc-located-after>
     horizon: 0.5 seconds
 {
-    observation object-pose {
-        provider: <entity-state>
-        observes var <tmpl_pickplace.target_object>
-    }
-    observation workspace-pose {
-        provider: <entity-state>
-        observes var <tmpl_pickplace.place_ws>
-    }
-    time extractor: py { module: bdd_exec_ros2.observation, attr: latest_identified_pose_stamp }
-    entity mapper: py { module: bdd_exec_ros2.observation, attr: map_identified_pose_batch }
+    observations: { <object-pose>, <workspace-pose> }
     evaluator: linear distance {
         equals: 0.10 m tolerance: 0.01 m
     }

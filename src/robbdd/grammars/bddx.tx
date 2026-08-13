@@ -13,6 +13,8 @@ bhv_impls+=BehaviourImplementation
 obs_policies+=ObservationPolicy
 |
 obs_providers+=ObservationProvider
+|
+observations+=Observation
 )*
 
 scenario_execs+=ScenarioExecution
@@ -53,9 +55,9 @@ ObservationPolicy:
 ObservationPolicySpec: RosTrinaryTopicPolicy | EvaluatedObservationPolicy ;
 RosTrinaryTopicPolicy: 'trinary' 'topic' ':' topic_name=STRING ;
 EvaluatedObservationPolicy:
-  observations+=Observation+
-  'time' 'extractor' ':' time_extractor=PyModuleAttr
-  ('entity' 'mapper' ':' entity_mapper=PyModuleAttr)?
+  'observations' ':' '{'
+    ('<' observations=[Observation|FQN] '>')+[',']
+  '}'
   'evaluator' ':' evaluator=Evaluator
 ;
 
@@ -72,7 +74,7 @@ SimulationEntityStateProvider:
 ;
 
 Observation:
-  'observation' name=IRI_TRUNK '{'
+  'observation' '(' 'ns' '=' ns=[NamespaceDeclare|FQN] ')' name=IRI_TRUNK '{'
   'provider' ':' '<' provider=[ObservationProvider|FQN] '>'
   ('observes' (
     'var' '<' var_target=[bdd.VariableBase|FQN] '>'
@@ -80,6 +82,8 @@ Observation:
     | 'agn' '<' agn_target=[sx.Agent|FQN] '>'
     | 'ws' '<' ws_target=[sx.Workspace|FQN] '>'
   ))?
+  'time' 'extractor' ':' time_extractor=PyModuleAttr
+  ('entity' 'mapper' ':' entity_mapper=PyModuleAttr)?
   '}'
 ;
 

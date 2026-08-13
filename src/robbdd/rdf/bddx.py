@@ -132,14 +132,25 @@ def add_obs_provider_to_graph(graph: Graph, provider: ObservationProvider) -> No
     raise ValueError(f"unhandled observation provider type: {provider.provider_spec.__class__}")
 
 
-def add_observation_to_graph(
-    graph: Graph, observation: Observation, policy: ObservationPolicy
-) -> None:
+def add_observation_to_graph(graph: Graph, observation: Observation) -> None:
+    graph.bind(prefix=observation.ns_prefix, namespace=observation.namespace)
     graph.add((observation.uri, RDF.type, URI_OBS_TYPE_OBSERVATION))
-    graph.add((policy.uri, URI_OBS_PRED_HAS_OBSERVATION, observation.uri))
     graph.add((observation.uri, URI_OBS_PRED_PROVIDER, observation.provider.uri))
     if observation.target is not None:
         graph.add((observation.uri, URI_OBS_PRED_OBSERVES_TARGET, observation.target.uri))
+    graph.add((observation.uri, URI_OBS_PRED_TIME_EXTRACTOR, observation.time_extractor_uri))
+    add_py_module_attr(
+        graph=graph,
+        node_uri=observation.time_extractor_uri,
+        py_model=observation.time_extractor,
+    )
+    if observation.entity_mapper is not None:
+        graph.add((observation.uri, URI_OBS_PRED_ENTITY_MAPPER, observation.entity_mapper_uri))
+        add_py_module_attr(
+            graph=graph,
+            node_uri=observation.entity_mapper_uri,
+            py_model=observation.entity_mapper,
+        )
 
 
 def add_distance_value(graph: Graph, value, quantity_uri: URIRef) -> URIRef:
@@ -259,16 +270,7 @@ def add_obs_pol_to_graph(graph: Graph, obs_pol: ObservationPolicy) -> None:
         spec = obs_pol.policy_spec
         graph.add(triple=(obs_pol.uri, RDF.type, URI_OBS_TYPE_EVALUATED_POLICY))
         for observation in spec.observations:
-            add_observation_to_graph(graph, observation, obs_pol)
-
-        te_uri = spec.time_extractor_uri
-        graph.add(triple=(obs_pol.uri, URI_OBS_PRED_TIME_EXTRACTOR, te_uri))
-        add_py_module_attr(graph=graph, node_uri=te_uri, py_model=spec.time_extractor)
-
-        if spec.entity_mapper is not None:
-            em_uri = spec.entity_mapper_uri
-            graph.add(triple=(obs_pol.uri, URI_OBS_PRED_ENTITY_MAPPER, em_uri))
-            add_py_module_attr(graph=graph, node_uri=em_uri, py_model=spec.entity_mapper)
+            graph.add((obs_pol.uri, URI_OBS_PRED_HAS_OBSERVATION, observation.uri))
 
         evaluator_type = spec.evaluator.__class__.__name__
         eval_uri = spec.evaluator_uri
@@ -332,6 +334,9 @@ def create_bddx_model_graph(model: Any, g: Graph | None = None) -> Graph:
 
     for provider in model.obs_providers:
         add_obs_provider_to_graph(graph=g, provider=provider)
+
+    for observation in model.observations:
+        add_observation_to_graph(graph=g, observation=observation)
 
     scene_inst_uris = set()
     for scr_exec in model.scenario_execs:
