@@ -243,7 +243,12 @@ class TestTextXLanguages(unittest.TestCase):
         scr_var = UserStoryLoader(full_graph).load_scenario_variant(
             full_graph=full_graph, variant_id=model.scenario_execs[0].variant.uri
         )
-        assert graph.value(policy.uri, NS_MM_OBS["time-extractor"], any=False) is not None
+        assert graph.value(policy.uri, NS_MM_OBS["time-extractor"], any=False) is None
+        assert all(
+            graph.value(observation.uri, NS_MM_OBS["time-extractor"], any=False)
+            == observation.time_extractor_uri
+            for observation in policy.policy_spec.observations
+        )
         assert graph.value(policy.uri, NS_MM_OBS["has-evaluator"], any=False) is not None
 
         policy_model = load_observation_policy(full_graph, scr_var, policy)
