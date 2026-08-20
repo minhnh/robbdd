@@ -33,6 +33,10 @@ from bdd_dsl.models.urirefs import (
     URI_BHV_TYPE_BHV,
     URI_BHV_TYPE_PICK,
     URI_BHV_TYPE_PLACE,
+)
+from bdd_dsl.representation import VariableStrTemplate
+from rdf_utils.collection import add_literal_list_pred, add_node_list_pred
+from rdf_utils.models.vocab import (
     URI_TIME_PRED_AFTER_EVT,
     URI_TIME_PRED_BEFORE_EVT,
     URI_TIME_PRED_HRZN_SEC,
@@ -41,8 +45,6 @@ from bdd_dsl.models.urirefs import (
     URI_TIME_TYPE_DURING,
     URI_TIME_TYPE_TC,
 )
-from bdd_dsl.representation import VariableStrTemplate
-from rdf_utils.collection import add_literal_list_pred, add_node_list_pred
 from rdflib import RDF, Graph, Literal, URIRef
 from rdflib.collection import Collection
 

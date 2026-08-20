@@ -3,7 +3,7 @@ from os.path import dirname, join
 from pathlib import Path
 from urllib.error import HTTPError
 
-from bdd_dsl.models.namespace import NS_MM_CSTR, NS_MM_OBS
+from bdd_dsl.models.namespace import NS_MM_CSTR
 from bdd_dsl.models.observation import (
     LinearDistanceEvaluator,
     ObservationPolicyEvaluator,
@@ -24,26 +24,27 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_TYPE_SCENARIO_TMPL,
     URI_BDD_TYPE_SCENARIO_VARIANT,
     URI_BDD_TYPE_US,
-    URI_OBS_PRED_POLICY,
-    URI_OBS_PRED_PROVIDER,
-    URI_OBS_TYPE_DIRECT_TRINARY_POLICY,
-    URI_OBS_TYPE_POLICY,
-    URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER,
-    URI_ROS_TYPE_TOPIC,
-    URI_TIME_PRED_HRZN_SEC,
-    URI_TIME_TYPE_AFTER_EVT,
 )
 from bdd_dsl.models.user_story import UserStoryLoader
 from rdf_utils.models.vocab import (
     URI_EXEC_PRED_RUNS_SCENE,
     URI_EXEC_TYPE_SCENE_INST,
+    URI_OBS_PRED_POLICY,
+    URI_OBS_PRED_PROVIDER,
+    URI_OBS_TYPE_DIRECT_TRINARY_POLICY,
+    URI_OBS_TYPE_POLICY,
     URI_QUDT_PRED_QUANTITY_KIND,
     URI_QUDT_PRED_UNIT,
     URI_QUDT_PRED_VALUE,
     URI_QUDT_QK_FREQ,
     URI_QUDT_TYPE_QUANTITY,
+    URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER,
+    URI_ROS_TYPE_TOPIC,
+    URI_TIME_PRED_HRZN_SEC,
+    URI_TIME_TYPE_AFTER_EVT,
+    URI_TIME_TYPE_INSTANT,
 )
-from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_QUDT_UNIT
+from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_OBS, NS_MM_QUDT_UNIT
 from rdf_utils.resolver import install_resolver
 from rdflib import RDF, URIRef
 from rdflib.namespace import SOSA
@@ -67,6 +68,9 @@ MODELS_DIR = join(ROOT_DIR, "examples", "models")
 
 
 def assert_bdd_graph_contract(model, graph):
+    for event in model.events:
+        assert (event.uri, RDF.type, URI_TIME_TYPE_INSTANT) in graph
+
     for tmpl in model.templates:
         assert (tmpl.uri, RDF.type, URI_BDD_TYPE_SCENARIO_TMPL) in graph
         assert (tmpl.scenario_uri, RDF.type, URI_BDD_TYPE_SCENARIO) in graph
