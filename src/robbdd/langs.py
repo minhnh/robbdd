@@ -49,6 +49,7 @@ from robbdd.classes.bddx import (
     ObservationProvider,
     RosTrinaryTopicPolicy,
     ScenarioExecution,
+    StringEntityMappingSpec,
 )
 
 __CWD = abspath(dirname(__file__))
@@ -145,6 +146,7 @@ def bddx_metamodel():
         join(__CWD, "grammars", "bddx.tx"),
         classes=[
             ScenarioExecution,
+            StringEntityMappingSpec,
             BehaviourImplementation,
             LinearDistanceEvaluator,
             ObservationProvider,

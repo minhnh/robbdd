@@ -1,6 +1,7 @@
 import unittest
 from os.path import dirname, join
 from pathlib import Path
+from types import SimpleNamespace
 from urllib.error import HTTPError
 
 from bdd_dsl.models.namespace import NS_MM_CSTR
@@ -9,6 +10,7 @@ from bdd_dsl.models.observation import (
     ObservationPolicyEvaluator,
     ObservationStamped,
     ObsPolicyModel,
+    read_string_entity_mappings,
 )
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_AC,
@@ -23,6 +25,7 @@ from bdd_dsl.models.urirefs import (
     URI_BDD_TYPE_SCENARIO_EXEC,
     URI_BDD_TYPE_SCENARIO_TMPL,
     URI_BDD_TYPE_SCENARIO_VARIANT,
+    URI_BDD_TYPE_STRING_ENTITY_MAPPER,
     URI_BDD_TYPE_US,
 )
 from bdd_dsl.models.user_story import UserStoryLoader
@@ -38,13 +41,16 @@ from rdf_utils.models.vocab import (
     URI_QUDT_PRED_VALUE,
     URI_QUDT_QK_FREQ,
     URI_QUDT_TYPE_QUANTITY,
+    URI_QUDT_UNIT_HZ,
+    URI_ROS_PRED_REFERENCE_FRAME,
     URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER,
     URI_ROS_TYPE_TOPIC,
+    URI_ROS_TYPE_TRANSFORM_LISTENER,
     URI_TIME_PRED_HRZN_SEC,
     URI_TIME_TYPE_AFTER_EVT,
     URI_TIME_TYPE_INSTANT,
 )
-from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_OBS, NS_MM_QUDT_UNIT
+from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_OBS
 from rdf_utils.resolver import install_resolver
 from rdflib import RDF, URIRef
 from rdflib.namespace import SOSA
@@ -53,7 +59,11 @@ from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE
 from textx import metamodel_for_language
 from textx.exceptions import TextXSyntaxError
 
-from robbdd.classes.bddx import EvaluatedObservationPolicy, RosTrinaryTopicPolicy
+from robbdd.classes.bddx import (
+    EvaluatedObservationPolicy,
+    RosTrinaryTopicPolicy,
+    StringEntityMappingSpec,
+)
 from robbdd.rdf.bdd import create_bdd_model_graph
 from robbdd.rdf.bddx import create_bddx_model_graph
 
@@ -182,7 +192,7 @@ class TestTextXLanguages(unittest.TestCase):
             graph.value(rate, URI_QUDT_PRED_VALUE, any=False).toPython()
             == entity_state.provider_spec.update_rate
         )
-        assert graph.value(rate, URI_QUDT_PRED_UNIT, any=False) == NS_MM_QUDT_UNIT["HZ"]
+        assert graph.value(rate, URI_QUDT_PRED_UNIT, any=False) == URI_QUDT_UNIT_HZ
         assert graph.value(rate, URI_QUDT_PRED_QUANTITY_KIND, any=False) == URI_QUDT_QK_FREQ
         assert (recognized_poses.uri, RDF.type, URI_ROS_TYPE_TOPIC) in graph
         assert (recognized_poses.uri, RDF.type, NS_MM_OBS.PoseProvider) not in graph
@@ -221,6 +231,20 @@ class TestTextXLanguages(unittest.TestCase):
                 for observation, position in zip(
                     policy.policy_spec.observations, ((0.0, 0.0, 0.0), (0.1, 0.0, 0.0)), strict=True
                 )
+            ]
+        )
+        assert accepted
+        accepted, _ = policy_model.evaluator.evaluate(
+            [
+                ObservationStamped(
+                    observation_uri=observation.uri,
+                    provider_uri=observation.provider.uri,
+                    stamp=1.2,
+                    value=SimpleNamespace(
+                        pose=SimpleNamespace(position=SimpleNamespace(x=x, y=0.0, z=0.0))
+                    ),
+                )
+                for observation, x in zip(policy.policy_spec.observations, (0.0, 0.1), strict=True)
             ]
         )
         assert accepted
@@ -386,6 +410,70 @@ class TestTextXLanguages(unittest.TestCase):
                 invalid_model,
                 file_name=str(fixture),
             )
+
+    def test_string_entity_mapping_requires_exactly_one_entity(self):
+        parent = object()
+        entity = object()
+        mapping = StringEntityMappingSpec(parent, "frame", entity, None, None, None)
+        self.assertIs(mapping.entity, entity)
+        with self.assertRaisesRegex(ValueError, "exactly one entity"):
+            StringEntityMappingSpec(parent, "frame", None, None, None, None)
+        with self.assertRaisesRegex(ValueError, "exactly one entity"):
+            StringEntityMappingSpec(parent, "frame", entity, entity, None, None)
+
+    def test_transform_listener_provider_serializes_string_entity_mappings(self):
+        fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))
+        provider_text = """
+obs provider (ns=bdd_exec_ros) tf-poses {
+    ros transform listener
+    reference-frame: "base_link"
+    update-rate: 20 Hz
+}
+"""
+        model = metamodel_for_language("robbdd-exec").model_from_str(
+            fixture.read_text()
+            .replace('import "lab.scenex"', 'import "lab.scenex"\nimport "lab.scene"')
+            .replace(
+                "obs provider (ns=bdd_exec_ros) recognized-poses {",
+                provider_text + "obs provider (ns=bdd_exec_ros) recognized-poses {",
+            ),
+            file_name=str(fixture),
+        )
+        graph = create_bddx_model_graph(model=model)
+        provider = next(item for item in model.obs_providers if item.name == "tf-poses")
+
+        assert (provider.uri, RDF.type, URI_ROS_TYPE_TRANSFORM_LISTENER) in graph
+        assert (
+            graph.value(provider.uri, URI_ROS_PRED_REFERENCE_FRAME, any=False).toPython()
+            == "base_link"
+        )
+        assert read_string_entity_mappings(graph, provider.uri) == []
+
+    def test_observation_serializes_declarative_string_entity_mapper(self):
+        fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))
+        declarative_mapper = """
+entity mapper: string {
+    "target" to var <tmpl_pickplace.target_object>
+}"""
+        model_text = fixture.read_text().replace(
+            "entity mapper: py { module: bdd_exec_ros2.observation, attr: map_identified_pose_batch }",
+            declarative_mapper,
+            1,
+        )
+        model = metamodel_for_language("robbdd-exec").model_from_str(
+            model_text, file_name=str(fixture)
+        )
+        graph = create_bddx_model_graph(model=model)
+        observation = model.observations[0]
+
+        assert (
+            observation.entity_mapper_uri,
+            RDF.type,
+            URI_BDD_TYPE_STRING_ENTITY_MAPPER,
+        ) in graph
+        assert dict(read_string_entity_mappings(graph, observation.entity_mapper_uri)) == {
+            "target": observation.entity_mapper.mappings[0].entity.uri
+        }
 
     def test_simulation_provider_rejects_non_positive_update_rate(self):
         fixture = Path(join(MODELS_DIR, "pickplace_observations.bddx"))

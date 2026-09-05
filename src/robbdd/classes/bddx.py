@@ -2,7 +2,7 @@
 from typing import Any
 
 from rdflib import Namespace, URIRef
-from scene_dsl.classes.common import IHasNamespace, IHasNamespaceDeclare
+from scene_dsl.classes.common import IHasNamespace, IHasNamespaceDeclare, IHasUUID
 from scene_dsl.classes.scene import Agent as ScnAgent
 from scene_dsl.classes.scene import Object as ScnObject
 from scene_dsl.classes.scene import Workspace as ScnWorkspace
@@ -25,6 +25,32 @@ class ObservationProvider(IHasNamespaceDeclare):
     def __init__(self, parent, ns, name, provider_spec) -> None:
         super().__init__(parent=parent, ns=ns, name=name)
         self.provider_spec = provider_spec
+
+
+class StringEntityMappingSpec(IHasUUID):
+    def __init__(self, parent, string, var, agn, obj, ws) -> None:
+        super().__init__(parent=parent)
+        entities = [entity for entity in (var, agn, obj, ws) if entity is not None]
+        if len(entities) != 1:
+            raise ValueError("StringEntityMapping requires exactly one entity")
+        self.string: str = string
+        self.var: VariableBase | None = var
+        self.agn: ScnAgent | None = agn
+        self.obj: ScnObject | None = obj
+        self.ws: ScnWorkspace | None = ws
+        self.entity: VariableBase | ScnAgent | ScnObject | ScnWorkspace = entities[0]
+        self._uri: URIRef | None = None
+
+    @property
+    def uri(self) -> URIRef:
+        if self._uri is not None:
+            return self._uri
+
+        obs = self.parent.parent
+        if not isinstance(obs, Observation):
+            raise TypeError(f"grandparent of {self} is not an Observation instance")
+        self._uri = obs.namespace[f"mapping-{self.uuid}"]
+        return self._uri
 
 
 class Observation(IHasNamespaceDeclare):
