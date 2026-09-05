@@ -32,16 +32,20 @@ from bdd_dsl.models.user_story import UserStoryLoader
 from rdf_utils.models.vocab import (
     URI_EXEC_PRED_RUNS_SCENE,
     URI_EXEC_TYPE_SCENE_INST,
+    URI_OBS_PRED_MAX_TIME_OFFSET,
     URI_OBS_PRED_POLICY,
     URI_OBS_PRED_PROVIDER,
     URI_OBS_TYPE_DIRECT_TRINARY_POLICY,
+    URI_OBS_TYPE_LINEAR_DISTANCE_EVALUATOR,
     URI_OBS_TYPE_POLICY,
     URI_QUDT_PRED_QUANTITY_KIND,
     URI_QUDT_PRED_UNIT,
     URI_QUDT_PRED_VALUE,
     URI_QUDT_QK_FREQ,
+    URI_QUDT_QK_TIME,
     URI_QUDT_TYPE_QUANTITY,
     URI_QUDT_UNIT_HZ,
+    URI_QUDT_UNIT_SEC,
     URI_ROS_PRED_REFERENCE_FRAME,
     URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER,
     URI_ROS_TYPE_TOPIC,
@@ -254,6 +258,7 @@ class TestTextXLanguages(unittest.TestCase):
         model_text = fixture.read_text().replace(
             """    evaluator: linear distance {
         equals: 0.10 m tolerance: 0.01 m
+        max time offset: 0.1 s
     }""",
             """    evaluator: py { module: test_textx_languages, attr: TruthWithReasonEvaluator}""",
         )
@@ -320,10 +325,24 @@ class TestTextXLanguages(unittest.TestCase):
                 )
                 graph = create_bdd_model_graph(model=bdd_model)
                 graph += create_bddx_model_graph(model=model)
+                evaluator_spec = model.obs_policies[0].policy_spec.evaluator
+                evaluator_uri = evaluator_spec.parent.evaluator_uri
+                offset_uri = evaluator_spec.max_time_offset_uri
+                assert (
+                    evaluator_uri,
+                    URI_OBS_PRED_MAX_TIME_OFFSET,
+                    offset_uri,
+                ) in graph
+                assert (offset_uri, RDF.type, URI_QUDT_TYPE_QUANTITY) in graph
+                assert (offset_uri, URI_QUDT_PRED_QUANTITY_KIND, URI_QUDT_QK_TIME) in graph
+                assert (offset_uri, URI_QUDT_PRED_UNIT, URI_QUDT_UNIT_SEC) in graph
+                assert graph.value(offset_uri, URI_QUDT_PRED_VALUE).toPython() == 0.1
                 scr_var = UserStoryLoader(graph).load_scenario_variant(
                     full_graph=graph, variant_id=model.scenario_execs[0].variant.uri
                 )
                 policy = load_observation_policy(graph, scr_var, model.obs_policies[0])
+                assert URI_OBS_TYPE_LINEAR_DISTANCE_EVALUATOR in policy.evaluator.types
+                assert policy.evaluator.max_time_offset == 0.1
                 assert policy.start_event is not None
                 policy.on_event(policy.start_event, 1.0)
                 accepted, _ = policy.add_samples(

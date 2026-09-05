@@ -37,6 +37,7 @@ obs policy (ns=bdd_exec_ros) fcx-located-after-distance
     observations: { <object-pose>, <workspace-pose> }
     evaluator: linear distance {
         equals: 0.10 m tolerance: 0.01 m
+        max time offset: 0.1 s
     }
 }
 

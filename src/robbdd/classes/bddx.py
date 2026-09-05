@@ -138,19 +138,29 @@ class EvaluatedObservationPolicy(IHasNamespace):
 class LinearDistanceEvaluator:
     parent: EvaluatedObservationPolicy
 
-    def __init__(self, parent, constraint) -> None:
+    def __init__(self, parent, constraint, max_time_offset=None) -> None:
         if not isinstance(parent, EvaluatedObservationPolicy):
             raise TypeError(
                 f"parent of LinearDistanceEvaluator is not an EvaluatedObservationPolicy: {parent}"
             )
         self.parent = parent
         self.constraint = constraint
+        self.max_time_offset = max_time_offset
         self._coord_uri: URIRef | None = None
         self._constraint_uri: URIRef | None = None
         self._lower_uri: URIRef | None = None
         self._upper_uri: URIRef | None = None
         self._ref_val_uri: URIRef | None = None
         self._tol_uri: URIRef | None = None
+        self._max_time_offset_uri: URIRef | None = None
+
+    @property
+    def max_time_offset_uri(self) -> URIRef:
+        if self._max_time_offset_uri is None:
+            self._max_time_offset_uri = self.parent.namespace[
+                f"{self.parent.policy_name}/evaluator/max-time-offset"
+            ]
+        return self._max_time_offset_uri
 
     @property
     def coordinate_uri(self) -> URIRef:

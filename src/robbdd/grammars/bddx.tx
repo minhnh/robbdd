@@ -109,8 +109,10 @@ Evaluator: PyModuleAttr | LinearDistanceEvaluator ;
 LinearDistanceEvaluator:
   'linear' 'distance' '{'
   constraint=DistanceConstraint
+  ('max' 'time' 'offset' ':' max_time_offset=TimeOffset)?
   '}'
 ;
+TimeOffset: value=FLOAT 's' ;
 DistanceConstraint:
   ('less-than' ':' less_than=DistanceValue
   | 'greater-than' ':' greater_than=DistanceValue
