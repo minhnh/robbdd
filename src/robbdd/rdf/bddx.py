@@ -36,6 +36,7 @@ from rdf_utils.models.vocab import (
     URI_OBS_PRED_ENTITY_MAPPER,
     URI_OBS_PRED_HAS_EVALUATOR,
     URI_OBS_PRED_HAS_OBSERVATION,
+    URI_OBS_PRED_MAX_TIME_OFFSET,
     URI_OBS_PRED_OBSERVES_TARGET,
     URI_OBS_PRED_POLICY,
     URI_OBS_PRED_PROVIDER,
@@ -52,8 +53,10 @@ from rdf_utils.models.vocab import (
     URI_QUDT_PRED_VALUE,
     URI_QUDT_QK_DISTANCE,
     URI_QUDT_QK_FREQ,
+    URI_QUDT_QK_TIME,
     URI_QUDT_TYPE_QUANTITY,
     URI_QUDT_UNIT_HZ,
+    URI_QUDT_UNIT_SEC,
     URI_ROS_PRED_CHNL_NAME,
     URI_ROS_PRED_REFERENCE_FRAME,
     URI_ROS_PRED_TYPE_NAME,
@@ -220,6 +223,21 @@ def add_linear_distance_to_graph(
     graph.add(triple=(eval_uri, RDF.type, URI_GEOM_TYPE_LINEAR_DISTANCE))
     for obs in observations:
         graph.add((eval_uri, URI_GEOM_PRED_BETWEEN_ENTITIES, obs.uri))
+    if evaluator.max_time_offset is not None:
+        if evaluator.max_time_offset.value < 0:
+            raise ValueError("linear distance max time offset must be non-negative")
+        offset_uri = evaluator.max_time_offset_uri
+        graph.add((eval_uri, URI_OBS_PRED_MAX_TIME_OFFSET, offset_uri))
+        graph.add((offset_uri, RDF.type, URI_QUDT_TYPE_QUANTITY))
+        graph.add((offset_uri, URI_QUDT_PRED_QUANTITY_KIND, URI_QUDT_QK_TIME))
+        graph.add(
+            (
+                offset_uri,
+                URI_QUDT_PRED_VALUE,
+                Literal(evaluator.max_time_offset.value, datatype=XSD.double),
+            )
+        )
+        graph.add((offset_uri, URI_QUDT_PRED_UNIT, URI_QUDT_UNIT_SEC))
 
     coord_uri = evaluator.coordinate_uri
     cstr_uri = evaluator.constraint_uri
