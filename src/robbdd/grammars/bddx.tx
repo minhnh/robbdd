@@ -63,7 +63,7 @@ EvaluatedObservationPolicy:
 
 HorizonSeconds: val=FLOAT 'seconds' ;
 
-ProviderSpec: RosTopicProvider | SimulationEntityStateProvider ;
+ProviderSpec: RosTopicProvider | SimulationEntityStateProvider | TransformListenerProvider ;
 RosTopicProvider:
   'ros' 'topic' ':' topic_name=STRING
   'type' ':' type_name=STRING
@@ -71,6 +71,19 @@ RosTopicProvider:
 SimulationEntityStateProvider:
   'ros' 'simulation' 'entity' 'state'
   'update-rate' ':' update_rate=FLOAT 'Hz'
+;
+TransformListenerProvider:
+  'ros' 'transform' 'listener'
+  'reference-frame' ':' reference_frame=STRING
+  'update-rate' ':' update_rate=FLOAT 'Hz'
+;
+StringEntityMappingSpec:
+  string=STRING 'to' (
+    'var' '<' var=[bdd.VariableBase|FQN] '>'
+    | 'agn' '<' agn=[sx.Agent|FQN] '>'
+    | 'obj' '<' obj=[sx.Object|FQN] '>'
+    | 'ws' '<' ws=[sx.Workspace|FQN] '>'
+  )
 ;
 
 Observation:
@@ -83,8 +96,13 @@ Observation:
     | 'ws' '<' ws_target=[sx.Workspace|FQN] '>'
   ))?
   'time' 'extractor' ':' time_extractor=PyModuleAttr
-  ('entity' 'mapper' ':' entity_mapper=PyModuleAttr)?
+  ('entity' 'mapper' ':' entity_mapper=EntityMapper)?
   '}'
+;
+
+EntityMapper: PyModuleAttr | StringEntityMapperSpec ;
+StringEntityMapperSpec:
+  'string' '{' mappings+=StringEntityMappingSpec[','] '}'
 ;
 
 Evaluator: PyModuleAttr | LinearDistanceEvaluator ;

@@ -3,10 +3,15 @@ from typing import Any
 
 from bdd_dsl.models.urirefs import (
     URI_BDD_PRED_HAS_BHV_IMPL,
+    URI_BDD_PRED_HAS_STRING_ENTITY_MAPPING,
+    URI_BDD_PRED_MAPPED_ENTITY,
     URI_BDD_PRED_OF_CLAUSE,
     URI_BDD_PRED_OF_VARIANT,
+    URI_BDD_PRED_STRING_VALUE,
     URI_BDD_TYPE_BHV_IMPL,
     URI_BDD_TYPE_SCENARIO_EXEC,
+    URI_BDD_TYPE_STRING_ENTITY_MAPPER,
+    URI_BDD_TYPE_STRING_ENTITY_MAPPING,
     URI_BHV_PRED_OF_BHV,
     URI_CSTR_PRED_HAS_CONSTRAINT,
     URI_CSTR_PRED_LOWER_THRESHOLD,
@@ -48,13 +53,15 @@ from rdf_utils.models.vocab import (
     URI_QUDT_QK_DISTANCE,
     URI_QUDT_QK_FREQ,
     URI_QUDT_TYPE_QUANTITY,
+    URI_QUDT_UNIT_HZ,
     URI_ROS_PRED_CHNL_NAME,
+    URI_ROS_PRED_REFERENCE_FRAME,
     URI_ROS_PRED_TYPE_NAME,
     URI_ROS_TYPE_ACTION,
     URI_ROS_TYPE_SIM_ENTITY_STATE_PROVIDER,
     URI_ROS_TYPE_TOPIC,
+    URI_ROS_TYPE_TRANSFORM_LISTENER,
 )
-from rdf_utils.namespace import NS_MM_QUDT_UNIT
 from rdflib import RDF, XSD, Graph, Literal, URIRef
 from rdflib.namespace import SOSA
 from scene_dsl.rdf.common import add_py_module_attr
@@ -72,6 +79,7 @@ from robbdd.classes.bddx import (
     ObservationProvider,
     RosTrinaryTopicPolicy,
     ScenarioExecution,
+    StringEntityMappingSpec,
 )
 from robbdd.rdf.clauses import add_node_time_constraint
 
@@ -117,7 +125,34 @@ def add_obs_provider_to_graph(graph: Graph, provider: ObservationProvider) -> No
                 Literal(provider.provider_spec.update_rate, datatype=XSD.double),
             )
         )
-        graph.add((update_rate_uri, URI_QUDT_PRED_UNIT, NS_MM_QUDT_UNIT["HZ"]))
+        graph.add((update_rate_uri, URI_QUDT_PRED_UNIT, URI_QUDT_UNIT_HZ))
+        graph.add((update_rate_uri, URI_QUDT_PRED_QUANTITY_KIND, URI_QUDT_QK_FREQ))
+        return
+
+    if spec_type == "TransformListenerProvider":
+        if provider.provider_spec.update_rate <= 0:
+            raise ValueError("transform-listener update-rate must be positive")
+        graph.add((provider.uri, RDF.type, URI_OBS_TYPE_POSE_PROVIDER))
+        graph.add((provider.uri, RDF.type, URI_ROS_TYPE_TRANSFORM_LISTENER))
+        graph.add((provider.uri, RDF.type, SOSA.Sensor))
+        graph.add(
+            (
+                provider.uri,
+                URI_ROS_PRED_REFERENCE_FRAME,
+                Literal(provider.provider_spec.reference_frame),
+            )
+        )
+        update_rate_uri = provider.namespace[f"{provider.name}/update-rate"]
+        graph.add((provider.uri, URI_SENS_PRED_UPDATE_RATE, update_rate_uri))
+        graph.add((update_rate_uri, RDF.type, URI_QUDT_TYPE_QUANTITY))
+        graph.add(
+            (
+                update_rate_uri,
+                URI_QUDT_PRED_VALUE,
+                Literal(provider.provider_spec.update_rate, datatype=XSD.double),
+            )
+        )
+        graph.add((update_rate_uri, URI_QUDT_PRED_UNIT, URI_QUDT_UNIT_HZ))
         graph.add((update_rate_uri, URI_QUDT_PRED_QUANTITY_KIND, URI_QUDT_QK_FREQ))
         return
 
@@ -145,12 +180,25 @@ def add_observation_to_graph(graph: Graph, observation: Observation) -> None:
         py_model=observation.time_extractor,
     )
     if observation.entity_mapper is not None:
-        graph.add((observation.uri, URI_OBS_PRED_ENTITY_MAPPER, observation.entity_mapper_uri))
-        add_py_module_attr(
-            graph=graph,
-            node_uri=observation.entity_mapper_uri,
-            py_model=observation.entity_mapper,
-        )
+        mapper_uri = observation.entity_mapper_uri
+        mapper_type = observation.entity_mapper.__class__.__name__
+        graph.add(triple=(observation.uri, URI_OBS_PRED_ENTITY_MAPPER, mapper_uri))
+        if mapper_type == "StringEntityMapperSpec":
+            graph.add(triple=(mapper_uri, RDF.type, URI_BDD_TYPE_STRING_ENTITY_MAPPER))
+            for mapping in observation.entity_mapper.mappings:
+                assert isinstance(mapping, StringEntityMappingSpec)
+                graph.add(triple=(mapper_uri, URI_BDD_PRED_HAS_STRING_ENTITY_MAPPING, mapping.uri))
+                graph.add(triple=(mapping.uri, RDF.type, URI_BDD_TYPE_STRING_ENTITY_MAPPING))
+                graph.add(triple=(mapping.uri, URI_BDD_PRED_STRING_VALUE, Literal(mapping.string)))
+                graph.add(triple=(mapping.uri, URI_BDD_PRED_MAPPED_ENTITY, mapping.entity.uri))
+        elif mapper_type == "PyModuleAttr":
+            add_py_module_attr(
+                graph=graph,
+                node_uri=observation.entity_mapper_uri,
+                py_model=observation.entity_mapper,
+            )
+        else:
+            raise TypeError(f"Observation mapper not handled for type '{mapper_type}'")
 
 
 def add_distance_value(graph: Graph, value, quantity_uri: URIRef) -> URIRef:
