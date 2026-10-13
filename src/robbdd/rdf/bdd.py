@@ -450,10 +450,13 @@ def create_bdd_model_graph(model: Any, g: Graph | None = None) -> Graph:
         g.bind(prefix=task.ns_prefix, namespace=task.namespace)
         g.add(triple=(task.uri, RDF.type, URI_TASK_TYPE_TASK))
 
-    tmpl_uris = set()
+    # skip templates already in the graph
+    tmpl_uris = set(g.subjects(RDF.type, URI_BDD_TYPE_SCENARIO_TMPL))
     templates = getattr(model, "templates", None)
     if templates is not None:
         for tmpl in templates:
+            if tmpl.uri in tmpl_uris:
+                continue
             tmpl_uris.add(tmpl.uri)
             add_scenario_tmpl(graph=g, tmpl=tmpl)
 

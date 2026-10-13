@@ -137,6 +137,19 @@ class TestTextXLanguages(unittest.TestCase):
     def setUp(self) -> None:
         install_resolver()
 
+    def test_imported_template_is_not_emitted_again_into_existing_graph(self):
+        from bdd_dsl.models.urirefs import URI_BDD_PRED_HAS_CLAUSE
+
+        model = metamodel_for_language("robbdd").model_from_file(
+            join(MODELS_DIR, "pickplace_table_custom.bdd")
+        )
+        graph = create_bdd_model_graph(model)
+        template = model.templates[0].uri
+        clauses = set(graph.objects(template, URI_BDD_PRED_HAS_CLAUSE))
+        inherited = SimpleNamespace(events=[], tasks=[], templates=[], stories=model.stories)
+        create_bdd_model_graph(inherited, g=graph)
+        assert set(graph.objects(template, URI_BDD_PRED_HAS_CLAUSE)) == clauses
+
     def test_robbdd(self):
         """Test RobBDD language"""
         bdd_mm = metamodel_for_language("robbdd")
