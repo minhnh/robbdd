@@ -22,7 +22,7 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
-  'textx', 'textX-jinja', 'rdflib', 'scene-dsl', 'bdd-dsl'
+  'textx', 'textX-jinja', 'rdflib', 'rdf-utils~=1.0.1', 'scene-dsl~=1.0.0', 'bdd-dsl~=1.0.0'
 ]
 
 [project.entry-points.textx_languages]

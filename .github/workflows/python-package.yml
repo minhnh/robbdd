@@ -25,21 +25,24 @@ jobs:
       with:
         repository: minhnh/rdf-utils
         path: rdf-utils
+        ref: v1.0.1
     - name: Checkout bdd-dsl
       uses: actions/checkout@v7
       with:
         repository: minhnh/bdd-dsl
         path: bdd-dsl
-        ref: devel
+        ref: v1.0.0
     - name: Checkout scene-dsl
       uses: actions/checkout@v7
       with:
         repository: secorolab/scene-dsl
         path: scene-dsl
+        ref: v1.0.0
     - name: Checkout robbdd
       uses: actions/checkout@v7
       with:
         path: robbdd
+        fetch-depth: 0
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
@@ -48,16 +51,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install ruff pytest
-        if [ -f robbdd/requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f robbdd/requirements.txt ]; then pip install -r robbdd/requirements.txt; fi
     - name: Lint with ruff
       run: |
         ruff check robbdd/src robbdd/tests
     - name: Install package
       run: |
-        pip install "./rdf-utils[all]"
-        pip install ./scene-dsl
-        pip install ./bdd-dsl
-        pip install ./robbdd
+        pip install "./rdf-utils[all]" ./scene-dsl ./bdd-dsl ./robbdd
     - name: Test with pytest
       run: |
         pytest -q robbdd/tests
