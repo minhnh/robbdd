@@ -52,12 +52,11 @@ from rdf_utils.models.vocab import (
     URI_ROS_TYPE_TRANSFORM_LISTENER,
     URI_TIME_PRED_HRZN_SEC,
     URI_TIME_TYPE_AFTER_EVT,
-    URI_TIME_TYPE_INSTANT,
 )
 from rdf_utils.namespace import NS_MM_GEOM_COORD, NS_MM_OBS
 from rdf_utils.resolver import install_resolver
 from rdflib import RDF, URIRef
-from rdflib.namespace import SOSA
+from rdflib.namespace import SOSA, TIME
 from scene_dsl.rdf.scene import create_scene_model_graph
 from scene_dsl.rdf.sensors import URI_SENS_PRED_UPDATE_RATE
 from textx import metamodel_for_language
@@ -74,7 +73,7 @@ from robbdd.rdf.bddx import create_bddx_model_graph
 
 class TruthWithReasonEvaluator(ObservationPolicyEvaluator):
     def _evaluate_samples(self, samples):
-        return bool(samples), "samples are present"
+        return bool(samples), {"reason": "samples are present"}
 
 
 ROOT_DIR = dirname(dirname(__file__))
@@ -83,7 +82,7 @@ MODELS_DIR = join(ROOT_DIR, "examples", "models")
 
 def assert_bdd_graph_contract(model, graph):
     for event in model.events:
-        assert (event.uri, RDF.type, URI_TIME_TYPE_INSTANT) in graph
+        assert (event.uri, RDF.type, TIME.Instant) in graph
 
     for tmpl in model.templates:
         assert (tmpl.uri, RDF.type, URI_BDD_TYPE_SCENARIO_TMPL) in graph

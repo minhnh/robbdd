@@ -41,9 +41,9 @@ from bdd_dsl.models.variation import (
     URI_BDD_TYPE_PERMUTATION,
 )
 from rdf_utils.collection import add_node_list_pred
-from rdf_utils.models.vocab import URI_TIME_TYPE_INSTANT
 from rdflib import RDF, XSD, BNode, Graph, IdentifiedNode, Literal, Node, URIRef
 from rdflib.collection import Collection
+from rdflib.namespace import TIME
 from scene_dsl.classes.common import SetBase
 from scene_dsl.classes.scene import (
     AgentSet,
@@ -442,7 +442,7 @@ def create_bdd_model_graph(model: Any, g: Graph | None = None) -> Graph:
     assert events is not None and isinstance(events, list), "no list of events in model"
     for evt in events:
         g.bind(prefix=evt.ns_prefix, namespace=evt.namespace)
-        g.add(triple=(evt.uri, RDF.type, URI_TIME_TYPE_INSTANT))
+        g.add(triple=(evt.uri, RDF.type, TIME.Instant))
 
     tasks = getattr(model, "tasks", None)
     assert tasks is not None and isinstance(tasks, list), "no list of tasks in model"
